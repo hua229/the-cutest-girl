@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,11 +33,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,11 +86,15 @@ fun AddRecordSheet(
     primaryEnabled: Boolean,
     onPrimary: () -> Unit,
     primaryLabel: String = "保存",
+    hasUnsavedChanges: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showDiscardConfirm by remember { mutableStateOf(false) }
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (hasUnsavedChanges) showDiscardConfirm = true else onDismiss()
+        },
         sheetState = sheetState,
         scrimColor = Color.Black.copy(alpha = 0.40f),
         containerColor = Color.Transparent,
@@ -99,6 +107,22 @@ fun AddRecordSheet(
             onPrimary = onPrimary,
             primaryLabel = primaryLabel,
             content = content
+        )
+    }
+    if (showDiscardConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirm = false },
+            title = { Text("放弃这次编辑？") },
+            text = { Text("已填写的内容和已选的照片不会保存。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardConfirm = false
+                    onDismiss()
+                }) { Text("放弃") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirm = false }) { Text("继续编辑") }
+            }
         )
     }
 }
@@ -117,9 +141,9 @@ fun AddRecordSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.55f)
+            .fillMaxHeight(0.62f)
             .glassPanel(shape = topOnly)
-            .navigationBarsPadding()
+            // ModalBottomSheet 自带系统栏 insets；这里只补键盘，避免双倍留白
             .imePadding()
             .padding(24.dp)
     ) {
@@ -213,12 +237,12 @@ fun SheetTextField(
     }
 }
 
-/** 抽屉日期行：只读展示 + 点击选择。 */
+/** 抽屉日期行：只读展示；[onClick] 为 null 时是不可点的信息行。 */
 @Composable
 fun SheetDateRow(
     label: String,
     value: String,
-    onClick: () -> Unit
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -227,7 +251,7 @@ fun SheetDateRow(
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(1.dp, BorderHairline, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -357,8 +381,8 @@ fun SheetPhotoPicker(
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (photos.isNotEmpty()) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                photos.forEach { name ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(photos) { name ->
                     Box(
                         modifier = Modifier
                             .size(72.dp)

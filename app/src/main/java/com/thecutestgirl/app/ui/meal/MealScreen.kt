@@ -143,7 +143,8 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
 fun MealScreen(
     onOpenMeal: (LocalDate, Int, String?) -> Unit,
     onOpenSettings: () -> Unit,
-    initialDate: LocalDate? = null
+    initialDate: LocalDate? = null,
+    onInitialTargetConsumed: () -> Unit = {}
 ) {
     val vm: MealViewModel = viewModel()
     // 只在**首次**组合时按通知日期定位一次。
@@ -156,6 +157,7 @@ fun MealScreen(
         if (jumpedDate != target) {
             vm.setDate(initialDate)
             jumpedDate = target
+            onInitialTargetConsumed()
         }
     }
     val date by vm.date.collectAsStateWithLifecycle()
@@ -237,6 +239,7 @@ fun MealScreen(
                         onRetry = retrySync,
                         onEditMine = { onOpenMeal(date, mealType, mine?.id) },
                         onAddMine = { addMealType = mealType },
+                        onOpenTheirs = { record -> onOpenMeal(date, mealType, record.id) },
                         onViewPhoto = { name -> viewerPhoto = name }
                     )
                 }
@@ -306,12 +309,12 @@ fun MealScreen(
             subtitle = "${date.toCnShort()} ${date.toWeekday()}",
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
+            hasUnsavedChanges = addVm.photoPath != null || addVm.note.isNotBlank(),
             onPrimary = { addVm.save(date, mealType) { addMealType = null } }
         ) {
             SheetDateRow(
                 label = "日期",
-                value = "${date.toCnShort()} ${date.toWeekday()}",
-                onClick = {}
+                value = "${date.toCnShort()} ${date.toWeekday()}"
             )
             SheetPhotoPicker(
                 photos = listOfNotNull(addVm.photoPath),
@@ -343,6 +346,7 @@ private fun MealSection(
     onRetry: () -> Unit,
     onEditMine: () -> Unit,
     onAddMine: () -> Unit,
+    onOpenTheirs: (MealRecord) -> Unit,
     onViewPhoto: (String) -> Unit
 ) {
     Column {
@@ -405,10 +409,11 @@ private fun MealSection(
             MealContentCard(
                 ownerLabel = null,
                 record = record,
-                clickable = false,
+                partner = true,
+                clickable = true,
                 syncFailed = syncFailed,
                 onRetry = onRetry,
-                onClick = {},
+                onClick = { onOpenTheirs(record) },
                 onViewPhoto = onViewPhoto,
                 partnerName = record.originName
             )
@@ -425,6 +430,7 @@ private fun MealContentCard(
     ownerLabel: String?,
     record: MealRecord,
     clickable: Boolean,
+    partner: Boolean = false,
     syncFailed: Boolean,
     onRetry: () -> Unit,
     onClick: () -> Unit,
@@ -440,7 +446,7 @@ private fun MealContentCard(
             // 对方的记录：卡片左缘压一条 4dp 钴蓝竖条（裁剪后只露内侧圆角内的部分），
             // 不额外占布局宽度，也不改变卡片圆角。
             .drawBehind {
-                if (!clickable) {
+                if (partner) {
                     drawRect(
                         color = accent,
                         topLeft = Offset(0f, 0f),

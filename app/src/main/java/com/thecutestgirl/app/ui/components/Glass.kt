@@ -435,6 +435,8 @@ fun SoftCapsuleButton(
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale
+                // 禁用态明显变灰（否则只禁用点击、看起来仍可点）
+                alpha = if (enabled) 1f else 0.38f
             }
             .clip(shape)
             .background(Color.White.copy(alpha = 0.86f))

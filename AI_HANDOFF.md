@@ -3,7 +3,29 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0-1 ~ P0-7）**，见下节。上一轮（2026-11-08）的 v4.1.0 是「浅色品牌体系（简洁白 + 粉红）」。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）** 与 **Batch 2（高优先 P1-UI）**，见下两节。
+
+## Batch 2（P1-UI 高优先 6 项，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P1-UI-1 | 饮食页对方记录可点开写评论：`MealContentCard` 增加 `partner` 标志（保留左缘钴蓝/粉条），对方卡片 `clickable=true` 进编辑页；照片内部点击仍是看大图；备注/照片只读、评论可写由原 VM 保证 |
+| P1-UI-2 | 通知点进「点滴」定位到记录：`PartnerNotifier` 增加 `EXTRA_RECORD_ID` → `MainActivity.NotificationTarget.recordId` → `AppRoot` → `EventScreen`；按 id 滚到对应 moment，找不到按日期回退，纪念日记录滚到纪念日分组；数据未加载时不提前消费 |
+| P1-UI-3 | `AppRoot` 的 `pendingDate` 改为 `pendingTarget`（route/date/recordId）：只传给 route 匹配的页面，页面消费后回调清空；`jumpedDate/consumedTargetKey` 防重复 |
+| P1-UI-4 | 抽屉完善：照片缩略图改 `LazyRow`；高度 0.62 屏高；去掉与 ModalBottomSheet 重复的 `navigationBarsPadding`；`hasUnsavedChanges` + 「放弃这次编辑？」确认；饮食抽屉日期行改为不可点信息行 |
+| P1-UI-5 | `SoftCapsuleButton` 禁用态 alpha 0.38（照片到上限时明显变灰） |
+| P1-UI-10 | Android 12+ 启动闪屏：`values-v31/themes.xml` 与 `values-night-v31/themes.xml`，背景 `#FAF7F8`（浅色品牌），冷启动实测首帧 `#FAF7F8`，无白闪 |
+
+### 验证
+- `compileDebugKotlin` + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**
+- JVM 单测 4/4；设备回归 **26/26**（`.verification/tests-v4.1.0-batch2.txt`；该轮在 EventScreen 滚动修正前跑，滚动修正只动 UI，未再复跑）
+- 装机验证：
+  - 通知 intent（meal/2026-10-29）→ 饮食页跳到 10月29日；再切穿搭页仍是 11 月（不串 tab）
+  - 通知 intent（event/e-theirs）→ 点滴页目标卡片可见；内容不足一屏时无法滚到顶部（LazyColumn 到达滚动边界，属正常）
+  - 对方午餐卡点开 → 编辑页「ta 的备注」只读、评论输入框可用、无删除按钮
+  - 穿搭抽屉：输入备注后返回 → 弹「放弃这次编辑？」，确认后关闭并清理未保存照片
+  - 冷启动首帧 `#FAF7F8`
+- 未手动验证：9 张照片横向滚动（代码用 LazyRow，未做 9 张实选）；两页纪念日记录的滚动定位
 
 ## Batch 1（P0 正确性 / 数据安全，v4.1.0 未升版本）
 

@@ -40,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -103,7 +104,14 @@ import androidx.compose.foundation.background
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventScreen(onAdd: () -> Unit, onOpen: (String) -> Unit, onOpenSettings: () -> Unit) {
+fun EventScreen(
+    onAdd: () -> Unit,
+    onOpen: (String) -> Unit,
+    onOpenSettings: () -> Unit,
+    initialDate: LocalDate? = null,
+    initialRecordId: String? = null,
+    onInitialTargetConsumed: () -> Unit = {}
+) {
     val vm: EventViewModel = viewModel()
     val events by vm.events.collectAsStateWithLifecycle()
     // 上次同步失败时，照片占位显示「同步不了」而不是「还在路上」
@@ -159,6 +167,34 @@ fun EventScreen(onAdd: () -> Unit, onOpen: (String) -> Unit, onOpenSettings: () 
     var headerHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val topArea = with(density) { headerHeightPx.toDp() } + 10.dp
+
+    // 通知落点：滚动到对应点滴；找不到就退回该日期附近。消费一次后清空。
+    var consumedTargetKey by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(initialRecordId, initialDate, moments, anniversaries.size) {
+        if (initialRecordId == null && initialDate == null) return@LaunchedEffect
+        val key = "${initialRecordId.orEmpty()}|${initialDate?.toString().orEmpty()}"
+        if (consumedTargetKey == key) return@LaunchedEffect
+        // 数据还没从 Room 回来：先不消费，等 moments/anniversaries 到达后重跑
+        if (moments.isEmpty() && anniversaries.isEmpty()) return@LaunchedEffect
+        val byId = initialRecordId?.let { id -> moments.indexOfFirst { it.id == id } } ?: -1
+        val byDate = if (byId < 0 && initialDate != null) {
+            moments.indexOfFirst { record ->
+                runCatching { LocalDate.parse(record.date) }
+                    .getOrNull()
+                    ?.let { !it.isAfter(initialDate) } == true
+            }
+        } else -1
+        val indexInMoments = if (byId >= 0) byId else byDate
+        if (indexInMoments >= 0) {
+            val momentsStart = (if (anniversaries.isNotEmpty()) 2 else 0) + 1
+            listState.scrollToItem(momentsStart + indexInMoments)
+        } else if (initialRecordId != null && anniversaries.any { it.id == initialRecordId }) {
+            // 目标是纪念日：滚到纪念日分组
+            listState.scrollToItem(0)
+        }
+        consumedTargetKey = key
+        onInitialTargetConsumed()
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -298,6 +334,8 @@ fun EventScreen(onAdd: () -> Unit, onOpen: (String) -> Unit, onOpenSettings: () 
             subtitle = if (isMoment) "日常点滴 · 可配一张照片" else "纪念日 · 自动计算天数",
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
+            hasUnsavedChanges = addVm.title.isNotBlank() ||
+                addVm.description.isNotBlank() || addVm.photoPath != null,
             onPrimary = { addVm.save { showAddSheet = false } }
         ) {
             SheetSegmented(

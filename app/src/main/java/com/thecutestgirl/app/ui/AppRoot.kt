@@ -62,7 +62,11 @@ import androidx.compose.animation.slideOutHorizontally
  * @param route tab 路由（outfit / meal / event），由 [com.thecutestgirl.app.sync.SyncEngine.PartnerItem] 带过来
  * @param date 那条记录属于哪一天（ISO，如 2026-10-29）；为空就停在今天
  */
-data class NotificationTarget(val route: String, val date: String)
+data class NotificationTarget(
+    val route: String,
+    val date: String,
+    val recordId: String = ""
+)
 
 /**
  * APP 整体框架：底部玻璃拟态导航（穿搭 / 饮食 / 点滴）+ 页面路由。
@@ -79,8 +83,9 @@ fun AppRoot(
     // 模糊采样源状态：包住 NavHost 的 Box 是被模糊的内容，玻璃栏从它采样
     val hazeState = remember { HazeState() }
     val openSettings = { navController.navigate("settings") }
-    // 通知带过来的日期：切到 tab 后由对应页面自己消费一次
-    var pendingDate by remember { mutableStateOf<String?>(null) }
+    // 通知带过来的落点：只交给对应 route 的页面，消费后立刻清空，避免串到别的 tab
+    var pendingTarget by remember { mutableStateOf<NotificationTarget?>(null) }
+    val clearPendingTarget = { pendingTarget = null }
     val tabs = listOf(
         GlassTab("outfit", "穿搭", Icons.Outlined.Checkroom, Icons.Filled.Checkroom),
         GlassTab("meal", "饮食", Icons.Outlined.Restaurant, Icons.Filled.Restaurant),
@@ -105,7 +110,7 @@ fun AppRoot(
     LaunchedEffect(notificationTarget) {
         val target = notificationTarget ?: return@LaunchedEffect
         val route = target.route.takeIf { candidate -> tabs.any { it.route == candidate } } ?: "outfit"
-        pendingDate = target.date
+        pendingTarget = target.copy(route = route)
         onSelect(route)
         onNotificationTargetConsumed()
     }
@@ -178,7 +183,11 @@ fun AppRoot(
                             onAdd = { date -> navController.navigate("outfitUpload/$date") },
                             onOpen = { id -> navController.navigate("outfitEdit/$id") },
                             onOpenSettings = openSettings,
-                            initialDate = pendingDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                            initialDate = pendingTarget
+                                ?.takeIf { it.route == "outfit" }
+                                ?.date
+                                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                            onInitialTargetConsumed = clearPendingTarget
                         )
                     }
                     // 指定某一天的上传页：新增照片 + 展示/增删该日已有照片
@@ -202,7 +211,11 @@ fun AppRoot(
                     // ---------- 饮食 ----------
                     composable("meal") {
                         MealScreen(
-                            initialDate = pendingDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                            initialDate = pendingTarget
+                                ?.takeIf { it.route == "meal" }
+                                ?.date
+                                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                            onInitialTargetConsumed = clearPendingTarget,
                             onOpenMeal = { date, mealType, recordId ->
                                 val base = "mealEdit/$date/$mealType"
                                 // id 用查询参数（?id=xx）传递，新增记录时可省略
@@ -235,7 +248,16 @@ fun AppRoot(
                         EventScreen(
                             onAdd = { navController.navigate("eventEdit") },
                             onOpen = { id -> navController.navigate("eventEdit/$id") },
-                            onOpenSettings = openSettings
+                            onOpenSettings = openSettings,
+                            initialDate = pendingTarget
+                                ?.takeIf { it.route == "event" }
+                                ?.date
+                                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                            initialRecordId = pendingTarget
+                                ?.takeIf { it.route == "event" }
+                                ?.recordId
+                                ?.takeIf { it.isNotBlank() },
+                            onInitialTargetConsumed = clearPendingTarget
                         )
                     }
                     composable("eventEdit") {

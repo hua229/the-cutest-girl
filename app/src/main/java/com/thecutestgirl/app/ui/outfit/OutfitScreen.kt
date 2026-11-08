@@ -118,7 +118,8 @@ fun OutfitScreen(
     onAdd: (LocalDate) -> Unit,
     onOpen: (String) -> Unit,
     onOpenSettings: () -> Unit,
-    initialDate: LocalDate? = null
+    initialDate: LocalDate? = null,
+    onInitialTargetConsumed: () -> Unit = {}
 ) {
     val vm: OutfitViewModel = viewModel()
     // 只在**首次**组合时按通知日期定位一次。
@@ -134,6 +135,7 @@ fun OutfitScreen(
             // 别的月份的记录压根不在查询结果里，用户点完通知还是看到当月。
             vm.jumpToDate(initialDate)
             jumpedDate = target
+            onInitialTargetConsumed()
         }
     }
     val month by vm.month.collectAsStateWithLifecycle()
@@ -353,6 +355,7 @@ fun OutfitScreen(
             subtitle = "${addDate.toCnShort()} ${addDate.toWeekday()}",
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
+            hasUnsavedChanges = addVm.newPhotos.isNotEmpty() || addVm.note.isNotBlank(),
             onPrimary = { addVm.save { showAddSheet = false } }
         ) {
             SheetDateRow(

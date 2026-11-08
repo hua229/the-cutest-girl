@@ -60,7 +60,8 @@ class MainActivity : ComponentActivity() {
         if (route.isBlank()) return null
         return NotificationTarget(
             route = route,
-            date = getStringExtra(PartnerNotifier.EXTRA_DATE).orEmpty()
+            date = getStringExtra(PartnerNotifier.EXTRA_DATE).orEmpty(),
+            recordId = getStringExtra(PartnerNotifier.EXTRA_RECORD_ID).orEmpty()
         )
     }
 }

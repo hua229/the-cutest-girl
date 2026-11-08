@@ -195,6 +195,7 @@ object PartnerNotifier {
 
     const val EXTRA_ROUTE = "extra_route"
     const val EXTRA_DATE = "extra_date"
+    const val EXTRA_RECORD_ID = "extra_record_id"
 
     fun notify(context: Context, items: List<SyncEngine.PartnerItem>) {
         val manager = NotificationManagerCompat.from(context)
@@ -239,6 +240,7 @@ object PartnerNotifier {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra(EXTRA_ROUTE, target?.route.orEmpty())
             putExtra(EXTRA_DATE, target?.date.orEmpty())
+            putExtra(EXTRA_RECORD_ID, target?.recordId.orEmpty())
         }
         val pendingIntent = PendingIntent.getActivity(
             context, 0, intent,
