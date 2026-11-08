@@ -1,9 +1,9 @@
-package com.thecutestgirl.app.ui.event
+﻿package com.thecutestgirl.app.ui.event
 
 import android.app.Application
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecutestgirl.app.data.AppDatabase
@@ -26,15 +26,6 @@ class EventViewModel(app: Application) : AndroidViewModel(app) {
 
     val events = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun delete(record: EventRecord) {
-        viewModelScope.launch {
-            val db = AppDatabase.getInstance(getApplication())
-            db.deleteEventWithTombstone(record)
-            runCatching { PhotoStore.delete(getApplication(), record.photoPath) }
-            SyncManager.enqueueNow(getApplication())
-        }
-    }
 }
 
 /** 添加 / 编辑事件 */

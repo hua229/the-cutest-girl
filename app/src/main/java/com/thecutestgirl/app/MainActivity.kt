@@ -1,15 +1,15 @@
-package com.thecutestgirl.app
+﻿package com.thecutestgirl.app
 
 import android.content.Intent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.thecutestgirl.app.sync.PartnerNotifier
 import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.ui.AppRoot

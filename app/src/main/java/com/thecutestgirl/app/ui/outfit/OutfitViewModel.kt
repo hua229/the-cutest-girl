@@ -1,9 +1,9 @@
-package com.thecutestgirl.app.ui.outfit
+﻿package com.thecutestgirl.app.ui.outfit
 
 import android.app.Application
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecutestgirl.app.data.AppDatabase

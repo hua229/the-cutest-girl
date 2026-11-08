@@ -1,6 +1,8 @@
-package com.thecutestgirl.app.ui.outfit
+﻿package com.thecutestgirl.app.ui.outfit
 
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
@@ -9,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,12 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,7 +60,6 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.thecutestgirl.app.data.OutfitRecord
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.data.SettingsStore
@@ -91,7 +89,6 @@ import com.thecutestgirl.app.ui.components.UiSpringStiffness
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import java.time.LocalDate
 import java.time.YearMonth
@@ -484,7 +481,7 @@ private fun OutfitThumb(
     Box(
         modifier = modifier
             .aspectRatio(4f / 5f)
-            .solidCard(cornerRadius = 16.dp, elevation = 6.dp)
+            .solidCard(cornerRadius = 16.dp)
             .clickable(onClick = onClick)
     ) {
         val photoFile = PhotoStore.file(context, record.photoPath)

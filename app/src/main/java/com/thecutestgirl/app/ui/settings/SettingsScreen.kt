@@ -1,6 +1,8 @@
-package com.thecutestgirl.app.ui.settings
+﻿package com.thecutestgirl.app.ui.settings
 
 import android.Manifest
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -23,10 +25,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,27 +38,22 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -81,10 +75,7 @@ import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.sync.SyncPhase
 import com.thecutestgirl.app.sync.SyncStatusStore
 import com.thecutestgirl.app.ui.components.AppTopBar
-import com.thecutestgirl.app.ui.components.BarIconSize
-import com.thecutestgirl.app.ui.components.IconTitle
 import com.thecutestgirl.app.ui.components.PrimaryButton
-import com.thecutestgirl.app.ui.components.quietTopAppBar
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.SyncStatusBar
 import com.thecutestgirl.app.ui.components.SyncStatusKind
@@ -376,7 +367,7 @@ private fun SettingsSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 18.dp, elevation = 6.dp)
+            .solidCard(cornerRadius = 18.dp)
             .padding(vertical = 4.dp),
         content = content
     )

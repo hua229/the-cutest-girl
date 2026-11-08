@@ -1,4 +1,4 @@
-package com.thecutestgirl.app.sync
+﻿package com.thecutestgirl.app.sync
 
 import android.content.Context
 import androidx.room.withTransaction
@@ -18,7 +18,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 
 /**

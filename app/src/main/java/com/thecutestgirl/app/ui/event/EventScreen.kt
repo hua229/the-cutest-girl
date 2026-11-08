@@ -1,6 +1,8 @@
-package com.thecutestgirl.app.ui.event
+﻿package com.thecutestgirl.app.ui.event
 
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,14 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.thecutestgirl.app.data.EVENT_TYPE_ANNIVERSARY
 import com.thecutestgirl.app.data.EVENT_TYPE_MOMENT
 import com.thecutestgirl.app.data.EventRecord
@@ -85,7 +84,6 @@ import com.thecutestgirl.app.ui.components.toCnFull
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
 import com.thecutestgirl.app.ui.theme.BigNumeralStyle
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -96,7 +94,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 
 /** 展开态玻璃顶栏占的高度（面板竖向 6dp×2 + 标题行 56 + 副标题 16 ≈ 78，取 84 略留余量） */

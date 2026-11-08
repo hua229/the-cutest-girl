@@ -88,3 +88,8 @@ dependencies {
     implementation(libs.haze)
     implementation(libs.haze.materials)
 }
+
+ksp {
+    // P2-5：导出 Room schema，迁移变更时有据可查
+    arg("room.schemaLocation", "$projectDir/schemas")
+}

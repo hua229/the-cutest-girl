@@ -1,6 +1,7 @@
-package com.thecutestgirl.app.ui.components
+﻿package com.thecutestgirl.app.ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -89,12 +89,10 @@ internal const val GlassNoise = 0.06f
 @Composable
 fun Modifier.glassPanel(
     cornerRadius: Dp = 16.dp,
-    glow: Color = Color.Transparent,
     drawHairline: Boolean = true,
     elevation: Dp = 8.dp
 ): Modifier = glassPanel(
     shape = RoundedCornerShape(cornerRadius),
-    glow = glow,
     drawHairline = drawHairline,
     elevation = elevation
 )
@@ -103,7 +101,6 @@ fun Modifier.glassPanel(
 @Composable
 fun Modifier.glassPanel(
     shape: androidx.compose.ui.graphics.Shape,
-    glow: Color = Color.Transparent,
     drawHairline: Boolean = true,
     elevation: Dp = 8.dp
 ): Modifier {
@@ -131,15 +128,6 @@ fun Modifier.glassPanel(
                     endY = size.height * 0.35f
                 )
             )
-            if (glow != Color.Transparent) {
-                drawRect(
-                    brush = Brush.radialGradient(
-                        colors = listOf(glow.copy(alpha = 0.10f), Color.Transparent),
-                        center = Offset(size.width * 0.18f, 0f),
-                        radius = size.width * 0.9f
-                    )
-                )
-            }
         }
         .then(
             if (drawHairline) Modifier.border(1.dp, BorderHairline, shape) else Modifier
@@ -151,25 +139,22 @@ fun Modifier.glassPanel(
 fun GlassCard(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 16.dp,
-    glow: Color = Color.Transparent,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(modifier = modifier.glassPanel(cornerRadius = cornerRadius, glow = glow), content = content)
+    Column(modifier = modifier.glassPanel(cornerRadius = cornerRadius), content = content)
 }
 
 /**
- * 兼容旧调用：所有卡片统一走 [glassPanel]。
- * elevation 参数保留只是为了不改调用点；深色下不用投影。
+ * 兼容旧调用：所有卡片统一走 [glassPanel]，固定 8dp 柔和投影（不提供 elevation 参数，
+ * 避免出现「看起来能配、实际不影响视觉」的无效参数）。
  */
 @Composable
 fun Modifier.solidCard(
     cornerRadius: Dp = 16.dp,
-    elevation: Dp = 8.dp,
     drawHairline: Boolean = true
 ): Modifier = glassPanel(
     cornerRadius = cornerRadius,
-    drawHairline = drawHairline,
-    elevation = elevation
+    drawHairline = drawHairline
 )
 
 /** 虚线卡：给「还空着、等你填」的位置（未记录的餐次）。 */
@@ -178,8 +163,7 @@ fun Modifier.dashedCard(
     cornerRadius: Dp = 16.dp,
     dash: Dp = 8.dp,
     gap: Dp = 8.dp,
-    color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.30f),
-    surfaceAlpha: Float = 1f
+    color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
 ): Modifier {
     val shape = RoundedCornerShape(cornerRadius)
     return this

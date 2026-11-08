@@ -1,9 +1,9 @@
-package com.thecutestgirl.app.ui.meal
+﻿package com.thecutestgirl.app.ui.meal
 
 import android.app.Application
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.thecutestgirl.app.data.AppDatabase

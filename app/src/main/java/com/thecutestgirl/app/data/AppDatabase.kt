@@ -15,8 +15,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         EventRecord::class,
         Tombstone::class
     ],
-    version = 5,
-    exportSchema = false
+    version = 6,
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -148,6 +148,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v5 → v6（P2-5）：给 date / dirty 加索引。
+         * 列表按 date 查、同步按 dirty 查；记录攒到几百条后能明显减少全表扫描。
+         * 索引名必须是 Room 期望的 index_<table>_<column>。
+         */
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                for (table in listOf("outfits", "meals", "events")) {
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_${table}_date ON $table(date)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_${table}_dirty ON $table(dirty)")
+                }
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -155,7 +169,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "the_cutest_girl.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { instance = it }
             }

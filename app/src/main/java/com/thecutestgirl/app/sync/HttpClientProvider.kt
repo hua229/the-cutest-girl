@@ -1,6 +1,8 @@
-package com.thecutestgirl.app.sync
+﻿package com.thecutestgirl.app.sync
 
 import okhttp3.OkHttpClient
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import java.util.concurrent.TimeUnit
 
 /**

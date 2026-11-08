@@ -1,6 +1,8 @@
-package com.thecutestgirl.app.data
+﻿package com.thecutestgirl.app.data
 
 import androidx.room.Dao
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy

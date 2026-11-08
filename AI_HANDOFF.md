@@ -3,7 +3,20 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4 同步状态与错误模型）**，见下五节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**，见下六节。
+
+## Batch 5（P2-5 / P2-6，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P2-5 | 三个实体加 `Index("date") + Index("dirty")`；DB **v5→v6** 迁移 `MIGRATION_5_6`（索引名 Room 规范的 `index_<table>_<column>`）；`exportSchema = true` + `ksp { room.schemaLocation }`，生成 `app/schemas/.../6.json`；云端 JSON 增加 `"schema": 1`；`parseSyncRecord` 增加校验（id 非空、mealType 0..2、eventType 0..1、事件标题非空、空 photoPath 视为无图），坏记录只跳过这一条 |
+| P2-6 | 删除无效参数：`solidCard(elevation)`（10 处调用点已去掉）、`dashedCard(surfaceAlpha)`、`glassPanel/GlassCard(glow)`；删除无引用的 `replyVersionOf`、`EventViewModel.delete`、`SyncStatusKind.Conflict` 死分支；批量清理 102 个未使用 import |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**；JVM 单测 4/4
+- 设备回归 **26/26**（`.verification/tests-v4.1.0-p2-schema.txt`）
+- 正式包真实 DB 升级：`PRAGMA user_version=6`，outfits/meals/events 数据保留（6/3/2 条），6 个索引全部存在，`logcat -b crash` 0 条
+- **坑（重要）**：批量清理未使用 import 时不能只按「符号出现次数」判断——`getValue/setValue` 是 `by` 委托隐式使用的，会被误删导致全项目编译失败。已恢复并记录；以后清理 import 必须编译验证。
 
 ## Batch 4（P2-2/3/4，v4.1.0 未升版本）
 

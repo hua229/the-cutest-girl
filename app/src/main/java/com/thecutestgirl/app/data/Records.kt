@@ -1,6 +1,7 @@
 package com.thecutestgirl.app.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.json.JSONObject
 import java.time.LocalDate
@@ -15,7 +16,10 @@ import java.time.LocalDate
  * - originName 创建者昵称（通知和卡片上显示）
  * - dirty     本地改过还没上传到云端
  */
-@Entity(tableName = "outfits")
+@Entity(
+    tableName = "outfits",
+    indices = [Index("date"), Index("dirty")]
+)
 data class OutfitRecord(
     @PrimaryKey val id: String,
     /** 记录日期，格式 2026-10-24 */
@@ -54,6 +58,7 @@ data class OutfitRecord(
 ) {
     fun toJson(): String = JSONObject()
         .put("type", "outfit")
+        .put("schema", 1)
         .put("id", id)
         .put("date", date)
         .put("photoPath", photoPath)
@@ -74,7 +79,10 @@ data class OutfitRecord(
 /** 餐次：0 早餐 1 午餐 2 晚餐 */
 val MEAL_NAMES = listOf("早餐", "午餐", "晚餐")
 
-@Entity(tableName = "meals")
+@Entity(
+    tableName = "meals",
+    indices = [Index("date"), Index("dirty")]
+)
 data class MealRecord(
     @PrimaryKey val id: String,
     val date: String,
@@ -100,6 +108,7 @@ data class MealRecord(
 ) {
     fun toJson(): String = JSONObject()
         .put("type", "meal")
+        .put("schema", 1)
         .put("id", id)
         .put("date", date)
         .put("mealType", mealType)
@@ -122,7 +131,10 @@ data class MealRecord(
 const val EVENT_TYPE_MOMENT = 0
 const val EVENT_TYPE_ANNIVERSARY = 1
 
-@Entity(tableName = "events")
+@Entity(
+    tableName = "events",
+    indices = [Index("date"), Index("dirty")]
+)
 data class EventRecord(
     @PrimaryKey val id: String,
     val type: Int,
@@ -149,6 +161,7 @@ data class EventRecord(
 ) {
     fun toJson(): String = JSONObject()
         .put("type", "event")
+        .put("schema", 1)
         .put("id", id)
         .put("eventType", type)
         .put("title", title)
@@ -242,11 +255,15 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
     when (o.optString("type")) {
         "outfit" -> {
             val date = o.validDate() ?: return@runCatching null
+            // P2-5 校验：id 和照片必须有；坏记录只跳过这一条
+            val id = o.optString("id")
+            val photo = o.optString("photoPath")
+            if (id.isBlank() || photo.isBlank()) return@runCatching null
             SyncRecord.Outfit(
                 OutfitRecord(
-                    id = o.getString("id"),
+                    id = id,
                     date = date,
-                    photoPath = o.getString("photoPath"),
+                    photoPath = photo,
                     note = o.optString("note"),
                     noteDevice = o.optString("noteDevice"),
                     noteName = o.optString("noteName"),
@@ -267,12 +284,17 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
         }
         "meal" -> {
             val date = o.validDate() ?: return@runCatching null
+            // P2-5 校验：id 非空、餐次 0..2；photoPath 空视为无图
+            val id = o.optString("id")
+            val mealType = o.optInt("mealType", -1)
+            if (id.isBlank() || mealType !in 0..2) return@runCatching null
+            val photo = o.optString("photoPath").takeIf { it.isNotBlank() }
             SyncRecord.Meal(
                 MealRecord(
-                    id = o.getString("id"),
+                    id = id,
                     date = date,
-                    mealType = o.optInt("mealType"),
-                    photoPath = if (o.isNull("photoPath")) null else o.optString("photoPath"),
+                    mealType = mealType,
+                    photoPath = photo,
                     note = o.optString("note"),
                     noteDevice = o.optString("noteDevice"),
                     noteName = o.optString("noteName"),
@@ -291,11 +313,17 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
         }
         "event" -> {
             val date = o.validDate() ?: return@runCatching null
+            // P2-5 校验：id 非空、事件类型 0..1、标题非空；photoPath 空视为无图
+            val id = o.optString("id")
+            val type = o.optInt("eventType", -1)
+            val title = o.optString("title")
+            if (id.isBlank() || type !in 0..1 || title.isBlank()) return@runCatching null
+            val photo = o.optString("photoPath").takeIf { it.isNotBlank() }
             SyncRecord.Event(
                 EventRecord(
-                    id = o.getString("id"),
-                    type = o.optInt("eventType"),
-                    title = o.getString("title"),
+                    id = id,
+                    type = type,
+                    title = title,
                     description = o.optString("description"),
                     noteDevice = o.optString("noteDevice"),
                     noteName = o.optString("noteName"),
@@ -304,7 +332,7 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
                     noteUpdatedAt = o.optLong("noteUpdatedAt", 0L)
                         .takeIf { it > 0L } ?: o.optLong("updatedAt"),
                     replyUpdatedAt = o.optLong("replyUpdatedAt", 0L),
-                    photoPath = if (o.isNull("photoPath")) null else o.optString("photoPath"),
+                    photoPath = photo,
                     date = date,
                     createdAt = o.optLong("createdAt"),
                     updatedAt = o.optLong("updatedAt"),
@@ -324,6 +352,3 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
  */
 fun noteVersionOf(noteUpdatedAt: Long, updatedAt: Long): Long =
     if (noteUpdatedAt > 0L) noteUpdatedAt else updatedAt
-
-/** reply 的有效版本时间；0 表示这一侧从未写过评论 */
-fun replyVersionOf(replyUpdatedAt: Long): Long = replyUpdatedAt

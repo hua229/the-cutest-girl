@@ -1,11 +1,12 @@
-package com.thecutestgirl.app.ui.components
+﻿package com.thecutestgirl.app.ui.components
 
 import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -57,8 +58,6 @@ import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -84,13 +83,11 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -120,8 +117,6 @@ import com.thecutestgirl.app.ui.theme.DateNumberStyle
 import com.thecutestgirl.app.ui.theme.EmptyTitleStyle
 import com.thecutestgirl.app.ui.theme.SuccessGreen
 import com.thecutestgirl.app.ui.theme.TextMuted
-import com.thecutestgirl.app.ui.theme.WarningAmber
-import dev.chrisbanes.haze.HazeState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -787,17 +782,16 @@ fun ConfirmDeleteDialog(visible: Boolean, onConfirm: () -> Unit, onDismiss: () -
 }
 
 /**
- * 同步状态（规范 v4.0）：空闲 / 同步中 / 成功 / 冲突 / 失败。
- * UI 只展示状态，不重写同步逻辑。
+ * 同步状态：空闲 / 同步中 / 成功 / 失败。
+ * 冲突态暂无引擎信号，P2-6 已移除死分支；将来引擎能报冲突时再加。
  */
-enum class SyncStatusKind { Idle, Syncing, Success, Conflict, Failure }
+enum class SyncStatusKind { Idle, Syncing, Success, Failure }
 
 /**
  * 同步状态条：图标 + 场景化文案 + 可选原因 + 失败重试。
  * - 空闲：灰色小图标「还没同步」
  * - 同步中：环形进度 +「同步中…」（调用方同时禁用触发按钮）
  * - 成功：绿色对勾 +「刚刚同步」+ 上次时间
- * - 冲突：橙色警告 +「N条冲突，点击合并」
  * - 失败：红色 +「同步失败」+ 简短原因 + 重试按钮
  */
 @Composable
@@ -805,8 +799,6 @@ fun SyncStatusBar(
     kind: SyncStatusKind,
     subText: String = "",
     reason: String? = null,
-    conflictCount: Int = 0,
-    onConflictClick: () -> Unit = {},
     onRetry: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -815,19 +807,16 @@ fun SyncStatusBar(
         SyncStatusKind.Idle -> "还没同步"
         SyncStatusKind.Syncing -> "同步中…"
         SyncStatusKind.Success -> "刚刚同步"
-        SyncStatusKind.Conflict -> "${conflictCount}条冲突，点击合并"
         SyncStatusKind.Failure -> "同步失败"
     }
     val iconTint = when (kind) {
         SyncStatusKind.Success -> SuccessGreen
         SyncStatusKind.Failure -> scheme.error
-        SyncStatusKind.Conflict -> WarningAmber
         SyncStatusKind.Idle -> TextMuted
         SyncStatusKind.Syncing -> scheme.secondary
     }
     val titleColor = when (kind) {
         SyncStatusKind.Failure -> scheme.error
-        SyncStatusKind.Conflict -> WarningAmber
         else -> scheme.onSurface
     }
 
@@ -835,10 +824,6 @@ fun SyncStatusBar(
         modifier = modifier
             .fillMaxWidth()
             .solidCard(cornerRadius = 16.dp)
-            .then(
-                if (kind == SyncStatusKind.Conflict) Modifier.clickable(onClick = onConflictClick)
-                else Modifier
-            )
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -853,7 +838,6 @@ fun SyncStatusBar(
                 imageVector = when (kind) {
                     SyncStatusKind.Success -> Icons.Outlined.CheckCircleOutline
                     SyncStatusKind.Failure -> Icons.Outlined.CloudOff
-                    SyncStatusKind.Conflict -> Icons.Outlined.Warning
                     else -> Icons.Outlined.CloudQueue
                 },
                 contentDescription = null,
@@ -1238,7 +1222,7 @@ fun PhotoNoteCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = cardCorner, elevation = 6.dp)
+            .solidCard(cornerRadius = cardCorner)
     ) {
         // ---------- 照片区 ----------
         when {
@@ -1631,7 +1615,7 @@ fun ReadOnlyNote(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp, elevation = 4.dp)
+            .solidCard(cornerRadius = 16.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         if (label != null) {
@@ -1670,7 +1654,7 @@ fun CommentField(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp, elevation = 4.dp)
+            .solidCard(cornerRadius = 16.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
@@ -1733,7 +1717,7 @@ fun PlainField(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp, elevation = 4.dp)
+            .solidCard(cornerRadius = 16.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         if (label != null) {
