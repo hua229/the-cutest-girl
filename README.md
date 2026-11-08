@@ -5,7 +5,7 @@
 - 界面：Jetpack Compose（Material 3，浅色品牌主题：简洁白 + 粉红，玻璃卡面）
 - 数据：Room 数据库；数据默认只在本机，开启同步后两台手机通过私有坚果云 WebDAV 目录互相同步
 - 最低支持 Android 8.0（minSdk 26）
-- 当前版本：`4.1.0`（versionCode 40）
+- 当前版本：`4.2.0`（versionCode 41）
 
 ## 功能
 
@@ -68,7 +68,7 @@ python tools/sync_test_server.py --port 18765 --root .verification/dav
 ./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest -PverificationApp --offline
 
 # 3) 安装并运行
-adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.1.0_debug.apk
+adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.2.0_debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -r com.thecutestgirl.app.verification.test/com.thecutestgirl.app.sync.SyncRegressionRunner
 ```

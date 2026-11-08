@@ -13,8 +13,8 @@ android {
         applicationId = "com.thecutestgirl.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 40
-        versionName = "4.1.0"
+        versionCode = 41
+        versionName = "4.2.0"
         testInstrumentationRunner = "com.thecutestgirl.app.sync.SyncRegressionRunner"
     }
 
