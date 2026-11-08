@@ -248,7 +248,6 @@ object PartnerNotifier {
         val alreadyNotified = SyncStateStore.notifiedIds(context)
         val fresh = items.filter { it.notifyKey.isBlank() || it.notifyKey !in alreadyNotified }
         if (fresh.isEmpty()) return
-        SyncStateStore.rememberNotified(context, fresh.map { it.notifyKey }.filter { it.isNotBlank() })
 
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
@@ -287,6 +286,7 @@ object PartnerNotifier {
             .setSmallIcon(R.drawable.ic_stat_notification)
             .setContentTitle("$who 发来了新内容")
             .setContentText(summary)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(summary))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
@@ -294,6 +294,10 @@ object PartnerNotifier {
             .setContentIntent(pendingIntent)
             .build()
 
-        runCatching { manager.notify(NOTICE_ID, notification) }
+        // 先确认通知真的发出去，再记入去重集合；否则发送失败会永久漏提醒
+        val posted = runCatching { manager.notify(NOTICE_ID, notification) }.isSuccess
+        if (posted) {
+            SyncStateStore.rememberNotified(context, fresh.map { it.notifyKey }.filter { it.isNotBlank() })
+        }
     }
 }

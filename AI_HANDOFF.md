@@ -3,7 +3,21 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**、**Batch 6（P2-7/8）**、**Batch 7（P2-9/10）**，见下八节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**、**Batch 6（P2-7/8）**、**Batch 7（P2-9/10）**、**Batch 8（P2-11/12/13 部分）**，见下九节。
+
+## Batch 8（P2-11 / P2-12 / P2-13 部分，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P2-11 | JVM 单测增至 **7 项**（新增日期解析 3 项）；设备回归增至 **29 项**：新增「坏远端记录字段校验」「DAV 配置归一化（前后空格/换密码）」「对方不能删除上传人记录（UI 标记 + ViewModel 双拦截）」 |
+| P2-12 | 重写 `README.md`：技术栈、同步目录与所需权限、JDK 17 构建命令、APK 路径、单测/设备回归命令、项目结构；明确 `gradle.properties` 里的 `org.gradle.java.home` 是**本机专用路径**（换机改路径或删掉用 `JAVA_HOME`），当前机器构建不受影响 |
+| P2-13（部分） | 通知改为「发送成功后才写 `notified_ids`」并加 `BigTextStyle`；`SheetSegmented` 改用 `selectable(role = Tab)`（无障碍能读选中态）；设置页应用密码增加显示/隐藏切换（20dp 线性图标）。**未做**：把全部用户文案抽到 `strings.xml`（工作量大，后续单独做） |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**
+- JVM 单测 **7/7**；设备回归 **29/29**（`.verification/tests-v4.1.0-p2-tests.txt`）
+- 正式包构建（applicationId 正常）并装机：设置页可见「显示密码」切换，`logcat -b crash` 0 条
+- **未验证**：TalkBack 实际朗读效果；真实对方新内容触发的通知样式（回归不产生系统通知）；导入备份仍未实现
 
 ## Batch 7（P2-9 / P2-10，v4.1.0 未升版本）
 

@@ -41,9 +41,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -111,6 +114,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     var url by remember { mutableStateOf(SettingsStore.webdavUrl(context)) }
     var user by remember { mutableStateOf(SettingsStore.webdavUser(context)) }
     var pass by remember { mutableStateOf(SettingsStore.webdavPass(context)) }
+    var showPass by remember { mutableStateOf(false) }
     // 同步状态：结构化 StateFlow（P2-2），后台同步完成后本页自动刷新
     val syncStatus by SyncStatusStore.status.collectAsStateWithLifecycle()
     val statusKind = when (syncStatus.phase) {
@@ -255,7 +259,28 @@ fun SettingsScreen(onBack: () -> Unit) {
                     onValueChange = { pass = it },
                     placeholder = "在坚果云生成的 16 位密码",
                     supporting = "获取方法：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码",
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = if (showPass) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    trailing = {
+                        IconButton(
+                            onClick = { showPass = !showPass },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (showPass) {
+                                    Icons.Outlined.VisibilityOff
+                                } else {
+                                    Icons.Outlined.Visibility
+                                },
+                                contentDescription = if (showPass) "隐藏密码" else "显示密码",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 )
             }
 
@@ -443,7 +468,8 @@ private fun SettingsField(
     placeholder: String? = null,
     supporting: String? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailing: (@Composable () -> Unit)? = null
 ) {
     val scheme = MaterialTheme.colorScheme
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
@@ -453,24 +479,27 @@ private fun SettingsField(
             color = scheme.onSurfaceVariant
         )
         Spacer(Modifier.height(4.dp))
-        Box {
-            if (value.isEmpty() && placeholder != null) {
-                Text(
-                    placeholder,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = scheme.onSurfaceVariant.copy(alpha = 0.6f)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) {
+                if (value.isEmpty() && placeholder != null) {
+                    Text(
+                        placeholder,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = scheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
+                    cursorBrush = SolidColor(scheme.primary),
+                    visualTransformation = visualTransformation,
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
-                cursorBrush = SolidColor(scheme.primary),
-                visualTransformation = visualTransformation,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (trailing != null) trailing()
         }
         if (!supporting.isNullOrBlank()) {
             Spacer(Modifier.height(4.dp))

@@ -69,7 +69,10 @@ class SyncRegressionRunner : Instrumentation() {
             "an unconfirmed file signature is still downloaded" to { unconfirmedSignatureIsDownloaded() },
             "incremental sync stops re-downloading untouched records" to { incrementalSkipsUntouched() },
             "switching the WebDAV endpoint resets the ledger and prepares folders" to { endpointSwitchResetsLedger() },
-            "re-saving the same endpoint keeps the incremental ledger" to { sameEndpointKeepsLedger() }
+            "re-saving the same endpoint keeps the incremental ledger" to { sameEndpointKeepsLedger() },
+            "bad remote records are rejected by field validation" to { validationRejectsBadRecords() },
+            "dav config normalization ignores cosmetic whitespace" to { davConfigNormalization() },
+            "partner cannot delete the uploader's record" to { partnerCannotDelete() }
         )
         val reports = mutableListOf<String>()
         var failures = 0
@@ -783,6 +786,63 @@ class SyncRegressionRunner : Instrumentation() {
         check(!whitespace) { "Whitespace-only changes must normalise to the same endpoint" }
         check(SyncStateStore.fileSignatures(targetContext).isNotEmpty()) {
             "Whitespace-only save wiped the ledger"
+        }
+    }
+
+    private fun validationRejectsBadRecords() {
+        fun parse(json: String) = parseSyncRecord(json)
+        check(parse("""{"type":"meal","id":"m1","date":"2026-10-24","mealType":9}""") == null) {
+            "mealType out of range must be rejected"
+        }
+        check(parse("""{"type":"event","id":"e1","date":"2026-10-24","eventType":5,"title":"x"}""") == null) {
+            "eventType out of range must be rejected"
+        }
+        check(parse("""{"type":"outfit","id":"","date":"2026-10-24","photoPath":"p.jpg"}""") == null) {
+            "blank id must be rejected"
+        }
+        check(parse("""{"type":"outfit","id":"o1","date":"2026-10-24","photoPath":""}""") == null) {
+            "outfit without a photo must be rejected"
+        }
+        check(parse("""{"type":"event","id":"e2","date":"2026-10-24","eventType":0,"title":""}""") == null) {
+            "event without a title must be rejected"
+        }
+        check(parse("""{"type":"meal","id":"m2","date":"2026-10-24","mealType":1,"photoPath":null}""") != null) {
+            "valid meal with no photo must be accepted"
+        }
+    }
+
+    private fun davConfigNormalization() {
+        val url = SettingsStore.webdavUrl(targetContext)
+        check(!SettingsStore.davConfigChanged(targetContext, "  $url  ", "  test  ", "test")) {
+            "Whitespace-only edits must normalise to the same endpoint"
+        }
+        check(SettingsStore.davConfigChanged(targetContext, url, "test", "different")) {
+            "A different password must count as a config change"
+        }
+    }
+
+    private fun partnerCannotDelete() = runBlocking {
+        val record = OutfitRecord(
+            id = "delete-guard-1",
+            date = "2026-10-24",
+            photoPath = "guard.jpg",
+            note = "keep me",
+            createdAt = oldTime,
+            updatedAt = oldTime,
+            origin = "device-B",
+            originName = "Bob",
+            dirty = false
+        )
+        db.outfitDao().upsert(record)
+        val vm = OutfitEditViewModel(targetContext.applicationContext as Application)
+        vm.load(record.id)
+        withTimeout(5_000) { while (vm.photoPath == null) delay(20) }
+        check(!vm.canDelete) { "Partner must not be allowed to delete" }
+        val latch = CountDownLatch(1)
+        vm.delete { latch.countDown() }
+        check(latch.await(5, TimeUnit.SECONDS))
+        check(db.outfitDao().getById(record.id) != null) {
+            "Partner deleted the uploader's record"
         }
     }
 

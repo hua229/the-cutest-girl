@@ -257,7 +257,7 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
             val date = o.validDate() ?: return@runCatching null
             // P2-5 校验：id 和照片必须有；坏记录只跳过这一条
             val id = o.optString("id")
-            val photo = o.optString("photoPath")
+            val photo = if (o.isNull("photoPath")) "" else o.optString("photoPath")
             if (id.isBlank() || photo.isBlank()) return@runCatching null
             SyncRecord.Outfit(
                 OutfitRecord(
@@ -288,7 +288,8 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
             val id = o.optString("id")
             val mealType = o.optInt("mealType", -1)
             if (id.isBlank() || mealType !in 0..2) return@runCatching null
-            val photo = o.optString("photoPath").takeIf { it.isNotBlank() }
+            val photo = if (o.isNull("photoPath")) null
+            else o.optString("photoPath").takeIf { it.isNotBlank() }
             SyncRecord.Meal(
                 MealRecord(
                     id = id,
@@ -318,7 +319,8 @@ fun parseSyncRecord(text: String): SyncRecord? = runCatching {
             val type = o.optInt("eventType", -1)
             val title = o.optString("title")
             if (id.isBlank() || type !in 0..1 || title.isBlank()) return@runCatching null
-            val photo = o.optString("photoPath").takeIf { it.isNotBlank() }
+            val photo = if (o.isNull("photoPath")) null
+            else o.optString("photoPath").takeIf { it.isNotBlank() }
             SyncRecord.Event(
                 EventRecord(
                     id = id,
