@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与新图标的粉色一致（左中纯色采样），adaptive icon 的背景兜底 -->
+    <color name="ic_launcher_background">#D1BD96</color>
+</resources>

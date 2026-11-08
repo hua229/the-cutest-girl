@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  通知栏小图标：白色爱心剪影 + 透明底。
+  Android 通知小图标会被系统强制着色（按主题色渲染），所以必须是
+  简单的白色剪影，不能用彩色启动图标（彩色图在通知栏会糊成一团白块）。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,74 C36,60 26,49 26,38 C26,29 33,23 41,23 C47,23 51.5,26.5 54,31.5 C56.5,26.5 61,23 67,23 C75,23 82,29 82,38 C82,49 72,60 54,74 Z" />
+</vector>

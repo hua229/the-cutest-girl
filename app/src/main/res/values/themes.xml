@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- v4.1 全站浅色：简洁白 + 粉红，启动主题固定浅色 -->
+    <style name="Theme.TheCutestGirl" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">#FAF7F8</item>
+    </style>
+</resources>

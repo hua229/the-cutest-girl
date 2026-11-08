@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 云同步需要联网（坚果云走 HTTPS） -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ 发送同步提醒通知需要 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 开机后把后台同步任务重新挂上：WorkManager 自己会恢复，但清过数据/被 ROM 清库时会丢 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--
+        弹出系统「忽略电池优化」确认框的准入条件。
+        不声明这一条，AOSP 的 RequestIgnoreBatteryOptimizations 在 onCreate 里
+        就会 finish()，界面表现是点「去设置」毫无反应（v2.9.0 的真实 bug）。
+        这是两个人的私人 App，不上架 Play，BatteryLife 政策警告不适用。
+    -->
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:ignore="BatteryLife" />
+
+    <!--
+        Android 11+ 的包可见性过滤：resolveActivity 查不到系统设置页就会误判「没有入口」，
+        让「去设置」的回退链断在第一步。把三个要用到的 action 都显式声明成可见。
+    -->
+    <queries>
+        <intent tools:ignore="BatteryLife">
+            <action android:name="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+            <data android:scheme="package" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.APPLICATION_DETAILS_SETTINGS" />
+            <data android:scheme="package" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:theme="@style/Theme.TheCutestGirl">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.TheCutestGirl">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 开机 / 应用被更新后，重新注册 15 分钟周期同步（幂等，重复注册无副作用） -->
+        <receiver
+            android:name=".sync.BootReceiver"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 供「拍一张」功能临时把照片交给系统相机使用，不需要任何存储权限 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+
+</manifest>
