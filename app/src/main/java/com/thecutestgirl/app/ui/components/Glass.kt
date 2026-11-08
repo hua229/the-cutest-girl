@@ -90,11 +90,13 @@ internal const val GlassNoise = 0.06f
 fun Modifier.glassPanel(
     cornerRadius: Dp = 16.dp,
     drawHairline: Boolean = true,
-    elevation: Dp = 8.dp
+    elevation: Dp = 8.dp,
+    surfaceAlpha: Float = 0.92f
 ): Modifier = glassPanel(
     shape = RoundedCornerShape(cornerRadius),
     drawHairline = drawHairline,
-    elevation = elevation
+    elevation = elevation,
+    surfaceAlpha = surfaceAlpha
 )
 
 /** glassPanel 的任意 shape 版本（抽屉用顶部圆角 24、底部齐边）。 */
@@ -102,7 +104,8 @@ fun Modifier.glassPanel(
 fun Modifier.glassPanel(
     shape: androidx.compose.ui.graphics.Shape,
     drawHairline: Boolean = true,
-    elevation: Dp = 8.dp
+    elevation: Dp = 8.dp,
+    surfaceAlpha: Float = 0.92f
 ): Modifier {
     val shadowTint = MaterialTheme.colorScheme.onSurface
     return this
@@ -118,7 +121,7 @@ fun Modifier.glassPanel(
             } else Modifier
         )
         .clip(shape)
-        .background(Color.White.copy(alpha = 0.78f))
+        .background(MaterialTheme.colorScheme.surface.copy(alpha = surfaceAlpha))
         .drawBehind {
             // 顶部内发光（背景之后绘制）
             drawRect(
@@ -256,7 +259,7 @@ fun FloatingTopBar(
             Box(
                 modifier = Modifier
                     .width(barWidth)
-                    .glassPanel(cornerRadius = barCorner)
+                    .glassPanel(cornerRadius = barCorner, surfaceAlpha = 0.96f)
             ) {
                 Layout(
                     content = {

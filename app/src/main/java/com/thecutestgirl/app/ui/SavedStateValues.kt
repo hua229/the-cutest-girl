@@ -76,6 +76,7 @@ internal fun savedDate(
     { parseRecordDate(it as? String ?: "") ?: default }
 )
 
+@Suppress("UNCHECKED_CAST")
 internal fun savedStringList(
     handle: SavedStateHandle,
     key: String

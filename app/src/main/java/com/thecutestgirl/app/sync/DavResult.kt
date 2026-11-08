@@ -31,10 +31,4 @@ sealed class DavResult<out T> {
     data class Err(val error: DavError) : DavResult<Nothing>()
 }
 
-/** 把 DavResult 转成异常，交给 syncOnce 的统一 catch 处理 */
-internal fun <T> DavResult<T>.getOrThrowDav(): T = when (this) {
-    is DavResult.Ok -> value
-    is DavResult.Err -> throw DavException(error)
-}
-
 internal class DavException(val error: DavError) : IOException(error.userMessage())

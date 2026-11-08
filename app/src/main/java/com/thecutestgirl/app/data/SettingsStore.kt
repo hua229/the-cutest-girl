@@ -18,6 +18,8 @@ import javax.crypto.spec.GCMParameterSpec
 object SettingsStore {
 
     private const val FILE = "settings"
+    private const val FILE_IDENTITY = "identity"
+    private const val FILE_SECRET = "dav_secret"
 
     const val DEFAULT_DAV_URL = "https://dav.jianguoyun.com/dav/"
 
@@ -70,6 +72,12 @@ object SettingsStore {
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
+    private fun identityPrefs(context: Context) =
+        context.applicationContext.getSharedPreferences(FILE_IDENTITY, Context.MODE_PRIVATE)
+
+    private fun secretPrefs(context: Context) =
+        context.applicationContext.getSharedPreferences(FILE_SECRET, Context.MODE_PRIVATE)
+
     fun webdavUrl(context: Context): String =
         prefs(context).getString("webdav_url", DEFAULT_DAV_URL) ?: DEFAULT_DAV_URL
 
@@ -77,14 +85,19 @@ object SettingsStore {
         prefs(context).getString("webdav_user", "") ?: ""
 
     fun webdavPass(context: Context): String {
-        val stored = prefs(context).getString("webdav_pass", "") ?: ""
-        if (stored.isBlank()) return ""
-        if (stored.startsWith(PASS_PREFIX)) return decryptPass(stored) ?: ""
-        // 旧版本明文：读的时候顺手迁移为密文，用户无感
-        encryptPass(stored)?.let { encrypted ->
-            prefs(context).edit().putString("webdav_pass", encrypted).apply()
+        val secret = secretPrefs(context)
+        val stored = secret.getString("webdav_pass", "") ?: ""
+        if (stored.isNotBlank()) {
+            return if (stored.startsWith(PASS_PREFIX)) decryptPass(stored) ?: "" else stored
         }
-        return stored
+        // 旧版本：密码在 settings.xml（明文或密文）。迁移到 dav_secret.xml 并从 settings 删除
+        val legacy = prefs(context).getString("webdav_pass", "") ?: ""
+        if (legacy.isBlank()) return ""
+        val plain = if (legacy.startsWith(PASS_PREFIX)) decryptPass(legacy) ?: "" else legacy
+        val migrated = if (plain.isBlank()) legacy else encryptPass(plain) ?: legacy
+        secret.edit().putString("webdav_pass", migrated).apply()
+        prefs(context).edit().remove("webdav_pass").apply()
+        return plain
     }
 
     fun saveDavConfig(context: Context, url: String, user: String, pass: String) {
@@ -93,8 +106,10 @@ object SettingsStore {
         prefs(context).edit()
             .putString("webdav_url", url.trim().ifBlank { DEFAULT_DAV_URL })
             .putString("webdav_user", user.trim())
-            .putString("webdav_pass", storedPass)
+            // 密码不再留在可备份的 settings.xml
+            .remove("webdav_pass")
             .apply()
+        secretPrefs(context).edit().putString("webdav_pass", storedPass).apply()
     }
 
     /**
@@ -117,27 +132,53 @@ object SettingsStore {
     fun isSyncConfigured(context: Context): Boolean =
         webdavUser(context).isNotBlank() && webdavPass(context).isNotBlank()
 
-    /** 本机唯一设备 ID（首次生成后固定），用于区分记录是谁创建的 */
+    /** 本机唯一设备 ID（首次生成后固定），用于区分记录是谁创建的。可随系统备份/备份 zip 恢复。 */
     fun deviceId(context: Context): String {
-        prefs(context).getString("device_id", null)?.let { return it }
+        identityPrefs(context).getString("device_id", null)?.let { return it }
+        // 旧版本存在 settings.xml：迁移到 identity.xml，并从旧文件删掉
+        val legacy = prefs(context).getString("device_id", null)
+        if (legacy != null) {
+            identityPrefs(context).edit().putString("device_id", legacy).apply()
+            prefs(context).edit().remove("device_id").apply()
+            return legacy
+        }
         val id = UUID.randomUUID().toString()
-        prefs(context).edit().putString("device_id", id).apply()
+        identityPrefs(context).edit().putString("device_id", id).apply()
         return id
     }
 
-    fun myName(context: Context): String =
-        prefs(context).getString("my_name", "我") ?: "我"
+    fun myName(context: Context): String {
+        identityPrefs(context).getString("my_name", null)?.let { return it }
+        // 旧版本存在 settings.xml：迁移过去，避免身份和密码一起留在被排除的文件里
+        val legacy = prefs(context).getString("my_name", null)
+        if (legacy != null) {
+            identityPrefs(context).edit().putString("my_name", legacy).apply()
+            prefs(context).edit().remove("my_name").apply()
+            return legacy
+        }
+        return "我"
+    }
 
     fun saveMyName(context: Context, name: String) {
-        prefs(context).edit().putString("my_name", name.trim().ifBlank { "我" }).apply()
+        identityPrefs(context).edit()
+            .putString("my_name", name.trim().ifBlank { "我" })
+            .apply()
     }
 
     /** 已经把昵称同步刷进历史记录的名字；和 myName 不一致时，下次同步会刷新全部旧记录 */
-    fun propagatedName(context: Context): String =
-        prefs(context).getString("propagated_name", "") ?: ""
+    fun propagatedName(context: Context): String {
+        identityPrefs(context).getString("propagated_name", null)?.let { return it }
+        val legacy = prefs(context).getString("propagated_name", null)
+        if (legacy != null) {
+            identityPrefs(context).edit().putString("propagated_name", legacy).apply()
+            prefs(context).edit().remove("propagated_name").apply()
+            return legacy
+        }
+        return ""
+    }
 
     fun setPropagatedName(context: Context, name: String) {
-        prefs(context).edit().putString("propagated_name", name).apply()
+        identityPrefs(context).edit().putString("propagated_name", name).apply()
     }
 
     /** 首次全量拉取完成前不弹通知（避免配对时历史记录轰炸） */

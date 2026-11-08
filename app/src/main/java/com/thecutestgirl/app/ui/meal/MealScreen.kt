@@ -105,8 +105,8 @@ fun mealIcon(mealType: Int): ImageVector = when (mealType) {
 }
 
 /**
- * 双色餐次图标：线性描边 + 钴蓝（secondary）柔底。
- * 三模块色彩分工：穿搭=梅紫、饮食=钴蓝、点滴=余烬橙。
+ * 双色餐次图标：线性描边 + 主色（粉色）柔底。
+ * v4.1 浅色品牌起全站强调色统一为主粉，不再按模块分色。
  */
 @Composable
 fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifier) {
@@ -444,8 +444,8 @@ private fun MealContentCard(
         modifier = Modifier
             .fillMaxWidth()
             .solidCard(cornerRadius = 16.dp)
-            // 对方的记录：卡片左缘压一条 4dp 钴蓝竖条（裁剪后只露内侧圆角内的部分），
-            // 不额外占布局宽度，也不改变卡片圆角。
+            // 对方的记录：卡片左缘压一条 4dp 主色（粉色）竖条（裁剪后只露内侧圆角内的部分），
+            // 不额外占布局宽度，也不改变卡片圆角。颜色与代码保持一致，不再写「钴蓝」。
             .drawBehind {
                 if (partner) {
                     drawRect(

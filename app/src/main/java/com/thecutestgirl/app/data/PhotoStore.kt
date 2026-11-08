@@ -90,6 +90,32 @@ object PhotoStore {
 
     fun isDraft(name: String?): Boolean = name?.startsWith(DRAFT_PREFIX) == true
 
+    /**
+     * FIX-05：本地照片孤儿 GC，任何用户启动 App 都会跑，不依赖是否开启同步。
+     *
+     * 只删同时满足三个条件的文件：
+     * - 不是 `draft_`（草稿由 [cleanupOldDrafts] 单独按 24h 处理）
+     * - 数据库三张表都不引用
+     * - 最后修改时间超过 24h（保护刚复制、还没写库的照片）
+     */
+    suspend fun cleanupOrphans(context: Context) = withContext(Dispatchers.IO) {
+        val db = AppDatabase.getInstance(context)
+        val referenced = (
+            db.outfitDao().getAllPhotoPaths() +
+                db.mealDao().getAllPhotoPaths() +
+                db.eventDao().getAllPhotoPaths()
+            ).toHashSet()
+        val cutoff = System.currentTimeMillis() - DRAFT_TTL_MS
+        runCatchingCancellable {
+            dir(context).listFiles { f ->
+                f.isFile &&
+                    !f.name.startsWith(DRAFT_PREFIX) &&
+                    f.name !in referenced &&
+                    f.lastModified() < cutoff
+            }?.forEach { it.delete() }
+        }
+    }
+
     /** 相机临时文件 → 草稿名，进程被杀也只会留下可清理的 draft_ 文件 */
     fun makeDraft(context: Context, file: File): String {
         if (file.name.startsWith(DRAFT_PREFIX)) return file.name

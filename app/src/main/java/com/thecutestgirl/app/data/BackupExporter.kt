@@ -62,11 +62,20 @@ object BackupExporter {
                 .put("versionName", versionName)
                 .put("versionCode", versionCode)
                 .put("exportedAt", System.currentTimeMillis())
+                .put("davUrl", SettingsStore.webdavUrl(context))
+                .put("davUser", SettingsStore.webdavUser(context))
                 .put("outfits", count("outfits"))
                 .put("meals", count("meals"))
                 .put("events", count("events"))
                 .put("photos", photoFiles.size)
-                .put("note", "不含同步密码与同步账本；photos/ 是全部正式照片")
+                .put("note", "不含同步密码与同步账本；identity.json 是设备身份；photos/ 是全部正式照片")
+
+            // FIX-02：身份单独导出，换机恢复备份后仍认得出自己上传的记录
+            // 键名与验收文档约定一致（camelCase），方便后续导入功能直接读取
+            val identity = JSONObject()
+                .put("deviceId", SettingsStore.deviceId(context))
+                .put("myName", SettingsStore.myName(context))
+                .put("propagatedName", SettingsStore.propagatedName(context))
 
             val output = context.contentResolver.openOutputStream(uri)
                 ?: error("无法写入所选文件")
@@ -79,9 +88,14 @@ object BackupExporter {
                         zip.closeEntry()
                     }
 
-                    zip.putNextEntry(ZipEntry("manifest.json"))
-                    zip.write(manifest.toString(2).toByteArray(Charsets.UTF_8))
-                    zip.closeEntry()
+                    fun addText(name: String, text: String) {
+                        zip.putNextEntry(ZipEntry(name))
+                        zip.write(text.toByteArray(Charsets.UTF_8))
+                        zip.closeEntry()
+                    }
+
+                    addText("manifest.json", manifest.toString(2))
+                    addText("identity.json", identity.toString(2))
 
                     addEntry("db/the_cutest_girl.db", dbFile)
                     // WAL/SHM 一并带上，兼容 checkpoint 没能完全清空的情况

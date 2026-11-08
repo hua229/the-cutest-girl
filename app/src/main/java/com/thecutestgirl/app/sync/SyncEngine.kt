@@ -46,6 +46,13 @@ class SyncEngine(private val context: Context) {
     private class DirectorySetupException(message: String) : IOException(message)
 
     /**
+     * FIX-03：同端点下云端目录被手动删掉 / 服务商重置目录。
+     * 只有 `listDir(records/photos)` 的 404 才算这个错误，用来清 dirsReady 让下一轮重建。
+     * 单条记录 GET 404 只是那条被删了，绝不能触发这里的逻辑。
+     */
+    private class CloudDirectoryMissingException(message: String) : IOException(message)
+
+    /**
      * 对方新增/改动的一条内容，用来拼通知。
      *
      * [recordId] 是通知去重的钥匙（前台 20 秒轮询会反复扫到同一条记录）；
@@ -99,9 +106,6 @@ class SyncEngine(private val context: Context) {
 
         /** 大图瘦身 / 照片目录扫描的最低间隔：6 小时 */
         private const val MAINTENANCE_INTERVAL_MS = 6 * 60 * 60 * 1000L
-
-        /** 本地孤儿照片保留时长：24 小时（避开正在编辑的草稿） */
-        private const val PHOTO_ORPHAN_TTL_MS = 24 * 60 * 60 * 1000L
 
         /** 云端孤儿照片 GC 间隔：24 小时；云端照片保留 7 天再删 */
         private const val CLOUD_GC_INTERVAL_MS = 24 * 60 * 60 * 1000L
@@ -243,10 +247,25 @@ class SyncEngine(private val context: Context) {
 
             val remoteRecords = when (val r = dav.listDir("thecutestgirl/records")) {
                 is DavResult.Ok -> r.value
-                is DavResult.Err -> throw DavException(r.error)
+                is DavResult.Err -> {
+                    // 目录 404 = 云端目录被删了：清掉 dirsReady，下一轮重建
+                    if (r.error == DavError.NotFound) {
+                        throw CloudDirectoryMissingException("云端记录目录不见了，正在自动重建")
+                    }
+                    throw DavException(r.error)
+                }
             }
-            // photos 目录一次 PROPFIND 同时服务「上传去重」「补漏」「瘦身」三处，失败可以容忍
-            val remotePhotos = (dav.listDir("thecutestgirl/photos") as? DavResult.Ok)?.value
+            // photos 目录一次 PROPFIND 同时服务「上传去重」「补漏」「瘦身」三处。
+            // 目录 404 同样要触发重建；其他错误仍可容忍（照片链路失败不阻塞记录同步）。
+            val remotePhotos = when (val r = dav.listDir("thecutestgirl/photos")) {
+                is DavResult.Ok -> r.value
+                is DavResult.Err -> {
+                    if (r.error == DavError.NotFound) {
+                        throw CloudDirectoryMissingException("云端照片目录不见了，正在自动重建")
+                    }
+                    null
+                }
+            }
             val remotePhotoNames = remotePhotos?.map { it.name }?.toHashSet() ?: hashSetOf()
             val remotePhotosBySize: Map<String, Long> =
                 remotePhotos?.associate { it.name to it.size } ?: emptyMap()
@@ -324,7 +343,17 @@ class SyncEngine(private val context: Context) {
                 // 归属只是创建者身份；对方也能修改这条记录的备注。
                 // 必须读取 JSON 里的版本，服务器 Last-Modified 与手机时钟无法直接比较。
                 // 下载失败时停止本轮，避免用尚未合并的旧内容覆盖云端备注。
-                val text = dav.getString("thecutestgirl/records/$name").getOrThrowDav()
+                // 但单条 404 只代表这条记录在 PROPFIND 之后被删了：跳过它，不能重置 dirsReady。
+                val text = when (val r = dav.getString("thecutestgirl/records/$name")) {
+                    is DavResult.Ok -> r.value
+                    is DavResult.Err -> {
+                        if (r.error == DavError.NotFound) {
+                            skipped++
+                            continue
+                        }
+                        throw DavException(r.error)
+                    }
+                }
                 // 记下这轮看到的指纹；「同一个指纹第二次出现」才算确认稳定
                 nextSigs[name] = sig
                 if (known != null && known == sig) nextConfirmed += name
@@ -368,10 +397,12 @@ class SyncEngine(private val context: Context) {
 
             // 网络请求全部结束后，一个事务写库：100 条记录只产生 1 次事务/fsync。
             // 事务内重新读本地版本（mergeXxx 内部就是这么做的），不会覆盖下载期间刚保存的内容。
+            // FIX-07：墓碑 id 在事务外查一次，避免每条远端记录都 getAll()（N+1）。
+            val tombstoneIds = tombstoneDao.getAll().map { it.id }.toHashSet()
             val mergedIds = mutableSetOf<String>()
             db.withTransaction {
                 for (record in pendingMerges) {
-                    if (mergeRemoteLocked(record)) mergedIds += record.id
+                    if (mergeRemoteLocked(record, tombstoneIds)) mergedIds += record.id
                 }
             }
             downloaded += mergedIds.size
@@ -510,12 +541,8 @@ class SyncEngine(private val context: Context) {
                     }
                 SyncStateStore.setLastMaintenanceAt(context, nowForMaintenance)
 
-                // P2-8 本地照片 GC：只删「数据库不引用 + 超过 24h」的文件
-                val referencedPhotos = localPhotoRefs.toHashSet()
-                val orphanCutoff = nowForMaintenance - PHOTO_ORPHAN_TTL_MS
-                PhotoStore.dir(context).listFiles { f ->
-                    f.isFile && f.name !in referencedPhotos && f.lastModified() < orphanCutoff
-                }?.forEach { it.delete() }
+                // P2-8 本地照片 GC（FIX-05：与启动时共用同一个实现，只删数据库不引用 + 非草稿 + 超过 24h）
+                PhotoStore.cleanupOrphans(context)
 
                 // P2-8 云端照片 GC（每天一次，保守策略）：
                 // 先下载所有远端记录收集照片引用；任一条解析失败就整轮跳过，避免误删。
@@ -541,7 +568,7 @@ class SyncEngine(private val context: Context) {
                         if (!photo.isNullOrBlank()) remoteRefs += photo
                     }
                     if (!remoteParseFailed) {
-                        val keep = remoteRefs + referencedPhotos
+                        val keep = remoteRefs + localPhotoRefs
                         val cloudOldCutoff = nowForMaintenance - CLOUD_PHOTO_TTL_MS
                         remotePhotos.forEach { entry ->
                             if (entry.name !in keep && entry.lastModified in 1 until cloudOldCutoff) {
@@ -594,6 +621,20 @@ class SyncEngine(private val context: Context) {
                 retryable = kind.retryable(),
                 errorKind = kind
             )
+        } catch (e: CloudDirectoryMissingException) {
+            // FIX-03：目录在同步过程中消失了（被手动删/服务商重置）。
+            // 清掉 dirsReady，下一轮会重新 MKCOL + listDir，不会永久失败。
+            SyncStateStore.setDirsReady(context, false)
+            val message = e.message ?: "云端目录不见了，正在自动重建"
+            SettingsStore.saveSyncStatus(
+                context, System.currentTimeMillis(), "同步失败：$message"
+            )
+            Result(
+                ok = false,
+                error = message,
+                retryable = true,
+                errorKind = DavError.NotFound
+            )
         } catch (e: DirectorySetupException) {
             // 目录没建好：明确把标记清掉，下一轮重新 MKCOL，不要永久卡住
             SyncStateStore.setDirsReady(context, false)
@@ -623,10 +664,10 @@ class SyncEngine(private val context: Context) {
 
     /**
      * 合并一条远端记录（调用方负责包事务；P1-PERF-7 批量合并）。
-     * 网络请求必须已经在事务外完成。
+     * 网络请求必须已经在事务外完成；[tombstoneIds] 由调用方在事务外查一次传入。
      */
-    private suspend fun mergeRemoteLocked(record: SyncRecord): Boolean {
-        if (tombstoneDao.getAll().any { it.id == record.id }) return false
+    private suspend fun mergeRemoteLocked(record: SyncRecord, tombstoneIds: Set<String>): Boolean {
+        if (record.id in tombstoneIds) return false
         return when (record) {
             is SyncRecord.Outfit -> mergeOutfit(record.record)
             is SyncRecord.Meal -> mergeMeal(record.record)

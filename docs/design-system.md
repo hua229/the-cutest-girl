@@ -6,8 +6,8 @@
 
 | 角色 | 值 | 用途 |
 | --- | --- | --- |
-| 页面底 | `#FAF7F8` | 带一丝暖粉的简洁白 |
-| 卡面 | 白 78% | 玻璃外观填充 |
+| 页面底 | `#EFE8EB` | 带暖粉的浅灰（v4.2.1 压深，卡片对比度 ≈1.19:1） |
+| 卡面 | 白 92% | 玻璃外观填充（`glassPanel` 默认 `surfaceAlpha=0.92`） |
 | 边框/分割线 | `#14201A1D`（8% 深） | 1dp 半透 |
 | 主文字 | `#201A1D` | 约 15.6:1 |
 | 次文字 | `#625A5F` | 约 6.9:1 |
@@ -37,7 +37,7 @@
 
 | 组件 | 规范 |
 | --- | --- |
-| `glassPanel` / `GlassCard` | 78% 白 + 顶部内发光（白 55%→透明）+ 1dp 8% 边框 + 8dp 中性投影；无 `glow/elevation` 参数 |
+| `glassPanel` / `GlassCard` | 92% 白 + 顶部内发光（白 55%→透明）+ 1dp 8% 边框 + 8dp 中性投影；无 `glow/elevation` 参数；抽屉 100% 不透明、顶栏 0.96 |
 | `solidCard` | `glassPanel` 别名，圆角 16、固定 8dp 投影 |
 | `AppTopBar` | `quietTopAppBar` + `IconTitle`，`windowInsets=0`（根 Scaffold 已处理状态栏） |
 | `FloatingTopBar` | 玻璃面板 24dp → 收起 16dp；宽度动画 300ms；可带设置齿轮 |
@@ -45,7 +45,7 @@
 | `SoftCapsuleButton` | 白 86% + 8% 边框、40dp、禁用 alpha 0.38 |
 | `SolidCircleButton` | 白 86% 圆 + 投影 10dp + 边框、按压 98% |
 | `DestructiveAction` | 48dp、错误色、1dp 错误色 35% 边框、无 ripple |
-| `AddRecordSheet` | 62% 屏高、40% 黑遮罩、顶部圆角 24、放弃确认；字段 `SheetTextField/SheetDateRow/SheetSegmented/SheetPhotoPicker` |
+| `AddRecordSheet` | 约 82% 屏高（最小 360dp）、40% 黑遮罩、顶部圆角 24、表面完全不透明、放弃确认；字段 `SheetTextField/SheetDateRow/SheetSegmented/SheetPhotoPicker` |
 | `SyncStatusBar` | 空闲/同步中/成功/失败；失败带原因 + 重试 |
 | `PhotoImage` | Coil 缓存 key = `name:lastModified`，瘦身后不显示旧图 |
 | `PhotoViewerDialog` | HorizontalPager + 双指缩放 1–5x + 双击 + 单击关闭 + 48dp 关闭按钮 |

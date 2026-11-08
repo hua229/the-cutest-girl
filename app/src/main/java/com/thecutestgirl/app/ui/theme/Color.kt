@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 // 页面底为带一丝暖粉的简洁白；卡面为 78% 白玻璃 + 1dp 半透边框 + 顶部内发光 + 柔和中性投影。
 // 真实背景模糊只保留给底部液态导航栏；其余卡面共享同一套玻璃「外观」。
 
-val CanvasLight = Color(0xFFFAF7F8)       // 页面底：简洁白，一丝暖粉
+val CanvasLight = Color(0xFFEFE8EB)       // 页面底：带暖粉的浅灰，卡片对比度 ≈ 1.19:1
 val CardWhite = Color(0xFFFFFFFF)         // 卡片实底
 val GlassTint = Color(0xE6FFFFFF)         // 90% 白：玻璃态填充（叠加在卡底上）
 val BorderHairline = Color(0x14201A1D)    // 8% 深：1dp 半透边框

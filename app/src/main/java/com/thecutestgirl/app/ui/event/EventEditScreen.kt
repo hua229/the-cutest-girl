@@ -129,12 +129,20 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                     }
                 }
 
-                PlainField(
-                    value = vm.title,
-                    onValueChange = { vm.title = it },
-                    label = if (isMoment) "标题" else "纪念日名称",
-                    placeholder = if (isMoment) "比如：一起去看了日落" else "比如：在一起"
-                )
+                // FIX-04：对方打开点滴时标题只读，保存只写评论
+                if (vm.amUploader || id == null) {
+                    PlainField(
+                        value = vm.title,
+                        onValueChange = { vm.title = it },
+                        label = if (isMoment) "标题" else "纪念日名称",
+                        placeholder = if (isMoment) "比如：一起去看了日落" else "比如：在一起"
+                    )
+                } else {
+                    ReadOnlyNote(
+                        label = if (isMoment) "标题" else "纪念日名称",
+                        value = vm.title
+                    )
+                }
 
                 // 只有日常点滴可以配照片；照片与描述合并成一张连贯卡片（v2.4.4 建立，v2.4.5 玻璃化）
                 if (isMoment) {
@@ -180,12 +188,14 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                     )
                 }
 
-                // 日期选择
+                // 日期选择（FIX-04：对方只读，保存时本来就会被丢弃）
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .solidCard(cornerRadius = 16.dp)
-                        .clickable { showDatePicker = true }
+                        .clickable(enabled = vm.amUploader) {
+                            if (vm.amUploader) showDatePicker = true
+                        }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -202,11 +212,13 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyLarge
                     )
-                    Text(
-                        "修改",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (vm.amUploader) {
+                        Text(
+                            "修改",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 if (id != null && vm.canDelete) {

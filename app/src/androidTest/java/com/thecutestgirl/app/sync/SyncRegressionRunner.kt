@@ -72,7 +72,10 @@ class SyncRegressionRunner : Instrumentation() {
             "re-saving the same endpoint keeps the incremental ledger" to { sameEndpointKeepsLedger() },
             "bad remote records are rejected by field validation" to { validationRejectsBadRecords() },
             "dav config normalization ignores cosmetic whitespace" to { davConfigNormalization() },
-            "partner cannot delete the uploader's record" to { partnerCannotDelete() }
+            "partner cannot delete the uploader's record" to { partnerCannotDelete() },
+            "old identity and password are migrated out of settings" to { legacyIdentityMigrates() },
+            "restored identity still owns its uploads" to { restoredIdentityKeepsUploader() },
+            "missing cloud folder is reprepared on the next sync" to { missingCloudFolderIsReprepared() }
         )
         val reports = mutableListOf<String>()
         var failures = 0
@@ -96,9 +99,14 @@ class SyncRegressionRunner : Instrumentation() {
     private fun fixture() {
         db.clearAllTables()
         val url = "http://10.0.2.2:18765/${UUID.randomUUID()}/"
-        targetContext.getSharedPreferences("settings", 0).edit().clear()
+        // FIX-02：身份在 identity.xml，密码在 dav_secret.xml；旧 settings.xml 只保留同步状态
+        targetContext.getSharedPreferences("settings", 0).edit().clear().commit()
+        targetContext.getSharedPreferences("identity", 0).edit().clear()
             .putString("device_id", "device-A").putString("my_name", "Alice")
-            .putString("propagated_name", "Alice").putBoolean("first_sync_done", true).commit()
+            .putString("propagated_name", "Alice").commit()
+        targetContext.getSharedPreferences("dav_secret", 0).edit().clear().commit()
+        targetContext.getSharedPreferences("settings", 0).edit()
+            .putBoolean("first_sync_done", true).commit()
         // 增量同步的账本必须一起清：每个用例都是全新的随机云端目录，
         // 留着上一个用例的时间戳会让「文件名相同但内容不同」被误判成没变。
         targetContext.getSharedPreferences("sync_state", 0).edit().clear().commit()
@@ -165,7 +173,7 @@ class SyncRegressionRunner : Instrumentation() {
     }
 
     private fun deviceB() {
-        targetContext.getSharedPreferences("settings", 0).edit()
+        targetContext.getSharedPreferences("identity", 0).edit()
             .putString("device_id", "device-B").putString("my_name", "Bob")
             .putString("propagated_name", "Bob").commit()
     }
@@ -844,6 +852,111 @@ class SyncRegressionRunner : Instrumentation() {
         check(db.outfitDao().getById(record.id) != null) {
             "Partner deleted the uploader's record"
         }
+    }
+
+    private fun legacyIdentityMigrates() {
+        val settings = targetContext.getSharedPreferences("settings", 0)
+        val identity = targetContext.getSharedPreferences("identity", 0)
+        val secret = targetContext.getSharedPreferences("dav_secret", 0)
+        identity.edit().clear().commit()
+        secret.edit().clear().commit()
+        settings.edit()
+            .putString("device_id", "legacy-device")
+            .putString("my_name", "Legacy")
+            .putString("propagated_name", "Legacy")
+            .putString("webdav_pass", "legacy-pass")
+            .commit()
+
+        check(SettingsStore.deviceId(targetContext) == "legacy-device") {
+            "Legacy device id was not migrated"
+        }
+        check(identity.getString("device_id", null) == "legacy-device")
+        check(!settings.contains("device_id")) { "Legacy device id left in settings" }
+        check(SettingsStore.myName(targetContext) == "Legacy")
+        check(identity.getString("my_name", null) == "Legacy")
+        check(!settings.contains("my_name")) { "Legacy nickname left in settings" }
+        check(SettingsStore.propagatedName(targetContext) == "Legacy")
+        check(!settings.contains("propagated_name"))
+
+        check(SettingsStore.webdavPass(targetContext) == "legacy-pass") {
+            "Legacy password could not be read"
+        }
+        val stored = secret.getString("webdav_pass", null)
+        check(stored != null && stored.startsWith("enc1:")) {
+            "Legacy password was not encrypted into dav_secret"
+        }
+        check(!settings.contains("webdav_pass")) {
+            "Legacy plaintext password left in the backupable settings file"
+        }
+    }
+
+    /**
+     * FIX-02：换机恢复备份后，identity.xml 回来了、密码没有回来。
+     * 身份必须仍然认得出「这些是我上传的」，否则恢复后的记录全部变成只读。
+     */
+    private fun restoredIdentityKeepsUploader() = runBlocking {
+        targetContext.getSharedPreferences("settings", 0).edit().clear().commit()
+        targetContext.getSharedPreferences("dav_secret", 0).edit().clear().commit()
+        targetContext.getSharedPreferences("identity", 0).edit().clear()
+            .putString("device_id", "device-A")
+            .putString("my_name", "Alice")
+            .putString("propagated_name", "Alice")
+            .commit()
+
+        check(SettingsStore.deviceId(targetContext) == "device-A") {
+            "Restored device id was lost"
+        }
+        check(!SettingsStore.isSyncConfigured(targetContext)) {
+            "Password must not be restored from backup"
+        }
+
+        val record = OutfitRecord(
+            id = "restored-1",
+            date = "2026-10-24",
+            photoPath = "restored.jpg",
+            note = "mine",
+            createdAt = oldTime,
+            updatedAt = oldTime,
+            origin = "device-A",
+            originName = "Alice",
+            dirty = false
+        )
+        db.outfitDao().upsert(record)
+        val vm = OutfitEditViewModel(targetContext.applicationContext as Application)
+        vm.load(record.id)
+        withTimeout(5_000) { while (vm.photoPath == null) delay(20) }
+        check(vm.canDelete) { "Restored identity no longer owns its uploads" }
+    }
+
+    /**
+     * FIX-03：同端点下云端目录被删，dirsReady 不重置会让同步永久失败。
+     * 第一轮必须失败并清标记，第二轮自动 MKCOL 恢复。
+     */
+    private suspend fun missingCloudFolderIsReprepared() {
+        val record = outfit(note = "before-delete", at = oldTime, origin = "device-B")
+        remote(record.id, record.toJson())
+        sync()
+        check(SyncStateStore.dirsReady(targetContext)) {
+            "fixture: dirsReady should be true after a successful sync"
+        }
+
+        // 模拟用户在云盘里删掉整个 records 目录
+        check(dav.delete("thecutestgirl/records").ok()) { "Could not delete the cloud folder" }
+
+        val failed = SyncEngine(targetContext).syncOnce()
+        check(!failed.ok) { "Sync should report the missing cloud folder" }
+        check(failed.retryable) { "Missing folder must be retryable" }
+        check(failed.errorKind == DavError.NotFound) { "Expected NotFound, got ${failed.errorKind}" }
+        check(!SyncStateStore.dirsReady(targetContext)) {
+            "dirsReady was not reset after the cloud folder disappeared"
+        }
+
+        // 下一轮：自动重建三层目录并继续同步
+        val recovered = sync()
+        check(recovered.ok) { "Sync did not recover after recreating folders" }
+        check(SyncStateStore.dirsReady(targetContext)) { "dirsReady was not set after recovery" }
+        check(dav.listDir("thecutestgirl/records").ok()) { "records folder was not recreated" }
+        check(dav.listDir("thecutestgirl/photos").ok()) { "photos folder was not recreated" }
     }
 
 }

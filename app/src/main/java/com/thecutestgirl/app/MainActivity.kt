@@ -41,9 +41,10 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             SyncManager.startAfterConfigured(this)
         }
-        // P2-7：清理进程被杀留下的过期草稿照片
+        // P2-7：清理进程被杀留下的过期草稿照片；FIX-05：同时清理孤儿照片（不要求开启同步）
         lifecycleScope.launch(Dispatchers.IO) {
             PhotoStore.cleanupOldDrafts(this@MainActivity)
+            PhotoStore.cleanupOrphans(this@MainActivity)
         }
         notificationTarget = intent.toNotificationTarget()
         setContent {

@@ -118,12 +118,14 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                 photoEditable = vm.amUploader
             )
 
-            // 日期选择
+            // 日期选择（FIX-04：对方只读，保存只写评论）
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .solidCard(cornerRadius = 16.dp)
-                    .clickable { showDatePicker = true }
+                    .clickable(enabled = vm.amUploader) {
+                        if (vm.amUploader) showDatePicker = true
+                    }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -139,11 +141,13 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
-                Text(
-                    "修改",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                if (vm.amUploader) {
+                    Text(
+                        "修改",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             if (id != null && vm.canDelete) {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -138,15 +139,19 @@ fun AddRecordSheetContent(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val topOnly = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.62f)
-            .glassPanel(shape = topOnly)
-            // ModalBottomSheet 自带系统栏 insets；这里只补键盘，避免双倍留白
-            .imePadding()
-            .padding(24.dp)
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        // 抽屉高度自适应：约 82% 屏高，小屏至少 360dp；内容区可滚动
+        val sheetHeight = (maxHeight * 0.82f).coerceAtLeast(360.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(sheetHeight)
+                // 抽屉必须完全不透明：半透明会让底层文字/图标透上来，读不清
+                .glassPanel(shape = topOnly, surfaceAlpha = 1f)
+                // ModalBottomSheet 自带系统栏 insets；这里只补键盘，避免双倍留白
+                .imePadding()
+                .padding(24.dp)
+        ) {
         // 拖动指示条（装饰，本身不占点击）
         Box(
             modifier = Modifier
@@ -184,6 +189,7 @@ fun AddRecordSheetContent(
             enabled = primaryEnabled
         )
         Spacer(Modifier.height(8.dp))
+        }
     }
 }
 

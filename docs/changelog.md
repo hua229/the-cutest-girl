@@ -2,6 +2,17 @@
 
 > 详细交接记录见 git 历史；本文件只保留版本级摘要。
 
+## v4.2.1（versionCode 42）— v4.2.0 验收修复
+
+- FIX-01 抽屉完全不透明、约 82% 屏高、小屏最小 360dp；顶栏 0.96
+- FIX-02 身份与密码拆分（`identity.xml` / `dav_secret.xml` / `settings.xml`）；旧数据自动迁移；备份 zip 增加 `identity.json`；系统备份只排除密码与同步账本
+- FIX-03 云端目录被删：`listDir` 404 清 `dirsReady`，下一轮自动 MKCOL；单条记录 404 只跳过
+- FIX-04 对方编辑页标题/日期只读，隐藏「修改」
+- FIX-05 本地孤儿照片 GC 随 App 启动执行（不要求开启同步）
+- FIX-06 页面底压深 `#EFE8EB` + 卡片 92% 白，对比度 ≥1.18:1
+- FIX-07 饮食左缘注释统一、墓碑 N+1 查询消除、编译 warning 清零、证据截图补齐
+- 设备回归 29 → **32 项**（身份迁移、备份恢复身份、目录重建）
+
 ## v4.2.0（versionCode 41）— 工程收尾
 
 - 文档拆分：`docs/architecture.md`、`docs/design-system.md`、`docs/changelog.md`；`AI_HANDOFF.md` 收敛为交接速查

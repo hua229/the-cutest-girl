@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from xml.sax.saxutils import escape
 import argparse
+import shutil
 import time
 
 
@@ -58,7 +59,10 @@ class DavHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         path = self.path_on_disk()
-        if path.is_file():
+        # FIX-03：目录删除也要真的生效（模拟用户/服务商删掉 thecutestgirl/records）
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.is_file():
             path.unlink()
         self.reply(204)
 
