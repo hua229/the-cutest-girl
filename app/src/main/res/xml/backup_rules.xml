@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- P2-9：系统备份不包含同步账号/密码与同步账本 -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="settings.xml" />
+    <exclude domain="sharedpref" path="sync_state.xml" />
+</full-backup-content>

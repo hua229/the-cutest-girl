@@ -1,7 +1,15 @@
 package com.thecutestgirl.app.data
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import java.security.KeyStore
 import java.util.UUID
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 /**
  * APP 设置（含坚果云 WebDAV 账号）存在 SharedPreferences 里。
@@ -13,6 +21,52 @@ object SettingsStore {
 
     const val DEFAULT_DAV_URL = "https://dav.jianguoyun.com/dav/"
 
+    // ---------------- 应用密码加密（P2-9，Android Keystore，无新增依赖） ----------------
+    private const val PASS_KEY_ALIAS = "tcg_dav_pass"
+    private const val PASS_PREFIX = "enc1:"
+
+    private fun keystoreKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (keyStore.getEntry(PASS_KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.let {
+            return it.secretKey
+        }
+        val generator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES,
+            "AndroidKeyStore"
+        )
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                PASS_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build()
+        )
+        return generator.generateKey()
+    }
+
+    private fun encryptPass(plain: String): String? = try {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, keystoreKey())
+        val encrypted = cipher.doFinal(plain.toByteArray(Charsets.UTF_8))
+        PASS_PREFIX + Base64.encodeToString(cipher.iv + encrypted, Base64.NO_WRAP)
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun decryptPass(stored: String): String? = try {
+        val raw = Base64.decode(stored.removePrefix(PASS_PREFIX), Base64.NO_WRAP)
+        val iv = raw.copyOfRange(0, 12)
+        val encrypted = raw.copyOfRange(12, raw.size)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, keystoreKey(), GCMParameterSpec(128, iv))
+        String(cipher.doFinal(encrypted), Charsets.UTF_8)
+    } catch (e: Exception) {
+        null
+    }
+
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
@@ -22,14 +76,24 @@ object SettingsStore {
     fun webdavUser(context: Context): String =
         prefs(context).getString("webdav_user", "") ?: ""
 
-    fun webdavPass(context: Context): String =
-        prefs(context).getString("webdav_pass", "") ?: ""
+    fun webdavPass(context: Context): String {
+        val stored = prefs(context).getString("webdav_pass", "") ?: ""
+        if (stored.isBlank()) return ""
+        if (stored.startsWith(PASS_PREFIX)) return decryptPass(stored) ?: ""
+        // 旧版本明文：读的时候顺手迁移为密文，用户无感
+        encryptPass(stored)?.let { encrypted ->
+            prefs(context).edit().putString("webdav_pass", encrypted).apply()
+        }
+        return stored
+    }
 
     fun saveDavConfig(context: Context, url: String, user: String, pass: String) {
+        // 加密失败（极少见）时回退明文，至少不丢功能；下次保存会再试
+        val storedPass = if (pass.isBlank()) "" else encryptPass(pass) ?: pass
         prefs(context).edit()
             .putString("webdav_url", url.trim().ifBlank { DEFAULT_DAV_URL })
             .putString("webdav_user", user.trim())
-            .putString("webdav_pass", pass)
+            .putString("webdav_pass", storedPass)
             .apply()
     }
 

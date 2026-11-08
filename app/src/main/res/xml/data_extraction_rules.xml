@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- P2-9：Android 12+ 的备份/换机迁移规则，同样排除密码与账本 -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="settings.xml" />
+        <exclude domain="sharedpref" path="sync_state.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="settings.xml" />
+        <exclude domain="sharedpref" path="sync_state.xml" />
+    </device-transfer>
+</data-extraction-rules>

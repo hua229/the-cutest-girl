@@ -39,6 +39,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudSync
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -70,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.thecutestgirl.app.data.SettingsStore
+import com.thecutestgirl.app.data.BackupExporter
 import com.thecutestgirl.app.sync.SyncEngine
 import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.sync.SyncPhase
@@ -137,6 +140,28 @@ fun SettingsScreen(onBack: () -> Unit) {
     val notifPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
+
+    // P2-10：导出备份（zip）
+    var exporting by remember { mutableStateOf(false) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        exporting = true
+        scope.launch {
+            val result = BackupExporter.export(context, uri)
+            exporting = false
+            Toast.makeText(
+                context,
+                if (result.isSuccess) {
+                    "备份已导出"
+                } else {
+                    "导出失败：${result.exceptionOrNull()?.message ?: "未知错误"}"
+                },
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     // 是否已在电池优化白名单里。
     // 用户点「去设置」跳去系统页、开完再返回时，本页不会重建，
@@ -320,6 +345,24 @@ fun SettingsScreen(onBack: () -> Unit) {
             // 后台保活：15 分钟是 Android 给普通应用的下限，Doze / 厂商省电还会把它拉长到几十分钟。
             // 唯一的正规解法是让用户把 App 加进电池优化白名单，系统就不再冻结它的后台任务。
             SettingsSection(
+                title = "数据备份",
+                description = "导出数据库和全部照片（zip），不包含同步密码。导入功能后续版本提供。"
+            ) {
+                SettingsActionRow(
+                    text = if (exporting) "正在导出…" else "导出备份",
+                    icon = true,
+                    iconVector = Icons.Outlined.Save,
+                    enabled = !exporting,
+                    container = false,
+                    onClick = {
+                        val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.CHINA)
+                            .format(Date())
+                        exportLauncher.launch("thecutestgirl-backup-$stamp.zip")
+                    }
+                )
+            }
+
+            SettingsSection(
                 title = "后台不被冻结",
                 description = "把本 App 加进电池优化白名单。不加的话，手机放着一会儿后台同步就会被系统" +
                     "掐掉，对方的通知可能延迟很久才到。"
@@ -447,6 +490,7 @@ private fun SettingsActionRow(
     icon: Boolean,
     enabled: Boolean,
     container: Boolean = true,
+    iconVector: ImageVector = Icons.Outlined.CloudSync,
     onClick: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -470,7 +514,7 @@ private fun SettingsActionRow(
     ) {
         if (icon) {
             Icon(
-                imageVector = Icons.Outlined.CloudSync,
+                imageVector = iconVector,
                 contentDescription = null,
                 tint = tint,
                 modifier = Modifier.size(20.dp)

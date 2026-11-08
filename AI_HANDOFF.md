@@ -3,7 +3,20 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**、**Batch 6（P2-7/8）**，见下七节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**、**Batch 6（P2-7/8）**、**Batch 7（P2-9/10）**，见下八节。
+
+## Batch 7（P2-9 / P2-10，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P2-9 | 应用密码改为 **Android Keystore AES-GCM** 加密后再写 SharedPreferences（格式 `enc1:<base64(iv+cipher)>`，别名 `tcg_dav_pass`）；读取旧明文时自动迁移为密文（用户无感）；解密失败返回空串、不崩溃。没有新增依赖。`AndroidManifest` 增加 `fullBackupContent` 与 `dataExtractionRules`，系统云备份/换机迁移都排除 `settings.xml`（含加密密码/账号）与 `sync_state.xml`；新增 `res/xml/backup_rules.xml`、`res/xml/data_extraction_rules.xml` |
+| P2-10 | 新增 `data/BackupExporter.kt`：导出 zip（`manifest.json` + 数据库（先 `wal_checkpoint(TRUNCATE)`，含 wal/shm 兜底）+ 全部非草稿照片），不含密码与账本；设置页新增「数据备份 → 导出备份」，走 SAF `CreateDocument("application/zip")`，导出中禁用入口；导入功能下一轮再做 |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**；JVM 单测 4/4
+- 设备回归 **26/26**（`.verification/tests-v4.1.0-p2-secret-backup.txt`）
+- 装机：旧明文密码已自动迁移，prefs 里是 `enc1:...`，同步结果仍为「同步成功」（解密链路可用）；设置页「导出备份」可见，点击后系统文件选择器正常打开；无崩溃
+- **未验证**：完整走完 SAF 选择并解压检查 zip；导入；系统备份/换机迁移的真实恢复
 
 ## Batch 6（P2-7 / P2-8，v4.1.0 未升版本）
 
