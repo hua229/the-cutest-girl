@@ -232,7 +232,7 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                     )
                 }
 
-                if (id != null) {
+                if (id != null && vm.canDelete) {
                     OutlinedButton(
                         onClick = { showDelete = true },
                         shape = RoundedCornerShape(8.dp),

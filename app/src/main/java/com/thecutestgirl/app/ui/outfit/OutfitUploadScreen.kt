@@ -57,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.thecutestgirl.app.data.OutfitRecord
 import com.thecutestgirl.app.data.PhotoStore
+import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.ui.components.AppDatePickerDialog
 import com.thecutestgirl.app.ui.components.BarIconSize
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
@@ -86,6 +87,9 @@ fun OutfitUploadScreen(
     val vm: OutfitUploadViewModel = viewModel()
     val date by vm.date.collectAsStateWithLifecycle()
     val existing by vm.existing.collectAsStateWithLifecycle()
+    // 只允许删除本机上传的照片，对方上传的只读
+    val uploadContext = LocalContext.current
+    val myDeviceIdForUpload = remember(uploadContext) { SettingsStore.deviceId(uploadContext) }
 
     LaunchedEffect(dateArg) { vm.ensureDate(dateArg) }
 
@@ -158,6 +162,7 @@ fun OutfitUploadScreen(
                 if (existing.isNotEmpty()) {
                     ExistingPhotosBlock(
                         records = existing,
+                        myDeviceId = myDeviceIdForUpload,
                         onOpen = onOpen,
                         onDelete = { pendingDelete = it }
                     )
@@ -221,6 +226,7 @@ private fun DatePickerRow(date: LocalDate, onClick: () -> Unit) {
 @Composable
 private fun ExistingPhotosBlock(
     records: List<OutfitRecord>,
+    myDeviceId: String,
     onOpen: (String) -> Unit,
     onDelete: (OutfitRecord) -> Unit
 ) {
@@ -239,6 +245,9 @@ private fun ExistingPhotosBlock(
                     row.forEach { record ->
                         ExistingThumb(
                             record = record,
+                            canDelete = record.origin.isBlank() ||
+                                record.origin == "local" ||
+                                record.origin == myDeviceId,
                             onClick = { onOpen(record.id) },
                             onDelete = { onDelete(record) },
                             modifier = Modifier.weight(1f)
@@ -254,6 +263,7 @@ private fun ExistingPhotosBlock(
 @Composable
 private fun ExistingThumb(
     record: OutfitRecord,
+    canDelete: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
@@ -282,23 +292,31 @@ private fun ExistingThumb(
                 modifier = Modifier.fillMaxSize()
             )
         }
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp)
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f))
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), CircleShape)
-                .clickable(onClick = onDelete),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Close,
-                contentDescription = "删除这张照片",
-                tint = scheme.error,
-                modifier = Modifier.size(16.dp)
-            )
+        if (canDelete) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(48.dp)
+                    .clickable(onClick = onDelete),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f))
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "删除这张照片",
+                        tint = scheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }

@@ -3,9 +3,41 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：新增「本轮改动（v4.1.0）：浅色品牌体系（简洁白 + 粉红）」整节。上一轮（2026-11-08）的 v4.0.0 是「全站深色玻璃 UI」，本轮按用户新品牌方向整体切回浅色。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0-1 ~ P0-7）**，见下节。上一轮（2026-11-08）的 v4.1.0 是「浅色品牌体系（简洁白 + 粉红）」。
 
-## 本轮改动（v4.1.0）：浅色品牌体系（简洁白 + 粉红）
+## Batch 1（P0 正确性 / 数据安全，v4.1.0 未升版本）
+
+### 已完成
+| ID | 修复 | 主要文件 |
+|---|---|---|
+| P0-1 | 单图「换一张」真正替换；多选先按剩余名额截断再复制；被替换/超额的孤儿文件清理；新增纯函数 `nextPhotoList` + 4 个 JVM 单测 | `Common.kt`、`AddRecordSheet.kt`、`NextPhotoListTest.kt` |
+| P0-2 | 只有上传人能删除；三个 EditViewModel 增加 `canDelete` 并在 `delete()` 里二次拦截；上传页删除键仅自己的照片显示；`deleteExisting` 按 origin 防御 | 3 个 EditViewModel、3 个编辑页、`OutfitUploadScreen.kt` |
+| P0-3 | 删除记录 + 写墓碑放进 `AppDatabase.delete*WithTombstone()` 同一 Room 事务；照片删除移到事务之后 | `AppDatabase.kt` + 5 个删除调用点 |
+| P0-4 | 「先验证、后提交」：`SyncEngine.verifyAndApplyDavConfig()` 用候选配置连一次（换端点还要建目录 + 真列 records/photos），成功才保存；失败不动旧配置/账本。换端点前弹确认框 | `SyncEngine.kt`、`SettingsScreen.kt` |
+| P0-5 | 目录准备改为「MKCOL + listDir records/photos 全部成功」才算 ready；失败抛 `DirectorySetupException` 并在 catch 里把 `dirsReady=false`；`testConnection` 同时校验两个目录 | `SyncEngine.kt` |
+| P0-6 | 照片原子写入（`.tmp` → rename，失败复制兜底）；`WebDavClient.downloadTo/uploadFrom` 流式传输；`saveFromUri` 先临时文件再压缩改名；`compressInPlace` 不再先删原图 | `PhotoStore.kt`、`WebDavClient.kt`、`SyncEngine.kt` |
+| P0-7 | 即时同步 3 秒节流；周期任务默认 `KEEP`（改配置时 `force=true` 才 `UPDATE`）；`MainActivity` 只在 `savedInstanceState == null` 时排同步 | `SyncManager.kt`、`MainActivity.kt`、`SettingsScreen.kt` |
+
+### 两个关键取舍（与任务书原文不同）
+1. **P0-7 没有用 `enqueueUniqueWork(KEEP)`**：现有回归「immediate sync bypasses a previous failed request's retry delay」要求失败退避后点同步能立刻跑；KEEP 会挡住它。改为 **3 秒节流 + 普通 `enqueue`**，去重验收（连点 5 次只入队一次、旋转不重复）仍然满足。
+2. **P0-1 的孤儿清理只删「本次新增里被丢弃的」文件**：编辑已有记录时，被替换的旧图仍被数据库引用，必须等保存成功由 ViewModel 删除；否则用户取消编辑会把原记录照片弄坏。纯函数 `nextPhotoList` 仍按任务书返回旧图孤儿，由调用方按场景决定是否立即删。
+
+### 验证
+- 编译 + `compileDebugAndroidTestKotlin` + `lintDebug`：0 errors / **6 warnings**（基线）
+- JVM 单测：`testDebugUnitTest` 通过（`NextPhotoListTest` 4 项）
+- 设备回归：**26/26 通过**（`.verification/tests-v4.1.0-batch1.txt`）
+- 装机手动验证：
+  - 对方点滴记录 → 编辑页**无**「删除这条点滴」
+  - 自己午餐记录 → 编辑页**有**「删除这条记录」
+  - 浅色界面/抽屉仍正常
+- 说明：单图「换一张」的完整相册选图流程未做人工点选验证（逻辑由单测覆盖）；删除事务回滚未单独注入异常验证；P0-4 的「错误密码不覆盖旧配置」未做真机输入验证。
+
+### 未做（留给后续批次）
+P1-UI / P1-PERF / P2 全部未动。P1-PERF-4（`PhotoStore.dir()` 缓存）在 P0-6 顺手做了。
+
+---
+
+## 上一轮（v4.1.0）：浅色品牌体系（简洁白 + 粉红）
 
 ### 需求（用户原话）
 用户以「品牌视觉系统重构专家」角色要求：把「深色 + 梅紫/钴蓝/余烬橙」整体切换为「简洁白 + 粉红」；取消深色方案；玻璃态仅保留底部导航栏，其余卡面统一为与底栏一致的玻璃外观。

@@ -29,10 +29,9 @@ class EventViewModel(app: Application) : AndroidViewModel(app) {
 
     fun delete(record: EventRecord) {
         viewModelScope.launch {
-            dao.delete(record)
-            AppDatabase.getInstance(getApplication()).tombstoneDao()
-                .insert(Tombstone(record.id, System.currentTimeMillis()))
-            PhotoStore.delete(getApplication(), record.photoPath)
+            val db = AppDatabase.getInstance(getApplication())
+            db.deleteEventWithTombstone(record)
+            runCatching { PhotoStore.delete(getApplication(), record.photoPath) }
             SyncManager.enqueueNow(getApplication())
         }
     }
@@ -85,6 +84,10 @@ class EventEditViewModel(app: Application) : AndroidViewModel(app) {
     /** 上传人：标题必填；对方：改了评论才能存 */
     val canSave: Boolean
         get() = if (amUploader) title.isNotBlank() else reply != originalReply
+
+    /** 只有上传人能删除；对方只能写评论 */
+    val canDelete: Boolean
+        get() = amUploader
 
     fun load(id: String) {
         if (editingId == id) return
@@ -173,6 +176,11 @@ class EventEditViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun delete(onDone: () -> Unit) {
+        // 第二道门：对方不能删上传人的记录
+        if (!canDelete) {
+            onDone()
+            return
+        }
         val id = editingId
         if (id == null) {
             onDone()
@@ -180,9 +188,8 @@ class EventEditViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             dao.getById(id)?.let { record ->
-                dao.delete(record)
-                database.tombstoneDao().insert(Tombstone(id, System.currentTimeMillis()))
-                PhotoStore.delete(getApplication(), record.photoPath)
+                database.deleteEventWithTombstone(record)
+                runCatching { PhotoStore.delete(getApplication(), record.photoPath) }
             }
             SyncManager.enqueueNow(getApplication())
             onDone()

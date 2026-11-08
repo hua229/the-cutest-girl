@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
@@ -23,6 +24,26 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mealDao(): MealDao
     abstract fun eventDao(): EventDao
     abstract fun tombstoneDao(): TombstoneDao
+
+    /**
+     * 删除记录 + 写墓碑必须在同一个事务里：
+     * 两步之间被杀/异常时，只删了记录没写墓碑，下一轮同步会把云端记录重新下载回来（记录复活）。
+     * 照片文件不参与数据库事务，调用方在事务成功后单独删。
+     */
+    suspend fun deleteOutfitWithTombstone(record: OutfitRecord) = withTransaction {
+        outfitDao().delete(record)
+        tombstoneDao().insert(Tombstone(record.id, System.currentTimeMillis()))
+    }
+
+    suspend fun deleteMealWithTombstone(record: MealRecord) = withTransaction {
+        mealDao().delete(record)
+        tombstoneDao().insert(Tombstone(record.id, System.currentTimeMillis()))
+    }
+
+    suspend fun deleteEventWithTombstone(record: EventRecord) = withTransaction {
+        eventDao().delete(record)
+        tombstoneDao().insert(Tombstone(record.id, System.currentTimeMillis()))
+    }
 
     companion object {
         @Volatile

@@ -33,8 +33,10 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
         )
-        // 打开 APP 时立刻同步一次 + 确保后台同步在跑
-        SyncManager.startAfterConfigured(this)
+        // 只有真正首次创建才触发同步排单；旋转屏幕等重建不重复入队
+        if (savedInstanceState == null) {
+            SyncManager.startAfterConfigured(this)
+        }
         notificationTarget = intent.toNotificationTarget()
         setContent {
             TheCutestGirlTheme {

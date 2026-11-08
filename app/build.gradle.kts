@@ -77,6 +77,9 @@ dependencies {
     // 照片加载显示
     implementation(libs.coil.compose)
 
+    // 纯函数单元测试（P0-1 nextPhotoList 等，仅测试期，不进 APK）
+    testImplementation(libs.junit)
+
     // 云同步：后台定时任务 + WebDAV 网络请求
     implementation(libs.androidx.work.runtime)
     implementation(libs.okhttp)

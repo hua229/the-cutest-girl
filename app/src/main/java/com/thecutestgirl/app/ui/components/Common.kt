@@ -129,6 +129,30 @@ fun LocalDate.toCnFull(): String = format(CN_FULL)
 fun LocalDate.toCnShort(): String = format(CN_SHORT)
 fun LocalDate.toWeekday(): String = dayOfWeek.getDisplayName(TextStyle.FULL, Locale.CHINESE)
 
+/**
+ * 计算新的照片列表，并返回「需要删除的孤儿文件」。
+ *
+ * - 单图（maxPhotos == 1）：新选的图替换旧图；旧图进入孤儿列表（是否真删由调用方决定，
+ *   编辑已有记录时旧图仍被数据库引用，要等保存成功后才由 ViewModel 删除）。
+ * - 多图：保留前 maxPhotos 张，超出部分进入孤儿列表（这些是刚从相册复制进来的多余文件）。
+ */
+internal fun nextPhotoList(
+    current: List<String>,
+    added: List<String>,
+    maxPhotos: Int
+): Pair<List<String>, List<String>> {
+    require(maxPhotos > 0) { "maxPhotos must be > 0" }
+    if (added.isEmpty()) return current to emptyList()
+    return if (maxPhotos == 1) {
+        val result = added.takeLast(1)
+        val replaced = current.filter { it !in result }
+        result to replaced
+    } else {
+        val merged = current + added
+        merged.take(maxPhotos) to merged.drop(maxPhotos)
+    }
+}
+
 // ---------- 空状态提示 ----------
 /**
  * 空状态（v2.5.3 重做）：默认用「模块色柔光 + 毛毡玩偶」当插画，而不是一枚线性图标。
@@ -912,7 +936,13 @@ fun PhotoNoteCard(
             // 拍出来的原图很大，压缩后再使用
             scope.launch {
                 withContext(Dispatchers.IO) { PhotoStore.compressInPlace(file) }
-                onPhotosChanged(currentPhotos + file.name)
+                val (next, orphans) = nextPhotoList(currentPhotos, listOf(file.name), maxPhotos)
+                onPhotosChanged(next)
+                // 只清理本次新增里被丢弃的；被替换的旧图仍被数据库引用，
+                // 保存成功后才由 ViewModel 删除（否则取消编辑会把原记录弄坏）
+                withContext(Dispatchers.IO) {
+                    orphans.filter { it == file.name }.forEach { PhotoStore.delete(context, it) }
+                }
             }
         } else {
             file?.delete()
@@ -921,7 +951,13 @@ fun PhotoNoteCard(
     val pickSingle = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             scope.launch {
-                PhotoStore.saveFromUri(context, uri)?.let { onPhotosChanged(currentPhotos + it) }
+                PhotoStore.saveFromUri(context, uri)?.let { name ->
+                    val (next, orphans) = nextPhotoList(currentPhotos, listOf(name), maxPhotos)
+                    onPhotosChanged(next)
+                    withContext(Dispatchers.IO) {
+                        orphans.filter { it == name }.forEach { PhotoStore.delete(context, it) }
+                    }
+                }
             }
         }
     }
@@ -933,8 +969,14 @@ fun PhotoNoteCard(
     ) { uris ->
         if (uris.isNotEmpty()) {
             scope.launch {
-                val saved = uris.mapNotNull { PhotoStore.saveFromUri(context, it) }
-                if (saved.isNotEmpty()) onPhotosChanged((currentPhotos + saved).take(maxPhotos))
+                // 先按剩余名额截断，再复制进私有目录，避免「复制了又丢弃」产生孤儿文件
+                val remaining = (maxPhotos - currentPhotos.size).coerceAtLeast(1)
+                val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it) }
+                if (saved.isNotEmpty()) {
+                    val (next, orphans) = nextPhotoList(currentPhotos, saved, maxPhotos)
+                    onPhotosChanged(next)
+                    withContext(Dispatchers.IO) { orphans.forEach { PhotoStore.delete(context, it) } }
+                }
             }
         }
     }

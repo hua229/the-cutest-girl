@@ -4,9 +4,12 @@ import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.StringReader
 import java.net.URLDecoder
@@ -89,6 +92,46 @@ class WebDavClient(baseUrl: String, user: String, pass: String) {
             .url(url(path))
             .header("Authorization", auth)
             .put(bytes.toRequestBody(contentType.toMediaType()))
+            .build()
+        client.newCall(req).execute().use { it.code in 200..299 }
+    }.getOrDefault(false)
+
+    /**
+     * 流式下载到目标文件：先写 `name.download` 临时文件，成功后原子改名。
+     * 中断/磁盘满不会在目标路径留下半个文件。
+     */
+    fun downloadTo(path: String, target: File): Boolean = runCatching {
+        val req = Request.Builder().url(url(path)).header("Authorization", auth).get().build()
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) return@runCatching false
+            val body = resp.body ?: return@runCatching false
+            target.parentFile?.mkdirs()
+            val tmp = File(target.parentFile, target.name + ".download")
+            body.byteStream().use { input ->
+                FileOutputStream(tmp).use { out -> input.copyTo(out) }
+            }
+            if (tmp.length() <= 0L) {
+                tmp.delete()
+                return@runCatching false
+            }
+            if (tmp.renameTo(target)) {
+                true
+            } else {
+                runCatching {
+                    tmp.copyTo(target, overwrite = true)
+                    tmp.delete()
+                    target.length() > 0
+                }.getOrDefault(false)
+            }
+        }
+    }.getOrDefault(false)
+
+    /** 流式上传本地文件（不把整张照片读进内存）。 */
+    fun uploadFrom(path: String, file: File, contentType: String): Boolean = runCatching {
+        val req = Request.Builder()
+            .url(url(path))
+            .header("Authorization", auth)
+            .put(file.asRequestBody(contentType.toMediaType()))
             .build()
         client.newCall(req).execute().use { it.code in 200..299 }
     }.getOrDefault(false)

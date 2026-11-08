@@ -158,6 +158,10 @@ class OutfitEditViewModel(app: Application) : AndroidViewModel(app) {
     val canSave: Boolean
         get() = if (amUploader) photoPath != null else reply != originalReply
 
+    /** 只有上传人能删除；对方只能写评论（UI 和 ViewModel 各一道门） */
+    val canDelete: Boolean
+        get() = amUploader
+
     fun load(id: String) {
         if (editingId == id) return
         viewModelScope.launch {
@@ -248,6 +252,11 @@ class OutfitEditViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun delete(onDone: () -> Unit) {
+        // 第二道门：对方不能删上传人的记录，不写墓碑
+        if (!canDelete) {
+            onDone()
+            return
+        }
         val id = editingId
         if (id == null) {
             onDone()
@@ -255,9 +264,10 @@ class OutfitEditViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             dao.getById(id)?.let { record ->
-                dao.delete(record)
-                database.tombstoneDao().insert(Tombstone(id, System.currentTimeMillis()))
-                PhotoStore.delete(getApplication(), record.photoPath)
+                // 删除 + 墓碑同一事务，避免「记录没了、墓碑没写」-> 云端重新下载复活
+                database.deleteOutfitWithTombstone(record)
+                // 照片不参与事务；删失败不影响记录删除
+                runCatching { PhotoStore.delete(getApplication(), record.photoPath) }
             }
             SyncManager.enqueueNow(getApplication())
             onDone()
@@ -318,10 +328,12 @@ class OutfitUploadViewModel(app: Application) : AndroidViewModel(app) {
 
     /** 删除这一天已有的某条记录：删库 + 墓碑 + 删文件 + 触发同步 */
     fun deleteExisting(record: OutfitRecord) {
+        // 只能删自己上传的；对方上传的照片只读（origin "local"/空视为本机旧数据）
+        val myDevice = SettingsStore.deviceId(getApplication())
+        if (record.origin.isNotBlank() && record.origin != "local" && record.origin != myDevice) return
         viewModelScope.launch {
-            dao.delete(record)
-            database.tombstoneDao().insert(Tombstone(record.id, System.currentTimeMillis()))
-            PhotoStore.delete(getApplication(), record.photoPath)
+            database.deleteOutfitWithTombstone(record)
+            runCatching { PhotoStore.delete(getApplication(), record.photoPath) }
             SyncManager.enqueueNow(getApplication())
         }
     }

@@ -42,12 +42,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -111,6 +113,8 @@ fun SettingsScreen(onBack: () -> Unit) {
         )
     }
     var busy by remember { mutableStateOf(false) }
+    var failureReason by remember { mutableStateOf<String?>(null) }
+    var showEndpointConfirm by remember { mutableStateOf(false) }
 
     // 立即同步：同步中不可重复触发；结束后自动落回「刚刚同步 / 同步失败」
     // （只读 SettingsStore 的现有结果，不改同步逻辑）
@@ -261,23 +265,26 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             // ---------- 操作区 ----------
-            // 测试连接 = 唯一主操作（48dp 全宽主按钮）；失败时同一入口可重试
+            // 测试连接 = 唯一主操作（48dp 全宽主按钮）；失败时同一入口可重试。
+            // 先验证、后提交：验证通过才保存配置，失败不动旧配置/账本。
             fun startTest() {
                 busy = true
+                failureReason = null
                 statusKind = SyncStatusKind.Syncing
                 scope.launch {
-                    // 端点变了就把本机增量账本整本作废，并且这一轮顺便把新云盘的三层目录
-                    // 建出来（原来「测试成功」只测根目录，新云盘没 records 时同步必 404）。
-                    val changed = SyncEngine.applyDavConfig(context, url, user, pass)
-                    val ok = SyncEngine(context).testConnection(prepareDirectories = changed)
-                    busy = false
-                    if (ok) {
-                        statusKind = SyncStatusKind.Success
-                        SyncManager.ensurePeriodic(context)
-                        SyncManager.enqueueNow(context)
-                        requestNotificationIfNeeded()
-                    } else {
-                        statusKind = SyncStatusKind.Failure
+                    when (val result = SyncEngine.verifyAndApplyDavConfig(context, url, user, pass)) {
+                        is SyncEngine.DavTestResult.Ok -> {
+                            busy = false
+                            statusKind = SyncStatusKind.Success
+                            SyncManager.ensurePeriodic(context, force = true)
+                            SyncManager.enqueueNow(context)
+                            requestNotificationIfNeeded()
+                        }
+                        is SyncEngine.DavTestResult.Failure -> {
+                            busy = false
+                            statusKind = SyncStatusKind.Failure
+                            failureReason = result.message
+                        }
                     }
                 }
             }
@@ -286,8 +293,34 @@ fun SettingsScreen(onBack: () -> Unit) {
                 text = if (busy) "正在测试连接…" else "测试并开启同步",
                 enabled = !busy && statusKind != SyncStatusKind.Syncing &&
                     user.isNotBlank() && pass.isNotBlank(),
-                onClick = { startTest() }
+                onClick = {
+                    if (SettingsStore.davConfigChanged(context, url, user, pass)) {
+                        // 换端点会重置增量账本：先让用户确认，再测试+保存
+                        showEndpointConfirm = true
+                    } else {
+                        startTest()
+                    }
+                }
             )
+
+            if (showEndpointConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showEndpointConfirm = false },
+                    title = { Text("换服务器？") },
+                    text = {
+                        Text("换服务器会让本机重新全量拉取一次，但不会删除本地数据。继续？")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showEndpointConfirm = false
+                            startTest()
+                        }) { Text("继续") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showEndpointConfirm = false }) { Text("取消") }
+                    }
+                )
+            }
 
             SettingsActionRow(
                 text = "立即同步",
@@ -313,7 +346,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         SimpleDateFormat("M月d日 HH:mm", Locale.CHINA).format(Date(lastAt))
                     }"
                 },
-                reason = if (lastFailed) {
+                reason = failureReason ?: if (lastFailed) {
                     lastResult.removePrefix("同步失败：").ifBlank { "请检查账号和应用密码" }
                 } else null,
                 onRetry = { startTest() }

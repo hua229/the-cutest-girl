@@ -37,6 +37,15 @@ import java.io.IOException
  */
 class SyncEngine(private val context: Context) {
 
+    /** 设置页「测试并开启同步」的结果：成功（含端点是否变化）或可读的失败原因 */
+    sealed class DavTestResult {
+        data class Ok(val changed: Boolean) : DavTestResult()
+        data class Failure(val message: String) : DavTestResult()
+    }
+
+    /** 目录准备失败要单独识别：只有这种情况才允许把 dirsReady 清掉重试 */
+    private class DirectorySetupException(message: String) : IOException(message)
+
     /**
      * 对方新增/改动的一条内容，用来拼通知。
      *
@@ -109,6 +118,52 @@ class SyncEngine(private val context: Context) {
             }
             return changed
         }
+
+        /**
+         * 「先验证、后提交」：候选配置先连一次（换端点时把三层目录建好并真列一次），
+         * 全部成功才保存，失败不动旧配置、不动账本。
+         *
+         * 为什么必须这样：旧入口是 applyDavConfig 先落盘，密码打错一个字符，
+         * 旧配置就被覆盖、账本也被重置，用户退回设置页后同步直接坏掉。
+         */
+        suspend fun verifyAndApplyDavConfig(
+            context: Context,
+            url: String,
+            user: String,
+            pass: String
+        ): DavTestResult = withContext(Dispatchers.IO) {
+            val changed = SettingsStore.davConfigChanged(context, url, user, pass)
+            val candidate = WebDavClient(
+                url.trim().ifBlank { SettingsStore.DEFAULT_DAV_URL },
+                user.trim(),
+                pass
+            )
+            if (!candidate.testConnection()) {
+                return@withContext DavTestResult.Failure(
+                    "连接失败：请检查账号、应用密码或网络"
+                )
+            }
+            if (changed) {
+                val dirsOk = candidate.mkcol("thecutestgirl") &&
+                    candidate.mkcol("thecutestgirl/records") &&
+                    candidate.mkcol("thecutestgirl/photos") &&
+                    candidate.listDir("thecutestgirl/records") != null &&
+                    candidate.listDir("thecutestgirl/photos") != null
+                if (!dirsOk) {
+                    return@withContext DavTestResult.Failure(
+                        "云端目录建不出来：请检查账号配额或网络"
+                    )
+                }
+            }
+            // 到这里才算验证通过：保存配置 + 换端点时重置账本
+            SettingsStore.saveDavConfig(context, url, user, pass)
+            if (changed) {
+                SyncStateStore.resetForNewEndpoint(context)
+                SettingsStore.clearFirstSyncDone(context)
+                SyncStateStore.setDirsReady(context, true)
+            }
+            DavTestResult.Ok(changed)
+        }
     }
 
     suspend fun syncOnce(): Result = syncMutex.withLock { syncOnceLocked() }
@@ -124,12 +179,18 @@ class SyncEngine(private val context: Context) {
             val firstTime = !SettingsStore.firstSyncDone(context)
 
             // 三个目录只建一次。前台轮询 20 秒一轮时，每轮 3 次 MKCOL 纯属白跑一趟网络。
-            // 任何一次同步失败都会把标记清掉，下一轮重新建一遍兜底（见 catch）。
+            // 建目录 + 真列一次才算成功；失败则保持/写回 dirsReady=false，下一轮重试。
+            // 只有目录准备失败才重置标记（见 catch），普通网络失败不重置，避免每轮多 3 次 MKCOL。
             if (!SyncStateStore.dirsReady(context)) {
-                dav.mkcol("thecutestgirl")
-                dav.mkcol("thecutestgirl/records")
-                dav.mkcol("thecutestgirl/photos")
-                SyncStateStore.setDirsReady(context, true)
+                val dirsOk = dav.mkcol("thecutestgirl") &&
+                    dav.mkcol("thecutestgirl/records") &&
+                    dav.mkcol("thecutestgirl/photos") &&
+                    dav.listDir("thecutestgirl/records") != null &&
+                    dav.listDir("thecutestgirl/photos") != null
+                SyncStateStore.setDirsReady(context, dirsOk)
+                if (!dirsOk) {
+                    throw DirectorySetupException("云端目录准备失败，请检查账号、配额或网络")
+                }
             }
 
             // ============ 0. 旧迁移 id 撞车修复 ============
@@ -268,8 +329,11 @@ class SyncEngine(private val context: Context) {
                     is SyncRecord.Event -> record.record.photoPath
                 }
                 if (photoName != null && !PhotoStore.file(context, photoName).exists()) {
-                    dav.getBytes("thecutestgirl/photos/$photoName")?.let { bytes ->
-                        FileOutputStream(PhotoStore.file(context, photoName)).use { it.write(bytes) }
+                    if (dav.downloadTo(
+                            "thecutestgirl/photos/$photoName",
+                            PhotoStore.file(context, photoName)
+                        )
+                    ) {
                         downloadedPhotos++
                     }
                 }
@@ -308,8 +372,11 @@ class SyncEngine(private val context: Context) {
             for (photoName in localPhotoRefs) {
                 if (PhotoStore.file(context, photoName).exists()) continue
                 if (photoName in remotePhotoNames) {
-                    dav.getBytes("thecutestgirl/photos/$photoName")?.let { bytes ->
-                        FileOutputStream(PhotoStore.file(context, photoName)).use { it.write(bytes) }
+                    if (dav.downloadTo(
+                            "thecutestgirl/photos/$photoName",
+                            PhotoStore.file(context, photoName)
+                        )
+                    ) {
                         downloadedPhotos++
                     }
                 }
@@ -327,7 +394,7 @@ class SyncEngine(private val context: Context) {
                 if (photoName != null && photoName !in remotePhotoNames) {
                     val local = PhotoStore.file(context, photoName)
                     if (local.exists()) {
-                        if (dav.putBytes("thecutestgirl/photos/$photoName", local.readBytes(), WebDavClient.jpegType())) {
+                        if (dav.uploadFrom("thecutestgirl/photos/$photoName", local, WebDavClient.jpegType())) {
                             uploadedPhotos++
                             // 及时补进已上传集合，同一张照片被多条记录引用时不再重复 PUT
                             remotePhotoNames += photoName
@@ -389,20 +456,17 @@ class SyncEngine(private val context: Context) {
                     val remoteSize = remotePhotosBySize[file.name]
                     val localSize = file.length()
                     if (remoteSize != null && remoteSize in 1 until (localSize * 6 / 10)) {
-                        // 云端已是压缩版，拉下来替换本地大图
-                        dav.getBytes("thecutestgirl/photos/${file.name}")?.let { bytes ->
-                            if (bytes.size < localSize) {
-                                FileOutputStream(file).use { it.write(bytes) }
-                                shrunkPhotos++
-                            }
+                        // 云端已是压缩版，流式拉下来替换本地大图（原子写入）
+                        if (dav.downloadTo("thecutestgirl/photos/${file.name}", file)) {
+                            shrunkPhotos++
                         }
                     } else {
                         // 压缩本地并覆盖云端
                         PhotoStore.compressInPlace(file)
                         if (file.length() < localSize) {
-                            if (dav.putBytes(
+                            if (dav.uploadFrom(
                                     "thecutestgirl/photos/${file.name}",
-                                    file.readBytes(),
+                                    file,
                                     WebDavClient.jpegType()
                                 )
                             ) {
@@ -441,6 +505,14 @@ class SyncEngine(private val context: Context) {
             )
         } catch (e: CancellationException) {
             throw e
+        } catch (e: DirectorySetupException) {
+            // 目录没建好：明确把标记清掉，下一轮重新 MKCOL，不要永久卡住
+            SyncStateStore.setDirsReady(context, false)
+            SettingsStore.saveSyncStatus(
+                context, System.currentTimeMillis(),
+                "同步失败：${e.message ?: "云端目录准备失败"}"
+            )
+            Result(ok = false, error = e.message ?: "云端目录准备失败")
         } catch (e: Exception) {
             SettingsStore.saveSyncStatus(
                 context, System.currentTimeMillis(),
@@ -716,8 +788,9 @@ class SyncEngine(private val context: Context) {
         dav.mkcol("thecutestgirl")
         dav.mkcol("thecutestgirl/records")
         dav.mkcol("thecutestgirl/photos")
-        // 真去列一次：能列出来才算这个新端点可以同步，别让「成功」变成空话
+        // 两个目录都真列一次：能列出来才算这个新端点可以同步
         if (dav.listDir("thecutestgirl/records") == null) return@withContext false
+        if (dav.listDir("thecutestgirl/photos") == null) return@withContext false
         SyncStateStore.setDirsReady(context, true)
         true
     }

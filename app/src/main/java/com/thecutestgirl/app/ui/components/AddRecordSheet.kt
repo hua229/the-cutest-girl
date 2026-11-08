@@ -298,12 +298,26 @@ fun SheetPhotoPicker(
     val scope = rememberCoroutineScope()
     var cameraTarget by remember { mutableStateOf<File?>(null) }
 
+    // 统一收口：抽屉里的照片都是未保存草稿，替换/超额的旧文件当场删掉，避免孤儿
+    fun deliver(names: List<String>) {
+        val remaining = (maxPhotos - photos.size).coerceAtLeast(1)
+        val accepted = if (maxPhotos == 1) names.takeLast(1) else names.take(remaining)
+        if (accepted.isEmpty()) {
+            names.forEach { PhotoStore.delete(context, it) }
+            return
+        }
+        if (maxPhotos == 1) {
+            photos.filter { it !in accepted }.forEach { PhotoStore.delete(context, it) }
+        }
+        onAdd(accepted)
+    }
+
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val file = cameraTarget
         if (ok && file != null && file.exists() && file.length() > 0) {
             scope.launch {
                 withContext(Dispatchers.IO) { PhotoStore.compressInPlace(file) }
-                onAdd(listOf(file.name))
+                deliver(listOf(file.name))
             }
         } else {
             file?.delete()
@@ -311,7 +325,7 @@ fun SheetPhotoPicker(
     }
     val pickSingle = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
-            scope.launch { PhotoStore.saveFromUri(context, uri)?.let { onAdd(listOf(it)) } }
+            scope.launch { PhotoStore.saveFromUri(context, uri)?.let { deliver(listOf(it)) } }
         }
     }
     val pickMultiple = rememberLauncherForActivityResult(
@@ -319,8 +333,10 @@ fun SheetPhotoPicker(
     ) { uris ->
         if (uris.isNotEmpty()) {
             scope.launch {
-                val saved = uris.mapNotNull { PhotoStore.saveFromUri(context, it) }
-                if (saved.isNotEmpty()) onAdd(saved.take(maxPhotos - photos.size))
+                // 先按剩余名额截断再复制，避免多余文件落盘
+                val remaining = (maxPhotos - photos.size).coerceAtLeast(1)
+                val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it) }
+                deliver(saved)
             }
         }
     }

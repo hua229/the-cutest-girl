@@ -129,7 +129,7 @@ fun MealEditScreen(
                 photoEditable = vm.amUploader
             )
 
-            if (recordId != null) {
+            if (recordId != null && vm.canDelete) {
                 OutlinedButton(
                     onClick = { showDelete = true },
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),

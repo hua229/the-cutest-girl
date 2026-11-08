@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -43,8 +44,16 @@ object SyncManager {
     private const val PERIODIC_NAME = "tcg_sync_periodic"
     private const val ONCE_NAME = "tcg_sync_now"
 
-    /** 注册/保持 15 分钟一次的后台同步（没配置账号时什么都不做） */
-    fun ensurePeriodic(context: Context) {
+    /** 3 秒内重复调用只入队一次（旋转屏幕、保存连点等） */
+    @Volatile
+    private var lastEnqueueAt = 0L
+
+    /**
+     * 注册/保持 15 分钟一次的后台同步（没配置账号时什么都不做）。
+     * 默认 KEEP：避免每次启动都 UPDATE 把下一次执行时间往后推。
+     * 用户改配置 / 换云盘后传 [force] = true 才 UPDATE。
+     */
+    fun ensurePeriodic(context: Context, force: Boolean = false) {
         if (!SettingsStore.isSyncConfigured(context)) return
         val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
             .setConstraints(
@@ -53,13 +62,19 @@ object SyncManager {
             .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
             .build()
         WorkManager.getInstance(context)
-            // UPDATE 而不是 KEEP：以后改约束/间隔时能生效，KEEP 会一直用第一次注册的那份
-            .enqueueUniquePeriodicWork(PERIODIC_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+            .enqueueUniquePeriodicWork(
+                PERIODIC_NAME,
+                if (force) ExistingPeriodicWorkPolicy.UPDATE else ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
     }
 
     /** 立即同步一次（保存记录、打开 APP、点「立即同步」时调用） */
     fun enqueueNow(context: Context) {
         if (!SettingsStore.isSyncConfigured(context)) return
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastEnqueueAt < 3_000L) return
+        lastEnqueueAt = now
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .addTag(ONCE_NAME)
             .setConstraints(
@@ -67,8 +82,9 @@ object SyncManager {
             )
             .build()
         WorkManager.getInstance(context)
-            // 新请求独立调度，不取消上传，也不排在旧任务的网络失败重试之后。
-            // 实际同步由 SyncEngine 的进程级 Mutex 串行执行。
+            // 不能 enqueueUniqueWork(KEEP)：一次失败任务进入退避后，KEEP 会挡住后续「立即同步」，
+            // 用户点同步要等退避结束才生效（回归 immediate sync bypasses retry delay 覆盖这一点）。
+            // 去重由上面的 3 秒节流 + SyncEngine 的进程级 Mutex 保证。
             .enqueue(request)
     }
 
