@@ -11,12 +11,16 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +32,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
@@ -38,6 +44,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.CheckCircleOutline
@@ -64,6 +71,8 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
@@ -73,8 +82,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,8 +97,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -107,11 +121,17 @@ import com.thecutestgirl.app.ui.theme.SuccessGreen
 import com.thecutestgirl.app.ui.theme.TextMuted
 import com.thecutestgirl.app.ui.theme.WarningAmber
 import dev.chrisbanes.haze.HazeState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -151,6 +171,97 @@ internal fun nextPhotoList(
         val merged = current + added
         merged.take(maxPhotos) to merged.drop(maxPhotos)
     }
+}
+
+/** 统一顶栏：quietTopAppBar + IconTitle；windowInsets=0（根 Scaffold 已处理状态栏）。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(
+    title: String,
+    icon: ImageVector,
+    onBack: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
+    TopAppBar(
+        modifier = Modifier.quietTopAppBar(),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent
+        ),
+        windowInsets = WindowInsets(0, 0, 0, 0),
+        title = {
+            IconTitle(
+                icon = icon,
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                iconSize = BarIconSize
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        },
+        actions = actions
+    )
+}
+
+/** 破坏性操作行：48dp、错误色文字、无系统 ripple（只在允许删除时显示）。 */
+@Composable
+fun DestructiveAction(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val color = MaterialTheme.colorScheme.error
+    val interactionSource = remember { MutableInteractionSource() }
+    val shape = RoundedCornerShape(8.dp)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(shape)
+            .border(1.dp, color.copy(alpha = 0.35f), shape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text, style = MaterialTheme.typography.labelLarge, color = color)
+    }
+}
+
+/**
+ * 「今天」：跨午夜自动刷新，回到前台也会刷新。
+ * 不要再用 `remember { LocalDate.now() }`（App 挂一夜后会停在昨天）。
+ */
+@Composable
+fun rememberToday(): LocalDate {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var today by remember { mutableStateOf(LocalDate.now()) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) today = LocalDate.now()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(today) {
+        val now = LocalDateTime.now()
+        val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay()
+        val waitMs = Duration.between(now, nextMidnight).toMillis().coerceAtLeast(1_000L)
+        delay(waitMs)
+        today = LocalDate.now()
+    }
+    return today
 }
 
 // ---------- 空状态提示 ----------
@@ -824,49 +935,141 @@ fun PhotoSyncPlaceholder(
     }
 }
 
-// ---------- 全屏看大图 ----------
+// ---------- 全屏看大图（支持左右滑 / 双指缩放 / 双击放大，单击关闭）----------
 @Composable
-fun PhotoViewerDialog(context: Context, name: String, onDismiss: () -> Unit) {
+fun PhotoViewerDialog(
+    context: Context,
+    photos: List<String>,
+    initialIndex: Int = 0,
+    onDismiss: () -> Unit
+) {
+    if (photos.isEmpty()) return
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        val safeIndex = initialIndex.coerceIn(0, photos.lastIndex)
+        val pagerState = rememberPagerState(
+            initialPage = safeIndex,
+            pageCount = { photos.size }
+        )
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.92f))
-                .clickable { onDismiss() },
-            contentAlignment = Alignment.Center
+                .background(Color.Black.copy(alpha = 0.96f))
         ) {
-            AsyncImage(
-                model = PhotoStore.file(context, name),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
+            HorizontalPager(
+                state = pagerState,
                 modifier = Modifier.fillMaxSize()
-            )
+            ) { page ->
+                ZoomablePhoto(
+                    file = PhotoStore.file(context, photos[page]),
+                    onTap = onDismiss
+                )
+            }
+            if (photos.size > 1) {
+                Text(
+                    "${pagerState.currentPage + 1} / ${photos.size}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 48.dp)
+                )
+            }
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(48.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.Close,
+                    contentDescription = "关闭",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
 
-/** 照片右上角的小圆底删除键：半透明表面 + 线性关闭图标，不抢照片的视觉重心 */
+/** 兼容单图调用 */
+@Composable
+fun PhotoViewerDialog(context: Context, name: String, onDismiss: () -> Unit) {
+    PhotoViewerDialog(context = context, photos = listOf(name), initialIndex = 0, onDismiss = onDismiss)
+}
+
+@Composable
+private fun ZoomablePhoto(file: File, onTap: () -> Unit) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(1f, 5f)
+                    offset = if (scale <= 1.01f) Offset.Zero else offset + pan
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onTap() },
+                    onDoubleTap = {
+                        if (scale > 1.01f) {
+                            scale = 1f
+                            offset = Offset.Zero
+                        } else {
+                            scale = 2.5f
+                        }
+                    }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = file,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offset.x
+                    translationY = offset.y
+                }
+        )
+    }
+}
+
+/** 照片右上角的小圆底删除键：视觉 32dp，热区 48dp（Android 最小触摸目标）。 */
 @Composable
 private fun PhotoRemoveButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         modifier = modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.88f))
-            .border(1.dp, scheme.onSurface.copy(alpha = 0.12f), CircleShape)
+            .size(48.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Close,
-            contentDescription = "移除照片",
-            tint = scheme.onSurface,
-            modifier = Modifier.size(16.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.88f))
+                .border(1.dp, scheme.onSurface.copy(alpha = 0.12f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = "移除照片",
+                tint = scheme.onSurface,
+                modifier = Modifier.size(16.dp)
+            )
+        }
     }
 }
 
@@ -998,7 +1201,13 @@ fun PhotoNoteCard(
     }
 
     if (viewerPhoto != null) {
-        PhotoViewerDialog(context, viewerPhoto!!, onDismiss = { viewerPhoto = null })
+        val index = photos.indexOf(viewerPhoto).coerceAtLeast(0)
+        PhotoViewerDialog(
+            context = context,
+            photos = photos,
+            initialIndex = index,
+            onDismiss = { viewerPhoto = null }
+        )
     }
 
     Column(

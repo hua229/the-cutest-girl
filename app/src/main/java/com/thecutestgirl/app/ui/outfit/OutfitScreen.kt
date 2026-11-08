@@ -77,6 +77,7 @@ import com.thecutestgirl.app.ui.components.FloatingTopBar
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
+import com.thecutestgirl.app.ui.components.rememberToday
 import com.thecutestgirl.app.ui.components.SheetDateRow
 import com.thecutestgirl.app.ui.components.SheetPhotoPicker
 import com.thecutestgirl.app.ui.components.SheetTextField
@@ -157,7 +158,7 @@ fun OutfitScreen(
         }
     }
 
-    val today = remember { LocalDate.now() }
+    val today = rememberToday()
 
     // 新增记录抽屉：统一 AddRecordSheet，写入复用现有 OutfitUploadViewModel
     val addVm: OutfitUploadViewModel = viewModel()
@@ -297,7 +298,7 @@ fun OutfitScreen(
                     )
                 ) {
                     Column {
-                        val isCurrentMonth = month == YearMonth.now()
+                        val isCurrentMonth = month == YearMonth.from(today)
                         DateNavRow(
                             label = "${month.year}年${month.monthValue}月",
                             subLabel = if (isCurrentMonth) null else "回到本月",

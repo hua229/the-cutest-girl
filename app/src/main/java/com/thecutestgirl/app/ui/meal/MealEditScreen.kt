@@ -39,7 +39,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thecutestgirl.app.data.MEAL_NAMES
+import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
+import com.thecutestgirl.app.ui.components.DestructiveAction
 import com.thecutestgirl.app.ui.components.quietTopAppBar
 import com.thecutestgirl.app.ui.components.PhotoNoteCard
 import java.time.LocalDate
@@ -70,36 +72,18 @@ fun MealEditScreen(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                modifier = Modifier.quietTopAppBar(),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        MealDuotoneIcon(mealType = mealType)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "记录${MEAL_NAMES[mealType]}",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { vm.save(day, mealType, onDone) },
-                        enabled = vm.canSave
-                    ) {
-                        Text("保存")
-                    }
+            AppTopBar(
+                title = "记录${MEAL_NAMES[mealType]}",
+                icon = mealIcon(mealType),
+                onBack = onDone
+            ) {
+                TextButton(
+                    onClick = { vm.save(day, mealType, onDone) },
+                    enabled = vm.canSave
+                ) {
+                    Text("保存")
                 }
-            )
+            }
         }
     ) { padding ->
         Column(
@@ -126,19 +110,16 @@ fun MealEditScreen(
                 onReplyChange = { vm.reply = it },
                 replyEditable = !vm.amUploader,
                 replyPlaceholder = "说点什么…比如：下次带我去",
-                photoEditable = vm.amUploader
+                photoEditable = vm.amUploader,
+                // 与饮食列表卡一致：3:2，避免列表/编辑页裁切跳变
+                photoRatio = 3f / 2f
             )
 
             if (recordId != null && vm.canDelete) {
-                OutlinedButton(
-                    onClick = { showDelete = true },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                ) {
-                    Text("删除这条记录", color = MaterialTheme.colorScheme.error)
-                }
+                DestructiveAction(
+                    text = "删除这条记录",
+                    onClick = { showDelete = true }
+                )
             }
 
             Spacer(Modifier.height(24.dp))

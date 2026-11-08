@@ -59,6 +59,7 @@ import com.thecutestgirl.app.data.OutfitRecord
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.ui.components.AppDatePickerDialog
+import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.BarIconSize
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
 import com.thecutestgirl.app.ui.components.IconTitle
@@ -115,34 +116,18 @@ fun OutfitUploadScreen(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                modifier = Modifier.quietTopAppBar(),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
-                title = {
-                    IconTitle(
-                        icon = Icons.Outlined.Checkroom,
-                        text = "记 ${date.toCnShort()} 的穿搭",
-                        style = MaterialTheme.typography.titleMedium,
-                        iconSize = BarIconSize
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { vm.save(onDone) },
-                        enabled = vm.canSave
-                    ) {
-                        Text("保存")
-                    }
+            AppTopBar(
+                title = "记 ${date.toCnShort()} 的穿搭",
+                icon = Icons.Outlined.Checkroom,
+                onBack = onDone
+            ) {
+                TextButton(
+                    onClick = { vm.save(onDone) },
+                    enabled = vm.canSave
+                ) {
+                    Text("保存")
                 }
-            )
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {

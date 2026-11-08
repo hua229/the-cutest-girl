@@ -53,8 +53,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thecutestgirl.app.data.EVENT_TYPE_ANNIVERSARY
 import com.thecutestgirl.app.data.EVENT_TYPE_MOMENT
 import com.thecutestgirl.app.ui.components.AppDatePickerDialog
+import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.BarIconSize
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
+import com.thecutestgirl.app.ui.components.DestructiveAction
 import com.thecutestgirl.app.ui.components.IconTitle
 import com.thecutestgirl.app.ui.components.quietTopAppBar
 import com.thecutestgirl.app.ui.components.PhotoNoteCard
@@ -94,34 +96,18 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                modifier = Modifier.quietTopAppBar(),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
-                title = {
-                    IconTitle(
-                        icon = Icons.Outlined.FavoriteBorder,
-                        text = if (id == null) "记一条点滴" else "编辑点滴",
-                        style = MaterialTheme.typography.titleMedium,
-                        iconSize = BarIconSize
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { vm.save(onDone) },
-                        enabled = vm.canSave
-                    ) {
-                        Text("保存")
-                    }
+            AppTopBar(
+                title = if (id == null) "记一条点滴" else "编辑点滴",
+                icon = Icons.Outlined.FavoriteBorder,
+                onBack = onDone
+            ) {
+                TextButton(
+                    onClick = { vm.save(onDone) },
+                    enabled = vm.canSave
+                ) {
+                    Text("保存")
                 }
-            )
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -176,7 +162,9 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                         onReplyChange = { vm.reply = it },
                         replyEditable = !vm.amUploader,
                         replyPlaceholder = "说点什么…比如：这张拍得真好",
-                        photoEditable = vm.amUploader
+                        photoEditable = vm.amUploader,
+                        // 与点滴列表卡一致：3:2
+                        photoRatio = 3f / 2f
                     )
                 } else {
                     // 纪念日没有照片；备注归上传人，评论归对方
@@ -233,15 +221,10 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                 }
 
                 if (id != null && vm.canDelete) {
-                    OutlinedButton(
-                        onClick = { showDelete = true },
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                    ) {
-                        Text("删除这条点滴", color = MaterialTheme.colorScheme.error)
-                    }
+                    DestructiveAction(
+                        text = "删除这条点滴",
+                        onClick = { showDelete = true }
+                    )
                 }
 
                 Spacer(Modifier.height(24.dp))

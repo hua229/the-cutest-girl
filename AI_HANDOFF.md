@@ -3,7 +3,26 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）** 与 **Batch 2（高优先 P1-UI）**，见下两节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2（高优先 P1-UI）** 与 **Batch 2b（剩余 P1-UI 6 项）**，见下三节。
+
+## Batch 2b（剩余 P1-UI 6 项，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P1-UI-6 | 新增 `AppTopBar`（quietTopAppBar + IconTitle + windowInsets=0，避免双倍状态栏留白）与 `DestructiveAction`（48dp、错误色、无 ripple）；OutfitEdit / MealEdit / EventEdit / OutfitUpload / Settings 全部换用；设置页「后台不被冻结」不再卡中卡（`SettingsActionRow(container=false)`） |
+| P1-UI-7 | 饮食/点滴编辑页 `PhotoNoteCard` 传 `photoRatio = 3f/2f`，与列表卡一致；穿搭编辑/上传保持 4:5 |
+| P1-UI-8 | 三个 tab 的 `FloatingTopBar` 都显示设置齿轮（长按标题快捷方式保留）；实测饮食/点滴都能一键进设置 |
+| P1-UI-12 | 新增 `rememberToday()`：ON_RESUME 刷新 + 到下一个午夜自动刷新；穿搭/饮食/点滴/纪念日卡全部替换 `remember { LocalDate.now() }` |
+| P1-UI-13 | `PhotoRemoveButton` 视觉 32dp、热区 48dp；上传页删除键此前已 48dp |
+| P1-UI-14 | `PhotoViewerDialog` 支持 `photos + initialIndex`：HorizontalPager 左右滑、双指缩放（1–5x）、双击放大/还原、单击关闭、右上角关闭按钮；编辑页多图共用同一 viewer |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**；JVM 单测 4/4
+- 装机验证：
+  - 饮食/点滴页都有设置齿轮，点击进入设置页
+  - 设置页顶栏标题 y≈180（单层状态栏留白，不再双倍）
+  - 饮食编辑页顶栏/保存/删除行显示正常；大图打开后「关闭」按钮可点
+- 未验证：跨午夜自动刷新（未改系统时间实测）；大图双指/双击手势、左右滑（只验证了打开/关闭）；9 张照片横向滚动
 
 ## Batch 2（P1-UI 高优先 6 项，v4.1.0 未升版本）
 

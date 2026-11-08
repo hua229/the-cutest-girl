@@ -79,6 +79,7 @@ import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
 import com.thecutestgirl.app.ui.components.PartnerMark
+import com.thecutestgirl.app.ui.components.rememberToday
 import com.thecutestgirl.app.ui.components.UiSpringDamping
 import com.thecutestgirl.app.ui.components.UiSpringStiffness
 import com.thecutestgirl.app.ui.components.solidCard
@@ -162,6 +163,7 @@ fun MealScreen(
     }
     val date by vm.date.collectAsStateWithLifecycle()
     val meals by vm.meals.collectAsStateWithLifecycle()
+    val today = rememberToday()
     val context = LocalContext.current
     val myDeviceId = SettingsStore.deviceId(context)
     // 上次同步失败时，照片占位显示「同步不了」而不是「还在路上」
@@ -249,7 +251,7 @@ fun MealScreen(
         // ---------- 悬浮顶栏：滚动后收起日期行与副标题 ----------
         FloatingTopBar(
             collapsed = scrolled,
-            onOpenSettings = null,
+            onOpenSettings = onOpenSettings,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onSizeChanged { headerHeightPx = it.height }
@@ -273,7 +275,7 @@ fun MealScreen(
                     shrinkTowards = Alignment.Top
                 )
             ) {
-                val isToday = date == LocalDate.now()
+                val isToday = date == today
                 DateNavRow(
                     label = "${date.toCnShort()} ${date.toWeekday()}",
                     // 今天时是静态胶囊徽标；不是今天时变成可点的「回到今天」胶囊按钮

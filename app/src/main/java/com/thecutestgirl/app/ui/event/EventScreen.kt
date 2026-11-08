@@ -75,6 +75,7 @@ import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
 import com.thecutestgirl.app.ui.components.PartnerMark
+import com.thecutestgirl.app.ui.components.rememberToday
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.toCnFull
@@ -269,8 +270,8 @@ fun EventScreen(
             // ---------- 悬浮顶栏（事件是时间线，只有标题行） ----------
             FloatingTopBar(
                 collapsed = scrolled,
-                // 设置齿轮只在穿搭页保留；其余两页走「长按标题」的隐藏入口
-                onOpenSettings = null,
+                // 三页都可以一键进设置；长按标题仍保留为快捷方式
+                onOpenSettings = onOpenSettings,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { headerHeightPx = it.height }
@@ -408,7 +409,7 @@ private fun SectionLabel(text: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AnniversaryCard(record: EventRecord, onClick: () -> Unit) {
-    val today = remember { LocalDate.now() }
+    val today = rememberToday()
     val start = remember(record.date) { parseRecordDate(record.date) ?: today }
     val isFuture = start.isAfter(today)
     val days = remember(record.date) {

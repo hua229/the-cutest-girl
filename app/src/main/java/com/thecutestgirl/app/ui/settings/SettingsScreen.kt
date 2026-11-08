@@ -77,6 +77,7 @@ import androidx.core.content.ContextCompat
 import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.sync.SyncEngine
 import com.thecutestgirl.app.sync.SyncManager
+import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.BarIconSize
 import com.thecutestgirl.app.ui.components.IconTitle
 import com.thecutestgirl.app.ui.components.PrimaryButton
@@ -183,25 +184,10 @@ fun SettingsScreen(onBack: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                modifier = Modifier.quietTopAppBar(),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
-                title = {
-                    IconTitle(
-                        icon = Icons.Outlined.Settings,
-                        text = "设置",
-                        style = MaterialTheme.typography.titleMedium,
-                        iconSize = BarIconSize
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                }
+            AppTopBar(
+                title = "设置",
+                icon = Icons.Outlined.Settings,
+                onBack = onBack
             )
         }
     ) { padding ->
@@ -371,6 +357,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     text = if (isIgnoringBatteryOptimizations) "已加入白名单" else "去设置",
                     icon = true,
                     enabled = !isIgnoringBatteryOptimizations,
+                    container = false,
                     onClick = { context.openBatteryOptimizationSettings() }
                 )
             }
@@ -488,6 +475,7 @@ private fun SettingsActionRow(
     text: String,
     icon: Boolean,
     enabled: Boolean,
+    container: Boolean = true,
     onClick: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -498,7 +486,7 @@ private fun SettingsActionRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .solidCard(cornerRadius = 16.dp)
+            .then(if (container) Modifier.solidCard(cornerRadius = 16.dp) else Modifier)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,

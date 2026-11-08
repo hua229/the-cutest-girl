@@ -46,8 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thecutestgirl.app.ui.components.AppDatePickerDialog
+import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.BarIconSize
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
+import com.thecutestgirl.app.ui.components.DestructiveAction
 import com.thecutestgirl.app.ui.components.IconTitle
 import com.thecutestgirl.app.ui.components.quietTopAppBar
 import com.thecutestgirl.app.ui.components.PhotoNoteCard
@@ -82,34 +84,18 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                modifier = Modifier.quietTopAppBar(),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
-                title = {
-                    IconTitle(
-                        icon = Icons.Outlined.Checkroom,
-                        text = "编辑穿搭",
-                        style = MaterialTheme.typography.titleMedium,
-                        iconSize = BarIconSize
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { vm.save(onDone) },
-                        enabled = vm.canSave
-                    ) {
-                        Text("保存")
-                    }
+            AppTopBar(
+                title = "编辑穿搭",
+                icon = Icons.Outlined.Checkroom,
+                onBack = onDone
+            ) {
+                TextButton(
+                    onClick = { vm.save(onDone) },
+                    enabled = vm.canSave
+                ) {
+                    Text("保存")
                 }
-            )
+            }
         }
     ) { padding ->
         Column(
@@ -171,15 +157,10 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
             }
 
             if (id != null && vm.canDelete) {
-                OutlinedButton(
-                    onClick = { showDelete = true },
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                ) {
-                    Text("删除这条穿搭", color = MaterialTheme.colorScheme.error)
-                }
+                DestructiveAction(
+                    text = "删除这条穿搭",
+                    onClick = { showDelete = true }
+                )
             }
 
             Spacer(Modifier.height(24.dp))
