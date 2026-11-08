@@ -3,7 +3,28 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2（高优先 P1-UI）** 与 **Batch 2b（剩余 P1-UI 6 项）**，见下三节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**，见下四节。
+
+## Batch 3（P1-PERF 1–9，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P1-PERF-1 | 删除穿搭/饮食/点滴三个页面的 `pageHaze` 与 `.haze(pageHaze)`（全仓无对应 hazeChild，纯开销）；底栏仍采样 AppRoot 的 `hazeState` |
+| P1-PERF-2 | 顶栏只记录**展开态**高度，折叠动画期间不再改 LazyColumn 的 `contentPadding`；`onSizeChanged` 仅在 `!scrolled` 时更新 |
+| P1-PERF-3 | 新增 `sync/HttpClientProvider.kt`：全进程共享 OkHttpClient（连接/读/写/整体超时 20/60/60/90s）；`WebDavClient` 不再每次 new |
+| P1-PERF-4 | `PhotoStore.dir()` 缓存 application 目录（Batch 1 已顺手完成） |
+| P1-PERF-5 | `SyncStateStore.saveFileSignatures/saveConfirmedFiles` 内容相同不写盘；`SettingsStore.saveSyncStatus` 状态文案不变时 `last_sync_at` 最多每分钟写一次，成功/失败切换立即写 |
+| P1-PERF-6 | 大图瘦身/整目录扫描改为**最多 6 小时一次**（`last_maintenance_at`；首次同步/换端点会清掉该键立即跑）；照片补漏本来就只查 DB 引用的缺失文件 |
+| P1-PERF-7 | 远端合并：网络阶段只下载 + 收集，全部结束后用一个 `db.withTransaction` 批量合并（`mergeRemoteLocked`），100 条记录 1 次事务 |
+| P1-PERF-8 | 新增 `PhotoImage`：Coil 缓存 key 带 `name:lastModified`，瘦身覆盖同名文件后不会显示旧图；列表/编辑/抽屉/大图全部换用 |
+| P1-PERF-9 | 前台轮询改 30 秒；连续失败指数退避 30→60→120→240→300 秒，成功立刻恢复；认证失败停止轮询依赖 P2-3 错误模型（未做） |
+| P1-PERF-10 | 跳过：release/R8 需要用户确认，本轮不做 |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**；JVM 单测 4/4
+- 设备回归 **26/26**（`.verification/tests-v4.1.0-batch3.txt`）——批量合并/维护门控/共享客户端都在同步路径上，已覆盖
+- 装机：三页截图正常，无本应用 crash；`logcat -b crash` 无记录
+- **未验证**：真机 `gfxinfo` 帧率对比（模拟器不收集）、prefs 实际写入次数、10MB 图上传内存、6 小时维护窗口（未改时间实测）
 
 ## Batch 2b（剩余 P1-UI 6 项，v4.1.0 未升版本）
 

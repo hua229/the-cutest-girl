@@ -79,6 +79,7 @@ import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
 import com.thecutestgirl.app.ui.components.PartnerMark
+import com.thecutestgirl.app.ui.components.PhotoImage
 import com.thecutestgirl.app.ui.components.rememberToday
 import com.thecutestgirl.app.ui.components.UiSpringDamping
 import com.thecutestgirl.app.ui.components.UiSpringStiffness
@@ -199,23 +200,22 @@ fun MealScreen(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 16
         }
     }
-    val pageHaze = remember { HazeState() }
+    // 顶栏 / FAB 共用的模糊采样源已移除：底栏的采样源在 AppRoot，页面内再挂一份是纯开销
 
     // 新增记录抽屉：统一走 AddRecordSheet，写入复用现有 MealEditViewModel
     val addVm: MealEditViewModel = viewModel()
     var addMealType by remember { mutableStateOf<Int?>(null) }
 
-    // 顶栏实测高度 → 内容起点
-    var headerHeightPx by remember { mutableIntStateOf(0) }
+    // 只记录展开态高度：折叠动画期间不再改 contentPadding
+    var expandedHeaderHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    val topArea = with(density) { headerHeightPx.toDp() } + 10.dp
+    val topArea = with(density) { expandedHeaderHeightPx.toDp() } + 10.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
         // ---------- 内容区（模糊采样源，只服务底部液态玻璃导航栏）----------
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .haze(pageHaze)
         ) {
             LazyColumn(
                 state = listState,
@@ -254,7 +254,7 @@ fun MealScreen(
             onOpenSettings = onOpenSettings,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .onSizeChanged { headerHeightPx = it.height }
+                .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
         ) {
             PageHeader(
                 title = "饮食",
@@ -485,8 +485,8 @@ private fun MealContentCard(
                         .padding(bottom = 16.dp)
                 ) {
                     if (photoFile.exists()) {
-                        AsyncImage(
-                            model = photoFile,
+                        PhotoImage(
+                            file = photoFile,
                             contentDescription = "餐食照片",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier

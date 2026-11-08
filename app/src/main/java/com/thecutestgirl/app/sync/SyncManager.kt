@@ -25,6 +25,8 @@ import androidx.work.WorkerParameters
 import com.thecutestgirl.app.MainActivity
 import com.thecutestgirl.app.R
 import com.thecutestgirl.app.data.SettingsStore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 
 /**
@@ -154,16 +156,28 @@ class BootReceiver : BroadcastReceiver() {
  */
 object SyncForegroundPoller {
 
-    /** 前台轮询间隔。太密会耗电，太疏就失去意义 */
-    const val INTERVAL_MS = 20_000L
+    /** 前台轮询正常间隔：30 秒（增量同步无变化时只有 2 次 PROPFIND） */
+    const val INTERVAL_MS = 30_000L
+
+    /** 连续失败时的退避上限 */
+    private const val MAX_INTERVAL_MS = 300_000L
 
     suspend fun runForever(context: Context) {
+        var interval = INTERVAL_MS
         while (true) {
             if (SettingsStore.isSyncConfigured(context)) {
-                // 失败也不停：下一轮继续试，网络恢复了自然就通
-                runCatching { SyncRunner.runOnce(context) }
+                val ok = try {
+                    SyncRunner.runOnce(context).ok
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    false
+                }
+                // 失败退避：30s → 60s → 120s → 240s → 300s，成功立刻回到 30s。
+                // 认证类错误的「停止轮询」要等 P2-3 的错误模型，避免继续每 30 秒打服务器。
+                interval = if (ok) INTERVAL_MS else (interval * 2).coerceAtMost(MAX_INTERVAL_MS)
             }
-            kotlinx.coroutines.delay(INTERVAL_MS)
+            delay(interval)
         }
     }
 }

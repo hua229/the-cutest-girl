@@ -114,6 +114,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.ui.theme.DateNumberStyle
 import com.thecutestgirl.app.ui.theme.EmptyTitleStyle
@@ -935,6 +936,30 @@ fun PhotoSyncPlaceholder(
     }
 }
 
+/**
+ * 本地照片统一入口（P1-PERF-8）：缓存 key 带上文件修改时间。
+ * 瘦身会原地覆盖同名文件，不带 lastModified 时 Coil 会继续显示旧图。
+ */
+@Composable
+fun PhotoImage(
+    file: File,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop
+) {
+    val context = LocalContext.current
+    AsyncImage(
+        model = ImageRequest.Builder(context)
+            .data(file)
+            .memoryCacheKey("${file.name}:${file.lastModified()}")
+            .diskCacheKey("${file.name}:${file.lastModified()}")
+            .build(),
+        contentDescription = contentDescription,
+        contentScale = contentScale,
+        modifier = modifier
+    )
+}
+
 // ---------- 全屏看大图（支持左右滑 / 双指缩放 / 双击放大，单击关闭）----------
 @Composable
 fun PhotoViewerDialog(
@@ -1029,8 +1054,8 @@ private fun ZoomablePhoto(file: File, onTap: () -> Unit) {
             },
         contentAlignment = Alignment.Center
     ) {
-        AsyncImage(
-            model = file,
+        PhotoImage(
+            file = file,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier
@@ -1280,8 +1305,8 @@ fun PhotoNoteCard(
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { viewerPhoto = photos.first() }
                 ) {
-                    AsyncImage(
-                        model = PhotoStore.file(context, photos.first()),
+                    PhotoImage(
+                        file = PhotoStore.file(context, photos.first()),
                         contentDescription = "照片",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -1313,8 +1338,8 @@ fun PhotoNoteCard(
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable { viewerPhoto = name }
                                 ) {
-                                    AsyncImage(
-                                        model = PhotoStore.file(context, name),
+                                    PhotoImage(
+                                        file = PhotoStore.file(context, name),
                                         contentDescription = "照片",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()

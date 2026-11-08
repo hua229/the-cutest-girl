@@ -100,7 +100,12 @@ object SettingsStore {
         prefs(context).getString("last_sync_result", "") ?: ""
 
     fun saveSyncStatus(context: Context, at: Long, result: String) {
-        prefs(context).edit()
+        val prefs = prefs(context)
+        val oldResult = prefs.getString("last_sync_result", "") ?: ""
+        val oldAt = prefs.getLong("last_sync_at", 0L)
+        // 状态文案没变时，last_sync_at 最多每分钟写一次；成功/失败切换立即写
+        if (result == oldResult && at - oldAt in 0 until 60_000L) return
+        prefs.edit()
             .putLong("last_sync_at", at)
             .putString("last_sync_result", result)
             .apply()

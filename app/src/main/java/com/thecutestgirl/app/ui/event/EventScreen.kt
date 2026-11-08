@@ -75,6 +75,7 @@ import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
 import com.thecutestgirl.app.ui.components.PartnerMark
+import com.thecutestgirl.app.ui.components.PhotoImage
 import com.thecutestgirl.app.ui.components.rememberToday
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
@@ -148,8 +149,7 @@ fun EventScreen(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 16
         }
     }
-    // 顶栏 / FAB 共用的模糊采样源
-    val pageHaze = remember { HazeState() }
+    // 顶栏 / FAB 共用的模糊采样源已移除：底栏的采样源在 AppRoot，页面内再挂一份是纯开销
 
     // 新增记录抽屉：统一 AddRecordSheet，写入复用现有 EventEditViewModel
     val addVm: EventEditViewModel = viewModel()
@@ -164,10 +164,10 @@ fun EventScreen(
         )
     }
 
-    // 顶栏实测高度 → 内容起点
-    var headerHeightPx by remember { mutableIntStateOf(0) }
+    // 只记录展开态高度：折叠动画期间不再改 contentPadding
+    var expandedHeaderHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    val topArea = with(density) { headerHeightPx.toDp() } + 10.dp
+    val topArea = with(density) { expandedHeaderHeightPx.toDp() } + 10.dp
 
     // 通知落点：滚动到对应点滴；找不到就退回该日期附近。消费一次后清空。
     var consumedTargetKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -210,7 +210,6 @@ fun EventScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .haze(pageHaze)
             ) {
                 LazyColumn(
                     state = listState,
@@ -274,7 +273,7 @@ fun EventScreen(
                 onOpenSettings = onOpenSettings,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .onSizeChanged { headerHeightPx = it.height }
+                    .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
             ) {
                 PageHeader(
                     title = "点滴",
@@ -537,8 +536,8 @@ private fun MomentCard(
                         .padding(top = 8.dp, bottom = 16.dp)
                 ) {
                     if (photoFile.exists()) {
-                        AsyncImage(
-                            model = photoFile,
+                        PhotoImage(
+                            file = photoFile,
                             contentDescription = "点滴照片",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier

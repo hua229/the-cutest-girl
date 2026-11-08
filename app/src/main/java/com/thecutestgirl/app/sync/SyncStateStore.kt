@@ -30,6 +30,7 @@ object SyncStateStore {
     private const val KEY_FILE_CONFIRMED = "file_confirmed"
     private const val KEY_NOTIFIED = "notified_ids"
     private const val KEY_DIRS_READY = "dirs_ready"
+    private const val KEY_LAST_MAINTENANCE = "last_maintenance_at"
 
     /** 记住多少条已提醒记录，够去重就行，别把 prefs 撑大 */
     private const val NOTIFIED_KEEP = 400
@@ -61,7 +62,10 @@ object SyncStateStore {
     fun saveFileSignatures(context: Context, map: Map<String, String>) {
         val json = JSONObject()
         map.forEach { (name, sig) -> if (sig.isNotBlank()) json.put(name, sig) }
-        prefs(context).edit().putString(KEY_FILE_SIG, json.toString()).apply()
+        val text = json.toString()
+        // 内容没变就不写盘：前台轮询每轮都调这里，避免无意义的 apply()
+        if (prefs(context).getString(KEY_FILE_SIG, null) == text) return
+        prefs(context).edit().putString(KEY_FILE_SIG, text).apply()
     }
 
     /** 拼指纹：时间与长度任一变化都算「变了」 */
@@ -79,7 +83,19 @@ object SyncStateStore {
     }
 
     fun saveConfirmedFiles(context: Context, names: Set<String>) {
-        prefs(context).edit().putString(KEY_FILE_CONFIRMED, names.joinToString(SEP)).apply()
+        val text = names.joinToString(SEP)
+        if (prefs(context).getString(KEY_FILE_CONFIRMED, null) == text) return
+        prefs(context).edit().putString(KEY_FILE_CONFIRMED, text).apply()
+    }
+
+    // ---------------- 维护轮（瘦身 / 大图扫描） ----------------
+
+    /** 上次做照片瘦身的时间（毫秒）。0 = 从没做过 */
+    fun lastMaintenanceAt(context: Context): Long =
+        prefs(context).getLong(KEY_LAST_MAINTENANCE, 0L)
+
+    fun setLastMaintenanceAt(context: Context, at: Long) {
+        prefs(context).edit().putLong(KEY_LAST_MAINTENANCE, at).apply()
     }
 
     // ---------------- 已提醒过的记录 ----------------
@@ -138,6 +154,7 @@ object SyncStateStore {
             .remove(KEY_FILE_CONFIRMED)
             .remove(KEY_NOTIFIED)
             .remove(KEY_DIRS_READY)
+            .remove(KEY_LAST_MAINTENANCE)
             .commit()
     }
 }

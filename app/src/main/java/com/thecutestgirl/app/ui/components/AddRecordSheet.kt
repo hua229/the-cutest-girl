@@ -388,8 +388,8 @@ fun SheetPhotoPicker(
                             .size(72.dp)
                             .clip(RoundedCornerShape(8.dp))
                     ) {
-                        AsyncImage(
-                            model = PhotoStore.file(context, name),
+                        PhotoImage(
+                            file = PhotoStore.file(context, name),
                             contentDescription = "照片",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

@@ -76,6 +76,7 @@ import com.thecutestgirl.app.ui.components.FabNavSpacing
 import com.thecutestgirl.app.ui.components.FloatingTopBar
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
+import com.thecutestgirl.app.ui.components.PhotoImage
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.rememberToday
 import com.thecutestgirl.app.ui.components.SheetDateRow
@@ -205,13 +206,12 @@ fun OutfitScreen(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 16
         }
     }
-    // 顶栏 / FAB 共用的模糊采样源：本页内容，两处玻璃都悬浮在它之上
-    val pageHaze = remember { HazeState() }
+    // 顶栏 / FAB 共用的模糊采样源已移除：底栏的采样源在 AppRoot，页面内再挂一份是纯开销
 
-    // 顶栏实测高度（px）→ 内容区顶部留白；折叠动画期间高度连续变化，留白跟着走
-    var headerHeightPx by remember { mutableIntStateOf(0) }
+    // 只记录展开态高度：折叠动画期间不再改 contentPadding，避免整表每帧重排
+    var expandedHeaderHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    val topArea = with(density) { headerHeightPx.toDp() } + 10.dp
+    val topArea = with(density) { expandedHeaderHeightPx.toDp() } + 10.dp
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -226,7 +226,6 @@ fun OutfitScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .haze(pageHaze)
             ) {
                 if (dayGroups.isEmpty()) {
                     EmptyHint(
@@ -275,7 +274,7 @@ fun OutfitScreen(
                 onOpenSettings = onOpenSettings,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .onSizeChanged { headerHeightPx = it.height }
+                    .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
             ) {
                 PageHeader(
                     title = "穿搭",
@@ -487,8 +486,8 @@ private fun OutfitThumb(
     ) {
         val photoFile = PhotoStore.file(context, record.photoPath)
         if (photoFile.exists()) {
-            AsyncImage(
-                model = photoFile,
+            PhotoImage(
+                file = photoFile,
                 contentDescription = "穿搭照片",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()

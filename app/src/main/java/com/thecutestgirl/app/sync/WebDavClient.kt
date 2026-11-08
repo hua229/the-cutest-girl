@@ -16,7 +16,6 @@ import java.net.URLDecoder
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 /** WebDAV 目录里的一项：文件名 / 服务器上的修改时间（毫秒）/ 大小 */
 data class DavEntry(val name: String, val lastModified: Long, val size: Long)
@@ -29,11 +28,8 @@ class WebDavClient(baseUrl: String, user: String, pass: String) {
 
     private val root = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
     private val auth = Credentials.basic(user, pass)
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(180, TimeUnit.SECONDS)
-        .writeTimeout(180, TimeUnit.SECONDS)
-        .build()
+    // 全进程共享连接池/线程池，见 HttpClientProvider
+    private val client = HttpClientProvider.client
 
     private fun url(path: String) = root + path.removePrefix("/")
 

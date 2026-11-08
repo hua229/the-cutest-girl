@@ -93,6 +93,10 @@ class SyncEngine(private val context: Context) {
     companion object {
         /** 超过 1MB 的视为未压缩的历史大图（正常压缩后都在 500KB 内） */
         private const val SHRINK_THRESHOLD = 1_048_576L
+
+        /** 大图瘦身 / 照片目录扫描的最低间隔：6 小时 */
+        private const val MAINTENANCE_INTERVAL_MS = 6 * 60 * 60 * 1000L
+
         private val syncMutex = Mutex()
 
         /**
@@ -266,6 +270,9 @@ class SyncEngine(private val context: Context) {
             var uploadedPhotos = 0
             var downloadedPhotos = 0
             val partnerNew = mutableListOf<PartnerItem>()
+            // P1-PERF-7：先收集远端记录，网络循环结束后在一个事务里批量合并
+            val pendingMerges = mutableListOf<SyncRecord>()
+            val partnerCandidates = mutableListOf<PartnerItem>()
             // 单条上传失败的原因（不中断本轮，只在状态里如实报告）
             val uploadErrors = mutableListOf<String>()
             // 云端读不动、被跳过的坏记录数
@@ -319,8 +326,8 @@ class SyncEngine(private val context: Context) {
                     skipped++
                     continue
                 }
-                if (!mergeRemote(record)) continue
-                downloaded++
+                // 网络阶段只下载、不写库；合并放到循环后的单事务里
+                pendingMerges += record
 
                 // 记录带的照片本地没有 → 下载
                 val photoName = when (record) {
@@ -339,7 +346,7 @@ class SyncEngine(private val context: Context) {
                 }
 
                 if (!firstTime && record.origin.isNotBlank() && record.origin != myDevice) {
-                    partnerNew += PartnerItem(
+                    partnerCandidates += PartnerItem(
                         typeLabel = record.typeLabel,
                         fromName = record.originName,
                         recordId = record.id,
@@ -349,6 +356,17 @@ class SyncEngine(private val context: Context) {
                     )
                 }
             }
+
+            // 网络请求全部结束后，一个事务写库：100 条记录只产生 1 次事务/fsync。
+            // 事务内重新读本地版本（mergeXxx 内部就是这么做的），不会覆盖下载期间刚保存的内容。
+            val mergedIds = mutableSetOf<String>()
+            db.withTransaction {
+                for (record in pendingMerges) {
+                    if (mergeRemoteLocked(record)) mergedIds += record.id
+                }
+            }
+            downloaded += mergedIds.size
+            partnerNew += partnerCandidates.filter { it.recordId in mergedIds }
 
             // ============ 1.5 昵称传播 ============
             // 先合并对方的备注，再刷新创建者昵称，避免改名抬高旧内容版本、吞掉对方的备注。
@@ -448,33 +466,41 @@ class SyncEngine(private val context: Context) {
             // 旧版本(v1)上传的未压缩照片有几 MB，这里自动压缩：
             // - 本地大、云端没有或云端也大 → 本地压缩 + 覆盖上传云端
             // - 本地大、云端明显更小（对方已压过）→ 下载压缩版覆盖本地
-            // 已压过的都小于阈值，之后每次同步直接跳过，幂等。
+            // 每轮扫描整个照片目录代价太高（前台 30 秒一轮），改为最多每 6 小时一次；
+            // 首次同步 / 换端点后（last_maintenance_at 被清掉）立即跑一次。
             var shrunkPhotos = 0
-            PhotoStore.dir(context)
-                .listFiles { f -> f.isFile && f.length() > SHRINK_THRESHOLD }
-                ?.forEach { file ->
-                    val remoteSize = remotePhotosBySize[file.name]
-                    val localSize = file.length()
-                    if (remoteSize != null && remoteSize in 1 until (localSize * 6 / 10)) {
-                        // 云端已是压缩版，流式拉下来替换本地大图（原子写入）
-                        if (dav.downloadTo("thecutestgirl/photos/${file.name}", file)) {
-                            shrunkPhotos++
-                        }
-                    } else {
-                        // 压缩本地并覆盖云端
-                        PhotoStore.compressInPlace(file)
-                        if (file.length() < localSize) {
-                            if (dav.uploadFrom(
-                                    "thecutestgirl/photos/${file.name}",
-                                    file,
-                                    WebDavClient.jpegType()
-                                )
-                            ) {
+            val nowForMaintenance = System.currentTimeMillis()
+            val lastMaintenance = SyncStateStore.lastMaintenanceAt(context)
+            val maintenanceDue = lastMaintenance == 0L ||
+                nowForMaintenance - lastMaintenance >= MAINTENANCE_INTERVAL_MS
+            if (maintenanceDue) {
+                PhotoStore.dir(context)
+                    .listFiles { f -> f.isFile && f.length() > SHRINK_THRESHOLD }
+                    ?.forEach { file ->
+                        val remoteSize = remotePhotosBySize[file.name]
+                        val localSize = file.length()
+                        if (remoteSize != null && remoteSize in 1 until (localSize * 6 / 10)) {
+                            // 云端已是压缩版，流式拉下来替换本地大图（原子写入）
+                            if (dav.downloadTo("thecutestgirl/photos/${file.name}", file)) {
                                 shrunkPhotos++
+                            }
+                        } else {
+                            // 压缩本地并覆盖云端
+                            PhotoStore.compressInPlace(file)
+                            if (file.length() < localSize) {
+                                if (dav.uploadFrom(
+                                        "thecutestgirl/photos/${file.name}",
+                                        file,
+                                        WebDavClient.jpegType()
+                                    )
+                                ) {
+                                    shrunkPhotos++
+                                }
                             }
                         }
                     }
-                }
+                SyncStateStore.setLastMaintenanceAt(context, nowForMaintenance)
+            }
 
             SettingsStore.setPropagatedName(context, currentName)
             if (firstTime) SettingsStore.setFirstSyncDone(context)
@@ -523,17 +549,12 @@ class SyncEngine(private val context: Context) {
     }
 
     /**
-     * 网络请求后在事务内重读本地版本，避免覆盖下载期间刚保存的内容或复活刚删的记录。
-     *
-     * v3 起是**字段级**合并：上传人的 note 和对方的 reply 由不同的人写，
-     * 各自带一个时间戳。谁的字段更新就用谁的，两边各写各的不会互相吞掉。
-     * 其余字段（照片 / 日期 / 标题 / 昵称…）仍按记录级 updatedAt 裁决。
-     *
-     * @return 是否真的改了本地数据（调用方据此计数）
+     * 合并一条远端记录（调用方负责包事务；P1-PERF-7 批量合并）。
+     * 网络请求必须已经在事务外完成。
      */
-    private suspend fun mergeRemote(record: SyncRecord): Boolean = db.withTransaction {
-        if (tombstoneDao.getAll().any { it.id == record.id }) return@withTransaction false
-        when (record) {
+    private suspend fun mergeRemoteLocked(record: SyncRecord): Boolean {
+        if (tombstoneDao.getAll().any { it.id == record.id }) return false
+        return when (record) {
             is SyncRecord.Outfit -> mergeOutfit(record.record)
             is SyncRecord.Meal -> mergeMeal(record.record)
             is SyncRecord.Event -> mergeEvent(record.record)
