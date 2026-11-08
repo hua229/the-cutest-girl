@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,10 +34,10 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Save
@@ -106,9 +107,20 @@ private fun relativeSyncTime(at: Long): String {
 /** 设置页：昵称 + 坚果云同步配置 + 立即同步 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    initialSection: SettingsSection? = null
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
+    // 从侧边菜单点进来时，直接滚到对应分组。
+    // 每个分组恰好是 LazyColumn 的一个 item，顺序与 SettingsSection 枚举一致。
+    LaunchedEffect(initialSection) {
+        val target = initialSection ?: return@LaunchedEffect
+        listState.scrollToItem(SettingsSection.values().indexOf(target).coerceAtLeast(0))
+    }
 
     var myName by remember { mutableStateOf(SettingsStore.myName(context)) }
     var url by remember { mutableStateOf(SettingsStore.webdavUrl(context)) }
@@ -204,204 +216,217 @@ fun SettingsScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .imePadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
+                .navigationBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 8.dp,
+                bottom = 24.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
-
             // ---------- 我的信息 ----------
             // v2.5.2：丢掉 OutlinedTextField 的默认方框（与全站玻璃胶囊语言冲突），
             // 改成「实体卡片 + 发丝线分隔 + 无框输入」，标签 12sp 弱化、值 15sp 突出。
-            SettingsSection(title = "我的信息") {
-                SettingsField(
-                    label = "我的昵称",
-                    value = myName,
-                    onValueChange = {
-                        myName = it
-                        SettingsStore.saveMyName(context, it)
-                    },
-                    supporting = "昵称会自动同步到对方看到的历史记录和新内容通知"
-                )
+            item(key = "profile") {
+                SettingsGroup(title = "我的信息") {
+                    SettingsField(
+                        label = "我的昵称",
+                        value = myName,
+                        onValueChange = {
+                            myName = it
+                            SettingsStore.saveMyName(context, it)
+                        },
+                        supporting = "昵称会自动同步到对方看到的历史记录和新内容通知"
+                    )
+                }
             }
 
             // ---------- 云同步 ----------
-            SettingsSection(
-                title = "云同步",
-                description = "两台手机都填同一个坚果云账号并开启同步，" +
-                    "你添加的穿搭 / 三餐 / 点滴会自动出现在对方手机上，对方会收到提醒。"
-            ) {
-                SettingsField(
-                    label = "服务器地址",
-                    value = url,
-                    onValueChange = { url = it },
-                    supporting = "坚果云用户不用改",
-                    keyboardType = KeyboardType.Uri
-                )
-                SettingsDivider()
-                SettingsField(
-                    label = "账号",
-                    value = user,
-                    onValueChange = { user = it },
-                    placeholder = "注册邮箱或手机号",
-                    keyboardType = KeyboardType.Email
-                )
-                SettingsDivider()
-                SettingsField(
-                    label = "应用密码",
-                    value = pass,
-                    onValueChange = { pass = it },
-                    placeholder = "在坚果云生成的 16 位密码",
-                    supporting = "获取方法：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码",
-                    visualTransformation = if (showPass) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    trailing = {
-                        IconButton(
-                            onClick = { showPass = !showPass },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (showPass) {
-                                    Icons.Outlined.VisibilityOff
-                                } else {
-                                    Icons.Outlined.Visibility
-                                },
-                                contentDescription = if (showPass) "隐藏密码" else "显示密码",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
+            item(key = "sync") {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SettingsGroup(
+                        title = "云同步",
+                        description = "两台手机都填同一个坚果云账号并开启同步，" +
+                            "你添加的穿搭 / 三餐 / 点滴会自动出现在对方手机上，对方会收到提醒。"
+                    ) {
+                        SettingsField(
+                            label = "服务器地址",
+                            value = url,
+                            onValueChange = { url = it },
+                            supporting = "坚果云用户不用改",
+                            keyboardType = KeyboardType.Uri
+                        )
+                        SettingsDivider()
+                        SettingsField(
+                            label = "账号",
+                            value = user,
+                            onValueChange = { user = it },
+                            placeholder = "注册邮箱或手机号",
+                            keyboardType = KeyboardType.Email
+                        )
+                        SettingsDivider()
+                        SettingsField(
+                            label = "应用密码",
+                            value = pass,
+                            onValueChange = { pass = it },
+                            placeholder = "在坚果云生成的 16 位密码",
+                            supporting = "获取方法：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码",
+                            visualTransformation = if (showPass) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                            trailing = {
+                                IconButton(
+                                    onClick = { showPass = !showPass },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (showPass) {
+                                            Icons.Outlined.VisibilityOff
+                                        } else {
+                                            Icons.Outlined.Visibility
+                                        },
+                                        contentDescription = if (showPass) "隐藏密码" else "显示密码",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        )
+                    }
+
+                    // ---------- 操作区 ----------
+                    // 测试连接 = 唯一主操作（48dp 全宽主按钮）；失败时同一入口可重试。
+                    // 先验证、后提交：验证通过才保存配置，失败不动旧配置/账本。
+                    fun startTest() {
+                        busy = true
+                        SyncStatusStore.markRunning()
+                        scope.launch {
+                            when (val result = SyncEngine.verifyAndApplyDavConfig(context, url, user, pass)) {
+                                is SyncEngine.DavTestResult.Ok -> {
+                                    busy = false
+                                    SyncStatusStore.markSuccess("同步已开启")
+                                    SyncManager.ensurePeriodic(context, force = true)
+                                    SyncManager.enqueueNow(context)
+                                    requestNotificationIfNeeded()
+                                }
+                                is SyncEngine.DavTestResult.Failure -> {
+                                    busy = false
+                                    SyncStatusStore.markFailure(result.message, retryable = false)
+                                }
+                            }
                         }
                     }
-                )
-            }
 
-            // ---------- 操作区 ----------
-            // 测试连接 = 唯一主操作（48dp 全宽主按钮）；失败时同一入口可重试。
-            // 先验证、后提交：验证通过才保存配置，失败不动旧配置/账本。
-            fun startTest() {
-                busy = true
-                SyncStatusStore.markRunning()
-                scope.launch {
-                    when (val result = SyncEngine.verifyAndApplyDavConfig(context, url, user, pass)) {
-                        is SyncEngine.DavTestResult.Ok -> {
-                            busy = false
-                            SyncStatusStore.markSuccess("同步已开启")
-                            SyncManager.ensurePeriodic(context, force = true)
+                    PrimaryButton(
+                        text = if (busy) "正在测试连接…" else "测试并开启同步",
+                        enabled = !busy && statusKind != SyncStatusKind.Syncing &&
+                            user.isNotBlank() && pass.isNotBlank(),
+                        onClick = {
+                            if (SettingsStore.davConfigChanged(context, url, user, pass)) {
+                                // 换端点会重置增量账本：先让用户确认，再测试+保存
+                                showEndpointConfirm = true
+                            } else {
+                                startTest()
+                            }
+                        }
+                    )
+
+                    if (showEndpointConfirm) {
+                        AlertDialog(
+                            onDismissRequest = { showEndpointConfirm = false },
+                            title = { Text("换服务器？") },
+                            text = {
+                                Text("换服务器会让本机重新全量拉取一次，但不会删除本地数据。继续？")
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    showEndpointConfirm = false
+                                    startTest()
+                                }) { Text("继续") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showEndpointConfirm = false }) { Text("取消") }
+                            }
+                        )
+                    }
+
+                    SettingsActionRow(
+                        text = "立即同步",
+                        icon = true,
+                        enabled = !busy && statusKind != SyncStatusKind.Syncing &&
+                            SettingsStore.isSyncConfigured(context),
+                        onClick = {
                             SyncManager.enqueueNow(context)
-                            requestNotificationIfNeeded()
+                            SyncStatusStore.markRunning()
                         }
-                        is SyncEngine.DavTestResult.Failure -> {
-                            busy = false
-                            SyncStatusStore.markFailure(result.message, retryable = false)
-                        }
-                    }
+                    )
+
+                    // 同步状态条：结构化状态 + 相对时间 + 失败原因 / 重试
+                    SyncStatusBar(
+                        kind = statusKind,
+                        subText = relativeSyncTime(syncStatus.at),
+                        reason = if (syncStatus.phase == SyncPhase.Failure) syncStatus.message else null,
+                        onRetry = { startTest() }
+                    )
+
+                    Text(
+                        "说明：APP 开着的时候每 30 秒同步一次，对方刚发的内容基本马上就能看到；" +
+                            "退到后台后系统只允许每 15 分钟同步一次（这是 Android 的硬限制，改不了）。" +
+                            "所以想及时收到对方的消息，把下面这一项开了会更稳。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            PrimaryButton(
-                text = if (busy) "正在测试连接…" else "测试并开启同步",
-                enabled = !busy && statusKind != SyncStatusKind.Syncing &&
-                    user.isNotBlank() && pass.isNotBlank(),
-                onClick = {
-                    if (SettingsStore.davConfigChanged(context, url, user, pass)) {
-                        // 换端点会重置增量账本：先让用户确认，再测试+保存
-                        showEndpointConfirm = true
-                    } else {
-                        startTest()
-                    }
+            // ---------- 数据备份 ----------
+            item(key = "backup") {
+                SettingsGroup(
+                    title = "数据备份",
+                    description = "导出数据库和全部照片（zip），不包含同步密码。导入功能后续版本提供。"
+                ) {
+                    SettingsActionRow(
+                        text = if (exporting) "正在导出…" else "导出备份",
+                        icon = true,
+                        iconVector = Icons.Outlined.Save,
+                        enabled = !exporting,
+                        container = false,
+                        onClick = {
+                            val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.CHINA)
+                                .format(Date())
+                            exportLauncher.launch("thecutestgirl-backup-$stamp.zip")
+                        }
+                    )
                 }
-            )
-
-            if (showEndpointConfirm) {
-                AlertDialog(
-                    onDismissRequest = { showEndpointConfirm = false },
-                    title = { Text("换服务器？") },
-                    text = {
-                        Text("换服务器会让本机重新全量拉取一次，但不会删除本地数据。继续？")
-                    },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            showEndpointConfirm = false
-                            startTest()
-                        }) { Text("继续") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showEndpointConfirm = false }) { Text("取消") }
-                    }
-                )
             }
 
-            SettingsActionRow(
-                text = "立即同步",
-                icon = true,
-                enabled = !busy && statusKind != SyncStatusKind.Syncing &&
-                    SettingsStore.isSyncConfigured(context),
-                onClick = {
-                    SyncManager.enqueueNow(context)
-                    SyncStatusStore.markRunning()
-                }
-            )
-
-            // 同步状态条：结构化状态 + 相对时间 + 失败原因 / 重试
-            SyncStatusBar(
-                kind = statusKind,
-                subText = relativeSyncTime(syncStatus.at),
-                reason = if (syncStatus.phase == SyncPhase.Failure) syncStatus.message else null,
-                onRetry = { startTest() }
-            )
-
-            Text(
-                "说明：APP 开着的时候每 30 秒同步一次，对方刚发的内容基本马上就能看到；" +
-                    "退到后台后系统只允许每 15 分钟同步一次（这是 Android 的硬限制，改不了）。" +
-                    "所以想及时收到对方的消息，把下面这一项开了会更稳。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // 后台保活：15 分钟是 Android 给普通应用的下限，Doze / 厂商省电还会把它拉长到几十分钟。
+            // ---------- 后台保活 ----------
+            // 15 分钟是 Android 给普通应用的下限，Doze / 厂商省电还会把它拉长到几十分钟。
             // 唯一的正规解法是让用户把 App 加进电池优化白名单，系统就不再冻结它的后台任务。
-            SettingsSection(
-                title = "数据备份",
-                description = "导出数据库和全部照片（zip），不包含同步密码。导入功能后续版本提供。"
-            ) {
-                SettingsActionRow(
-                    text = if (exporting) "正在导出…" else "导出备份",
-                    icon = true,
-                    iconVector = Icons.Outlined.Save,
-                    enabled = !exporting,
-                    container = false,
-                    onClick = {
-                        val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.CHINA)
-                            .format(Date())
-                        exportLauncher.launch("thecutestgirl-backup-$stamp.zip")
-                    }
-                )
+            item(key = "battery") {
+                SettingsGroup(
+                    title = "后台不被冻结",
+                    description = "把本 App 加进电池优化白名单。不加的话，手机放着一会儿后台同步就会被系统" +
+                        "掐掉，对方的通知可能延迟很久才到。"
+                ) {
+                    SettingsActionRow(
+                        text = if (isIgnoringBatteryOptimizations) "已加入白名单" else "去设置",
+                        icon = true,
+                        enabled = !isIgnoringBatteryOptimizations,
+                        container = false,
+                        onClick = { context.openBatteryOptimizationSettings() }
+                    )
+                }
             }
-
-            SettingsSection(
-                title = "后台不被冻结",
-                description = "把本 App 加进电池优化白名单。不加的话，手机放着一会儿后台同步就会被系统" +
-                    "掐掉，对方的通知可能延迟很久才到。"
-            ) {
-                SettingsActionRow(
-                    text = if (isIgnoringBatteryOptimizations) "已加入白名单" else "去设置",
-                    icon = true,
-                    enabled = !isIgnoringBatteryOptimizations,
-                    container = false,
-                    onClick = { context.openBatteryOptimizationSettings() }
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -414,7 +439,7 @@ fun SettingsScreen(onBack: () -> Unit) {
  * 现在按「分组 = 卡片」组织，组内用发丝线切行，视觉重量和列表页卡片一致。
  */
 @Composable
-private fun SettingsSection(
+private fun SettingsGroup(
     title: String,
     description: String? = null,
     content: @Composable ColumnScope.() -> Unit

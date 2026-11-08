@@ -142,7 +142,7 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
  */
 fun MealScreen(
     onOpenMeal: (LocalDate, Int, String?) -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenMenu: () -> Unit,
     initialDate: LocalDate? = null,
     onInitialTargetConsumed: () -> Unit = {}
 ) {
@@ -250,7 +250,7 @@ fun MealScreen(
         // ---------- 悬浮顶栏：滚动后收起日期行与副标题 ----------
         FloatingTopBar(
             collapsed = scrolled,
-            onOpenSettings = onOpenSettings,
+            onOpenMenu = onOpenMenu,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
@@ -260,11 +260,10 @@ fun MealScreen(
                 subtitle = "好好吃饭，天天开心",
                 icon = Icons.Outlined.Restaurant,
                 collapsed = scrolled,
-                // 收起态点一下回列表顶部；长按标题进设置
+                // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
                 onClick = if (scrolled) ({
                     topBarScope.launch { listState.animateScrollToItem(0) }
-                }) else null,
-                onLongPress = onOpenSettings
+                }) else null
             )
             AnimatedVisibility(
                 visible = !scrolled,

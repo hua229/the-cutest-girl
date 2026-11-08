@@ -108,7 +108,7 @@ import androidx.compose.foundation.background
 fun EventScreen(
     onAdd: () -> Unit,
     onOpen: (String) -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenMenu: () -> Unit,
     initialDate: LocalDate? = null,
     initialRecordId: String? = null,
     onInitialTargetConsumed: () -> Unit = {}
@@ -269,8 +269,7 @@ fun EventScreen(
             // ---------- 悬浮顶栏（事件是时间线，只有标题行） ----------
             FloatingTopBar(
                 collapsed = scrolled,
-                // 三页都可以一键进设置；长按标题仍保留为快捷方式
-                onOpenSettings = onOpenSettings,
+                onOpenMenu = onOpenMenu,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
@@ -280,11 +279,10 @@ fun EventScreen(
                     subtitle = "值得记住的每一件小事",
                     icon = Icons.Outlined.FavoriteBorder,
                     collapsed = scrolled,
-                    // 收起态点一下回列表顶部；长按标题进设置
+                    // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
                     onClick = if (scrolled) ({
                         topBarScope.launch { listState.animateScrollToItem(0) }
-                    }) else null,
-                    onLongPress = onOpenSettings
+                    }) else null
                 )
             }
 

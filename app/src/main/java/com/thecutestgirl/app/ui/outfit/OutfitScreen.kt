@@ -118,7 +118,7 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 fun OutfitScreen(
     onAdd: (LocalDate) -> Unit,
     onOpen: (String) -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenMenu: () -> Unit,
     initialDate: LocalDate? = null,
     onInitialTargetConsumed: () -> Unit = {}
 ) {
@@ -267,11 +267,10 @@ fun OutfitScreen(
                 }
             }
 
-            // ---------- 悬浮顶栏：内容从它下面滚过；设置是右侧独立圆钮 ----------
+            // ---------- 悬浮顶栏：内容从它下面滚过；右侧是全局设置菜单 ----------
             FloatingTopBar(
                 collapsed = scrolled,
-                // 设置齿轮只在穿搭页保留；其余两页走「长按标题」的隐藏入口
-                onOpenSettings = onOpenSettings,
+                onOpenMenu = onOpenMenu,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
@@ -281,11 +280,10 @@ fun OutfitScreen(
                     subtitle = "今天穿的也很漂亮",
                     icon = Icons.Outlined.Checkroom,
                     collapsed = scrolled,
-                    // 收起态点一下回列表顶部；长按标题进设置
+                    // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
                     onClick = if (scrolled) ({
                         topBarScope.launch { listState.animateScrollToItem(0) }
-                    }) else null,
-                    onLongPress = onOpenSettings
+                    }) else null
                 )
                 // 滚动后把「月份行 + 日期条」整块收起，只留标题行
                 AnimatedVisibility(

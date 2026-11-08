@@ -114,7 +114,9 @@ SharedPreferences 按「能不能进备份」拆文件：
 ## 4. UI 层
 
 - `AppRoot`：底部液态导航 + NavHost；持有底栏 Haze 采样源；通知落点 `pendingTarget`（route/date/recordId），页面消费后清空
-- 列表页：`FloatingTopBar`（展开高度只记录一次）+ LazyColumn + 页面专属内容
+- 全局设置抽屉：`AppRoot` 用 `ModalNavigationDrawer` 包住 Scaffold，抽屉内容为 `SettingsMenuDrawer`；`gesturesEnabled = showBottomBar`（只在三个列表页可边缘滑开）；返回键的 `BackHandler` 注册在 `drawerContent` 内、NavHost 之后，保证先关抽屉
+- 设置路由：`settings?section={section}`；`SettingsSection` 枚举（profile/sync/backup/battery）同时定义菜单项与设置页 `LazyColumn` 的 item key，进入时 `scrollToItem` 定位
+- 列表页：`FloatingTopBar(onOpenMenu=...)`（展开高度只记录一次）+ LazyColumn + 页面专属内容；设置入口只此一个，`PageHeader` 不再有长按手势
 - 新增记录：统一 `AddRecordSheet`（约 82% 屏高、表面 0.98、40% 遮罩、放弃确认）；编辑已有记录仍走全屏页
 - 对方编辑页：标题/日期只读，不显示「修改」；保存只写 `reply`
 - 表单：`SavedStateHandle` + Compose 状态双写（`ui/SavedStateValues.kt`）

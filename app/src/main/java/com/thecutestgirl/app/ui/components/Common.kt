@@ -8,9 +8,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -422,19 +420,16 @@ fun IconTitle(
  *
  * v3.0：自身不画背景（由外层 [FloatingTopBar] 的实色卡面承载），避免两层底色叠加；
  * 标题图标由 emoji 换成与底部导航同套的线性图标。
- * 设置齿轮移出标题行（由 [FloatingTopBar] 的独立圆形按钮承载，
- * 避免与日期栏的 ◀ ▶ 挤在一起误触）。
+ * v4.3：设置入口统一收进侧边菜单，标题行不再承担「长按进设置」的隐藏手势。
  */
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 fun PageHeader(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     collapsed: Boolean = false,
-    onClick: (() -> Unit)? = null,
-    onLongPress: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
@@ -446,17 +441,14 @@ fun PageHeader(
                 top = 8.dp,
                 bottom = 8.dp
             )
-            // v2.6：长按标题是设置的「隐藏入口」——饮食/事件页去掉齿轮后，
-            // 仍能就地进设置，不必切回穿搭页
-            // 点击 = 收起态胶囊回列表顶部；长按 = 进设置（饮食/事件页唯一的设置入口）。
-            // 两者必须用同一个手势识别器，拆成两个会让子节点先消费、外层收不到。
+            // v4.3：收起态点标题回列表顶部。设置入口已经统一收进侧边菜单，
+            // 这里不再用长按做隐藏入口，避免和「点一下回顶部」互相干扰。
             .then(
-                if (onClick != null || onLongPress != null) {
-                    Modifier.combinedClickable(
+                if (onClick != null) {
+                    Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { onClick?.invoke() },
-                        onLongClick = { onLongPress?.invoke() }
+                        onClick = onClick
                     )
                 } else Modifier
             ),

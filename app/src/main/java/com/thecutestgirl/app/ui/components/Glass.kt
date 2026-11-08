@@ -29,7 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -221,17 +221,20 @@ fun Modifier.quietTopAppBar(): Modifier {
 
 private val CollapsedBarWidth = 136.dp
 private val CollapsedBarCorner = 16.dp
-private val GearSlot = 64.dp
+private val MenuSlot = 64.dp
 
 /**
- * 顶部悬浮面板（v4.0）：玻璃面板 24dp 圆角 + 可选齿轮；
+ * 顶部悬浮面板（v4.0）：玻璃面板 24dp 圆角 + 可选菜单按钮；
  * 滚动后收成左上角 16dp 圆角的小胶囊。宽度动画 300ms，内容只测量一次。
+ *
+ * v4.3：右侧齿轮改为「设置菜单」按钮。三个列表页共用这一个入口，
+ * 点开全局侧边菜单，不再出现「每页一个齿轮 / 长按标题」的分裂入口。
  */
 @Composable
 fun FloatingTopBar(
     modifier: Modifier = Modifier,
     collapsed: Boolean = false,
-    onOpenSettings: (() -> Unit)? = null,
+    onOpenMenu: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     BoxWithConstraints(
@@ -239,8 +242,8 @@ fun FloatingTopBar(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        val gearSpace = if (onOpenSettings != null) GearSlot else 0.dp
-        val expandedWidth = (maxWidth - gearSpace).coerceAtLeast(CollapsedBarWidth)
+        val menuSpace = if (onOpenMenu != null) MenuSlot else 0.dp
+        val expandedWidth = (maxWidth - menuSpace).coerceAtLeast(CollapsedBarWidth)
         val barWidth by animateDpAsState(
             targetValue = if (collapsed) CollapsedBarWidth else expandedWidth,
             animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
@@ -277,16 +280,16 @@ fun FloatingTopBar(
                 }
             }
             Spacer(Modifier.weight(1f))
-            if (onOpenSettings != null) {
+            if (onOpenMenu != null) {
                 SolidCircleButton(
-                    onClick = onOpenSettings,
+                    onClick = onOpenMenu,
                     diameter = 48.dp,
-                    contentDescription = "设置",
+                    contentDescription = "打开设置菜单",
                     modifier = Modifier.padding(top = if (collapsed) 0.dp else 8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = "设置",
+                        imageVector = Icons.Outlined.Menu,
+                        contentDescription = "打开设置菜单",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
