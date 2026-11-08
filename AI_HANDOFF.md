@@ -3,7 +3,22 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**，见下四节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4 同步状态与错误模型）**，见下五节。
+
+## Batch 4（P2-2/3/4，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P2-2 | 新增 `sync/SyncStatusStore.kt`：`SyncStatus(phase/at/message/retryable)` StateFlow；`SyncRunner.runOnce` 在开始/成功/失败时更新，`SyncManager.startAfterConfigured` 用上次落盘结果 `prime()`；设置页与穿搭/饮食/点滴全部改为 `collectAsStateWithLifecycle`，不再解析 `lastSyncResult` 字符串；设置页显示「刚刚同步 / N 分钟前」；`SettingsStore.lastSyncResult` 仍照旧写入以兼容旧版本 |
+| P2-3 | 新增 `sync/DavResult.kt`：`DavError { Auth, NotFound, Quota, Parse, Network }` + `DavResult<T>`；`WebDavClient` 所有方法改为返回 `DavResult`（401/403→Auth、404→NotFound、507→Quota、解析失败→Parse、IO→Network）；`SyncEngine.Result` 增加 `retryable/errorKind`，`SyncWorker` 只对可重试错误 `retry()`；设置页测试连接按错误类型显示「账号或应用密码不正确 / 服务器地址不对 / 云端空间不足 / 网络错误」；前台轮询遇到不可重试错误直接停止（P1-PERF-9 的认证停止补完） |
+| P2-4 | 新增 `runCatchingCancellable`；`WebDavClient` 的 guard 与 `PhotoStore` 的 IO `runCatching` 全部改为取消异常原样抛出 |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**；JVM 单测 4/4
+- 设备回归 **26/26**（`.verification/tests-v4.1.0-p2-sync.txt`）
+- 装机：设置页状态条显示「刚刚同步」，无崩溃
+- **坑**：改 `WebDavClient` 签名后必须 `assembleDebugAndroidTest` 重新打包测试 APK，只 `compileDebugAndroidTestKotlin` 会装到旧测试包（本轮踩过一次，26 项全红）
+- **未验证**：真机输入错误密码的完整 UI 流程；配额满/404 的真实服务器场景；设置页在后台同步完成瞬间的自动刷新（结构上已由 StateFlow 保证）
 
 ## Batch 3（P1-PERF 1–9，v4.1.0 未升版本）
 

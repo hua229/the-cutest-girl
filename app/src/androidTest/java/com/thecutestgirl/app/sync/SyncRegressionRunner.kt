@@ -1,4 +1,4 @@
-package com.thecutestgirl.app.sync
+﻿package com.thecutestgirl.app.sync
 
 import android.app.Application
 import android.app.Instrumentation
@@ -22,6 +22,11 @@ import java.time.LocalDate
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+
+/** P2-3：测试代码同样走 DavResult */
+private fun DavResult<*>.ok(): Boolean = this is DavResult.Ok
+
+private fun <T> DavResult<T>.valueOrNull(): T? = (this as? DavResult.Ok)?.value
 
 /** Runs real Room + WebDAV + ViewModel behavior, in a separate verification APK. */
 class SyncRegressionRunner : Instrumentation() {
@@ -96,8 +101,8 @@ class SyncRegressionRunner : Instrumentation() {
         targetContext.getSharedPreferences("sync_state", 0).edit().clear().commit()
         SettingsStore.saveDavConfig(targetContext, url, "test", "test")
         dav = WebDavClient(url, "test", "test")
-        check(dav.mkcol("thecutestgirl/records")) { "Local test server unavailable" }
-        check(dav.mkcol("thecutestgirl/photos"))
+        check(dav.mkcol("thecutestgirl/records").ok()) { "Local test server unavailable" }
+        check(dav.mkcol("thecutestgirl/photos").ok())
     }
 
     // v2.8.0 起 note / reply 是两个字段，各自带时间戳；这里一律用具名参数，
@@ -149,7 +154,7 @@ class SyncRegressionRunner : Instrumentation() {
     )
 
     private fun remote(id: String, json: String) {
-        check(dav.putBytes("thecutestgirl/records/$id.json", json.toByteArray(), WebDavClient.jsonType()))
+        check(dav.putBytes("thecutestgirl/records/$id.json", json.toByteArray(), WebDavClient.jsonType()).ok())
     }
 
     private suspend fun sync(): SyncEngine.Result = SyncEngine(targetContext).syncOnce().also {
@@ -246,7 +251,7 @@ class SyncRegressionRunner : Instrumentation() {
         val received = db.outfitDao().getById(original.id)!!
         check(received.note == "Bob's shared note") { "Nickname propagation overwrote the note: '${received.note}'" }
         check(received.originName == "New Alice")
-        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json")!!) as SyncRecord.Outfit
+        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json").valueOrNull()!!) as SyncRecord.Outfit
         check(uploaded.record.note == "Bob's shared note" && uploaded.originName == "New Alice")
     }
 
@@ -264,7 +269,7 @@ class SyncRegressionRunner : Instrumentation() {
         remote(newest.id, newest.copy(note = "stale", updatedAt = oldTime - 1).toJson())
         sync()
         check(db.outfitDao().getById(newest.id)!!.note == "unsent")
-        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${newest.id}.json")!!) as SyncRecord.Outfit
+        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${newest.id}.json").valueOrNull()!!) as SyncRecord.Outfit
         check(uploaded.record.note == "unsent" && uploaded.origin == "device-B")
     }
 
@@ -282,7 +287,7 @@ class SyncRegressionRunner : Instrumentation() {
         db.tombstoneDao().insert(Tombstone(original.id))
         sync()
         check(db.outfitDao().getById(original.id) == null)
-        check(dav.getString("thecutestgirl/records/T_${original.id}.json") != null)
+        check(dav.getString("thecutestgirl/records/T_${original.id}.json").valueOrNull() != null)
         sync()
         check(db.outfitDao().getById(original.id) == null)
     }
@@ -309,7 +314,7 @@ class SyncRegressionRunner : Instrumentation() {
         db.outfitDao().upsert(original)
         val running = async { sync() }
         withTimeout(10_000) {
-            while (dav.getString("upload-started") == null) delay(20)
+            while (dav.getString("upload-started").valueOrNull() == null) delay(20)
         }
         db.outfitDao().upsert(
             original.copy(
@@ -322,7 +327,7 @@ class SyncRegressionRunner : Instrumentation() {
         val latest = db.outfitDao().getById(original.id)!!
         check(latest.note == "saved during upload" && latest.dirty) { "The newer unsent edit was marked clean" }
         sync()
-        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json")!!) as SyncRecord.Outfit
+        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json").valueOrNull()!!) as SyncRecord.Outfit
         check(uploaded.record.note == "saved during upload")
     }
 
@@ -413,7 +418,7 @@ class SyncRegressionRunner : Instrumentation() {
         db.outfitDao().upsert(healthy.copy(dirty = true))
         val result = sync()
         check(result.skipped == 1) { "Expected one skipped record, got ${result.skipped}" }
-        check(dav.getString("thecutestgirl/records/${healthy.id}.json") != null) {
+        check(dav.getString("thecutestgirl/records/${healthy.id}.json").valueOrNull() != null) {
             "A single bad record blocked the healthy upload"
         }
         check(db.outfitDao().getById(healthy.id)!!.dirty.not())
@@ -430,7 +435,7 @@ class SyncRegressionRunner : Instrumentation() {
         check(result.pending == 1) { "Expected one pending upload, got ${result.pending}" }
         check(db.outfitDao().getById("reject-1")!!.dirty) { "Rejected record must stay dirty for retry" }
         check(!db.outfitDao().getById("healthy-1")!!.dirty) { "Healthy record was left behind" }
-        check(dav.getString("thecutestgirl/records/healthy-1.json") != null)
+        check(dav.getString("thecutestgirl/records/healthy-1.json").valueOrNull() != null)
     }
 
     private suspend fun retryDoesNotBlockFreshRequest() {
@@ -456,7 +461,7 @@ class SyncRegressionRunner : Instrumentation() {
             db.outfitDao().upsert(fresh)
             SyncManager.enqueueNow(targetContext)
             withTimeout(8_000) {
-                while (dav.getString("thecutestgirl/records/${fresh.id}.json") == null) delay(50)
+                while (dav.getString("thecutestgirl/records/${fresh.id}.json").valueOrNull() == null) delay(50)
             }
             check(!db.outfitDao().getById(fresh.id)!!.dirty)
         } finally {
@@ -503,7 +508,7 @@ class SyncRegressionRunner : Instrumentation() {
         db.outfitDao().setReply(original.id, "nice photo", "Bob", oldTime + 3)
         sync()
 
-        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json")!!)
+        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json").valueOrNull()!!)
             as SyncRecord.Outfit
         check(uploaded.record.note == "keep me") { "Note was wiped by a reply-only edit" }
         check(uploaded.record.reply == "nice photo")
@@ -587,7 +592,7 @@ class SyncRegressionRunner : Instrumentation() {
 
         val running = async { sync() }
         withTimeout(10_000) {
-            while (dav.getString("upload-started") == null) delay(20)
+            while (dav.getString("upload-started").valueOrNull() == null) delay(20)
         }
         // 上传还在飞的时候，对方写了评论
         db.outfitDao().setReply(original.id, "written mid-upload", "Bob", oldTime + 7)
@@ -598,7 +603,7 @@ class SyncRegressionRunner : Instrumentation() {
         check(local.note == "uploading")
 
         sync()
-        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json")!!)
+        val uploaded = parseSyncRecord(dav.getString("thecutestgirl/records/${original.id}.json").valueOrNull()!!)
             as SyncRecord.Outfit
         check(uploaded.record.reply == "written mid-upload") { "Reply never reached the cloud" }
         check(uploaded.record.note == "uploading")
@@ -649,7 +654,7 @@ class SyncRegressionRunner : Instrumentation() {
     // 测试服务器把每一次 records 目录下的 json GET 都记在 fixture 根目录的 get-log 里。
 
     private suspend fun recordGets(): Int =
-        (dav.getString("get-log") ?: "").lineSequence().count { it.isNotBlank() }
+        (dav.getString("get-log").valueOrNull() ?: "").lineSequence().count { it.isNotBlank() }
 
     /**
      * 没变过的记录不该被反复下载。
@@ -716,7 +721,7 @@ class SyncRegressionRunner : Instrumentation() {
         // 换到一个全新的空端点：只建账号根目录，不建 thecutestgirl
         val newUrl = "http://10.0.2.2:18765/${UUID.randomUUID()}/"
         val newDav = WebDavClient(newUrl, "test", "test")
-        check(newDav.mkcol("")) { "Could not create the new account root" }
+        check(newDav.mkcol("").ok()) { "Could not create the new account root" }
 
         val changed = SyncEngine.applyDavConfig(targetContext, newUrl, "test", "test")
         check(changed) { "Switching to a new endpoint must be detected" }
@@ -731,8 +736,8 @@ class SyncRegressionRunner : Instrumentation() {
         // 按钮那轮：测试连接 + 顺手把新云盘三层目录建出来
         val ok = SyncEngine(targetContext).testConnection(prepareDirectories = changed)
         check(ok) { "Test-and-enable on the new endpoint should succeed" }
-        check(newDav.listDir("thecutestgirl/records") != null) { "records folder was not created" }
-        check(newDav.listDir("thecutestgirl/photos") != null) { "photos folder was not created" }
+        check(newDav.listDir("thecutestgirl/records").ok()) { "records folder was not created" }
+        check(newDav.listDir("thecutestgirl/photos").ok()) { "photos folder was not created" }
         check(SyncStateStore.dirsReady(targetContext)) { "dirsReady should be set after preparing folders" }
 
         // 紧接着的整轮同步不能再报 404（原来「显示成功却一直同步失败」的坑）

@@ -66,6 +66,8 @@ import com.thecutestgirl.app.data.OutfitRecord
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.sync.SyncManager
+import com.thecutestgirl.app.sync.SyncPhase
+import com.thecutestgirl.app.sync.SyncStatusStore
 import com.thecutestgirl.app.ui.components.AddRecordSheet
 import com.thecutestgirl.app.ui.components.AppDatePickerDialog
 import com.thecutestgirl.app.ui.components.AppMonthPickerDialog
@@ -148,7 +150,8 @@ fun OutfitScreen(
     // 上次同步失败时，照片占位显示「同步不了」而不是「还在路上」
     val context = LocalContext.current
     val myDeviceId = SettingsStore.deviceId(context)
-    val syncFailed = SettingsStore.lastSyncResult(context).startsWith("同步失败")
+    val syncStatus by SyncStatusStore.status.collectAsStateWithLifecycle()
+    val syncFailed = syncStatus.phase == SyncPhase.Failure
     val retrySync = {
         // 没填坚果云账号时不能承诺"已经开始同步"，否则点了什么也不会发生
         if (SettingsStore.isSyncConfigured(context)) {

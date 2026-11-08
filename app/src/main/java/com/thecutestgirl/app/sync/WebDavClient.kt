@@ -1,8 +1,8 @@
 package com.thecutestgirl.app.sync
 
+import kotlinx.coroutines.CancellationException
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -10,7 +10,6 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.StringReader
 import java.net.URLDecoder
 import java.time.Instant
@@ -23,6 +22,9 @@ data class DavEntry(val name: String, val lastModified: Long, val size: Long)
 /**
  * 极简 WebDAV 客户端（OkHttp 实现），只做同步需要的五件事：
  * PROPFIND 列目录 / GET 下载 / PUT 上传 / MKCOL 建目录 / 连接测试。
+ *
+ * v4.1 P2-3：所有方法返回 [DavResult]，401/404/507/网络/解析可区分；
+ * P2-4：取消异常原样抛出，不当作普通失败。
  */
 class WebDavClient(baseUrl: String, user: String, pass: String) {
 
@@ -33,29 +35,50 @@ class WebDavClient(baseUrl: String, user: String, pass: String) {
 
     private fun url(path: String) = root + path.removePrefix("/")
 
+    private fun errorFor(code: Int): DavError = when (code) {
+        401, 403 -> DavError.Auth
+        404 -> DavError.NotFound
+        507 -> DavError.Quota
+        else -> DavError.Network("服务器返回 HTTP $code")
+    }
+
+    private inline fun <T> guard(block: () -> DavResult<T>): DavResult<T> =
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            DavResult.Err(DavError.Network(e.message ?: "网络错误"))
+        }
+
     /** 测试账号密码是否可用（对根目录发 PROPFIND Depth 0） */
-    fun testConnection(): Boolean = runCatching {
+    fun testConnection(): DavResult<Unit> = guard {
         val req = Request.Builder()
             .url(url(""))
             .header("Authorization", auth)
             .header("Depth", "0")
             .method("PROPFIND", PROPFIND_BODY.toRequestBody(XML))
             .build()
-        client.newCall(req).execute().use { it.code in 200..299 }
-    }.getOrDefault(false)
+        client.newCall(req).execute().use { resp ->
+            if (resp.isSuccessful) DavResult.Ok(Unit) else DavResult.Err(errorFor(resp.code))
+        }
+    }
 
     /** 建目录；目录已存在（405）也算成功 */
-    fun mkcol(path: String): Boolean = runCatching {
+    fun mkcol(path: String): DavResult<Unit> = guard {
         val req = Request.Builder()
             .url(url(path))
             .header("Authorization", auth)
             .method("MKCOL", null)
             .build()
-        client.newCall(req).execute().use { it.code in 200..299 || it.code == 405 }
-    }.getOrDefault(false)
+        client.newCall(req).execute().use { resp ->
+            if (resp.isSuccessful || resp.code == 405) DavResult.Ok(Unit)
+            else DavResult.Err(errorFor(resp.code))
+        }
+    }
 
-    /** 列出目录下的文件（跳过子目录），失败返回 null */
-    fun listDir(path: String): List<DavEntry>? = runCatching {
+    /** 列出目录下的文件（跳过子目录） */
+    fun listDir(path: String): DavResult<List<DavEntry>> = guard {
         val req = Request.Builder()
             .url(url(path))
             .header("Authorization", auth)
@@ -63,44 +86,68 @@ class WebDavClient(baseUrl: String, user: String, pass: String) {
             .method("PROPFIND", PROPFIND_BODY.toRequestBody(XML))
             .build()
         client.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) return@runCatching null
-            val xml = resp.body?.string() ?: return@runCatching emptyList()
-            parseMultiStatus(xml)
+            if (!resp.isSuccessful) return@guard DavResult.Err(errorFor(resp.code))
+            val xml = resp.body?.string() ?: return@guard DavResult.Err(DavError.Parse)
+            val entries = try {
+                parseMultiStatus(xml)
+            } catch (e: Exception) {
+                return@guard DavResult.Err(DavError.Parse)
+            }
+            DavResult.Ok(entries)
         }
-    }.getOrNull()
+    }
 
-    fun getString(path: String): String? = runCatching {
+    fun getString(path: String): DavResult<String> = guard {
         val req = Request.Builder().url(url(path)).header("Authorization", auth).get().build()
         client.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) null else resp.body?.string()
+            if (!resp.isSuccessful) return@guard DavResult.Err(errorFor(resp.code))
+            val text = resp.body?.string() ?: return@guard DavResult.Err(DavError.Parse)
+            DavResult.Ok(text)
         }
-    }.getOrNull()
+    }
 
-    fun getBytes(path: String): ByteArray? = runCatching {
+    fun getBytes(path: String): DavResult<ByteArray> = guard {
         val req = Request.Builder().url(url(path)).header("Authorization", auth).get().build()
         client.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) null else resp.body?.bytes()
+            if (!resp.isSuccessful) return@guard DavResult.Err(errorFor(resp.code))
+            val bytes = resp.body?.bytes() ?: return@guard DavResult.Err(DavError.Parse)
+            DavResult.Ok(bytes)
         }
-    }.getOrNull()
+    }
 
-    fun putBytes(path: String, bytes: ByteArray, contentType: String): Boolean = runCatching {
+    fun putBytes(path: String, bytes: ByteArray, contentType: String): DavResult<Unit> = guard {
         val req = Request.Builder()
             .url(url(path))
             .header("Authorization", auth)
             .put(bytes.toRequestBody(contentType.toMediaType()))
             .build()
-        client.newCall(req).execute().use { it.code in 200..299 }
-    }.getOrDefault(false)
+        client.newCall(req).execute().use { resp ->
+            if (resp.isSuccessful) DavResult.Ok(Unit) else DavResult.Err(errorFor(resp.code))
+        }
+    }
+
+    /** 删除云端文件（404 也算成功，本来就没有） */
+    fun delete(path: String): DavResult<Unit> = guard {
+        val req = Request.Builder()
+            .url(url(path))
+            .header("Authorization", auth)
+            .delete()
+            .build()
+        client.newCall(req).execute().use { resp ->
+            if (resp.isSuccessful || resp.code == 404) DavResult.Ok(Unit)
+            else DavResult.Err(errorFor(resp.code))
+        }
+    }
 
     /**
      * 流式下载到目标文件：先写 `name.download` 临时文件，成功后原子改名。
      * 中断/磁盘满不会在目标路径留下半个文件。
      */
-    fun downloadTo(path: String, target: File): Boolean = runCatching {
+    fun downloadTo(path: String, target: File): DavResult<Unit> = guard {
         val req = Request.Builder().url(url(path)).header("Authorization", auth).get().build()
         client.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) return@runCatching false
-            val body = resp.body ?: return@runCatching false
+            if (!resp.isSuccessful) return@guard DavResult.Err(errorFor(resp.code))
+            val body = resp.body ?: return@guard DavResult.Err(DavError.Parse)
             target.parentFile?.mkdirs()
             val tmp = File(target.parentFile, target.name + ".download")
             body.byteStream().use { input ->
@@ -108,39 +155,34 @@ class WebDavClient(baseUrl: String, user: String, pass: String) {
             }
             if (tmp.length() <= 0L) {
                 tmp.delete()
-                return@runCatching false
+                return@guard DavResult.Err(DavError.Parse)
             }
             if (tmp.renameTo(target)) {
-                true
+                DavResult.Ok(Unit)
             } else {
-                runCatching {
+                val copied = try {
                     tmp.copyTo(target, overwrite = true)
                     tmp.delete()
                     target.length() > 0
-                }.getOrDefault(false)
+                } catch (e: Exception) {
+                    false
+                }
+                if (copied) DavResult.Ok(Unit) else DavResult.Err(DavError.Network("照片写入失败"))
             }
         }
-    }.getOrDefault(false)
+    }
 
     /** 流式上传本地文件（不把整张照片读进内存）。 */
-    fun uploadFrom(path: String, file: File, contentType: String): Boolean = runCatching {
+    fun uploadFrom(path: String, file: File, contentType: String): DavResult<Unit> = guard {
         val req = Request.Builder()
             .url(url(path))
             .header("Authorization", auth)
             .put(file.asRequestBody(contentType.toMediaType()))
             .build()
-        client.newCall(req).execute().use { it.code in 200..299 }
-    }.getOrDefault(false)
-
-    /** 删除云端文件（404 也算成功，本来就没有） */
-    fun delete(path: String): Boolean = runCatching {
-        val req = Request.Builder()
-            .url(url(path))
-            .header("Authorization", auth)
-            .delete()
-            .build()
-        client.newCall(req).execute().use { it.code in 200..299 || it.code == 404 }
-    }.getOrDefault(false)
+        client.newCall(req).execute().use { resp ->
+            if (resp.isSuccessful) DavResult.Ok(Unit) else DavResult.Err(errorFor(resp.code))
+        }
+    }
 
     companion object {
         private val XML = "application/xml".toMediaType()
@@ -206,8 +248,10 @@ class WebDavClient(baseUrl: String, user: String, pass: String) {
             return entries
         }
 
-        private fun parseHttpDate(text: String): Long = runCatching {
+        private fun parseHttpDate(text: String): Long = try {
             Instant.from(HTTP_DATE.parse(text.trim())).toEpochMilli()
-        }.getOrDefault(0L)
+        } catch (e: Exception) {
+            0L
+        }
     }
 }

@@ -92,6 +92,7 @@ object SyncManager {
 
     /** 账号刚配好：先把周期任务挂上，再立刻来一次 */
     fun startAfterConfigured(context: Context) {
+        SyncStatusStore.prime(context)
         ensurePeriodic(context)
         enqueueNow(context)
     }
@@ -106,7 +107,17 @@ object SyncManager {
 object SyncRunner {
 
     suspend fun runOnce(context: Context): SyncEngine.Result {
+        // P2-2：结构化状态供 UI 收集；字符串版本仍写入 SettingsStore 兼容旧版本
+        SyncStatusStore.markRunning()
         val result = SyncEngine(context.applicationContext).syncOnce()
+        if (result.ok) {
+            SyncStatusStore.markSuccess()
+        } else {
+            SyncStatusStore.markFailure(
+                result.error ?: "同步失败",
+                retryable = result.retryable
+            )
+        }
         if (result.partnerNew.isNotEmpty()) {
             PartnerNotifier.notify(context.applicationContext, result.partnerNew)
         }
@@ -119,7 +130,12 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
     override suspend fun doWork(): Result {
         val result = SyncRunner.runOnce(applicationContext)
-        return if (result.ok) Result.success() else Result.retry()
+        return when {
+            result.ok -> Result.success()
+            // 认证/地址/配额/数据问题重试也没用，交给状态条显示原因
+            result.retryable -> Result.retry()
+            else -> Result.failure()
+        }
     }
 }
 
@@ -166,16 +182,22 @@ object SyncForegroundPoller {
         var interval = INTERVAL_MS
         while (true) {
             if (SettingsStore.isSyncConfigured(context)) {
-                val ok = try {
-                    SyncRunner.runOnce(context).ok
+                val result = try {
+                    SyncRunner.runOnce(context)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    false
+                    SyncEngine.Result(ok = false, error = e.message, retryable = true)
                 }
-                // 失败退避：30s → 60s → 120s → 240s → 300s，成功立刻回到 30s。
-                // 认证类错误的「停止轮询」要等 P2-3 的错误模型，避免继续每 30 秒打服务器。
-                interval = if (ok) INTERVAL_MS else (interval * 2).coerceAtMost(MAX_INTERVAL_MS)
+                if (result.ok) {
+                    interval = INTERVAL_MS
+                } else if (!result.retryable) {
+                    // 认证/地址/配额问题：停止轮询，避免每 30 秒打服务器。
+                    // 用户改完配置或重新回到前台时会重新启动。
+                    return
+                } else {
+                    interval = (interval * 2).coerceAtMost(MAX_INTERVAL_MS)
+                }
             }
             delay(interval)
         }

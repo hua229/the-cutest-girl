@@ -68,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -77,6 +78,8 @@ import androidx.core.content.ContextCompat
 import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.sync.SyncEngine
 import com.thecutestgirl.app.sync.SyncManager
+import com.thecutestgirl.app.sync.SyncPhase
+import com.thecutestgirl.app.sync.SyncStatusStore
 import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.BarIconSize
 import com.thecutestgirl.app.ui.components.IconTitle
@@ -91,6 +94,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** 同步时间的相对文案：刚刚 / N 分钟前 / N 小时前 / 具体日期 */
+private fun relativeSyncTime(at: Long): String {
+    if (at <= 0L) return "还没同步过"
+    val diff = System.currentTimeMillis() - at
+    return when {
+        diff < 60_000L -> "刚刚同步"
+        diff < 3_600_000L -> "${diff / 60_000L} 分钟前"
+        diff < 86_400_000L -> "${diff / 3_600_000L} 小时前"
+        else -> SimpleDateFormat("M月d日 HH:mm", Locale.CHINA).format(Date(at))
+    }
+}
+
 /** 设置页：昵称 + 坚果云同步配置 + 立即同步 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,38 +117,16 @@ fun SettingsScreen(onBack: () -> Unit) {
     var url by remember { mutableStateOf(SettingsStore.webdavUrl(context)) }
     var user by remember { mutableStateOf(SettingsStore.webdavUser(context)) }
     var pass by remember { mutableStateOf(SettingsStore.webdavPass(context)) }
-    // 同步状态：打开设置页时用已有的「上次同步结果」推断初始语义，之后由页面上的操作驱动
-    var statusKind by remember {
-        mutableStateOf(
-            when {
-                !SettingsStore.isSyncConfigured(context) -> SyncStatusKind.Idle
-                SettingsStore.lastSyncAt(context) == 0L -> SyncStatusKind.Idle
-                SettingsStore.lastSyncResult(context).startsWith("同步失败") -> SyncStatusKind.Failure
-                else -> SyncStatusKind.Success
-            }
-        )
+    // 同步状态：结构化 StateFlow（P2-2），后台同步完成后本页自动刷新
+    val syncStatus by SyncStatusStore.status.collectAsStateWithLifecycle()
+    val statusKind = when (syncStatus.phase) {
+        SyncPhase.Idle -> SyncStatusKind.Idle
+        SyncPhase.Running -> SyncStatusKind.Syncing
+        SyncPhase.Success -> SyncStatusKind.Success
+        SyncPhase.Failure -> SyncStatusKind.Failure
     }
     var busy by remember { mutableStateOf(false) }
-    var failureReason by remember { mutableStateOf<String?>(null) }
     var showEndpointConfirm by remember { mutableStateOf(false) }
-
-    // 立即同步：同步中不可重复触发；结束后自动落回「刚刚同步 / 同步失败」
-    // （只读 SettingsStore 的现有结果，不改同步逻辑）
-    LaunchedEffect(statusKind) {
-        if (statusKind == SyncStatusKind.Syncing && !busy) {
-            val startAt = SettingsStore.lastSyncAt(context)
-            while (statusKind == SyncStatusKind.Syncing && !busy) {
-                delay(1500)
-                if (SettingsStore.lastSyncAt(context) != startAt) {
-                    statusKind = if (SettingsStore.lastSyncResult(context).startsWith("同步失败")) {
-                        SyncStatusKind.Failure
-                    } else {
-                        SyncStatusKind.Success
-                    }
-                }
-            }
-        }
-    }
 
     // 输入停顿后发送最终昵称；离开设置页时也补发，避免必须重启或手动同步。
     LaunchedEffect(myName) {
@@ -255,21 +248,19 @@ fun SettingsScreen(onBack: () -> Unit) {
             // 先验证、后提交：验证通过才保存配置，失败不动旧配置/账本。
             fun startTest() {
                 busy = true
-                failureReason = null
-                statusKind = SyncStatusKind.Syncing
+                SyncStatusStore.markRunning()
                 scope.launch {
                     when (val result = SyncEngine.verifyAndApplyDavConfig(context, url, user, pass)) {
                         is SyncEngine.DavTestResult.Ok -> {
                             busy = false
-                            statusKind = SyncStatusKind.Success
+                            SyncStatusStore.markSuccess("同步已开启")
                             SyncManager.ensurePeriodic(context, force = true)
                             SyncManager.enqueueNow(context)
                             requestNotificationIfNeeded()
                         }
                         is SyncEngine.DavTestResult.Failure -> {
                             busy = false
-                            statusKind = SyncStatusKind.Failure
-                            failureReason = result.message
+                            SyncStatusStore.markFailure(result.message, retryable = false)
                         }
                     }
                 }
@@ -315,31 +306,20 @@ fun SettingsScreen(onBack: () -> Unit) {
                     SettingsStore.isSyncConfigured(context),
                 onClick = {
                     SyncManager.enqueueNow(context)
-                    statusKind = SyncStatusKind.Syncing
+                    SyncStatusStore.markRunning()
                 }
             )
 
-            // 同步状态条：状态图标 + 场景化文案 + 失败原因 / 重试
-            val lastAt = SettingsStore.lastSyncAt(context)
-            val lastResult = SettingsStore.lastSyncResult(context)
-            val lastFailed = lastResult.startsWith("同步失败")
+            // 同步状态条：结构化状态 + 相对时间 + 失败原因 / 重试
             SyncStatusBar(
                 kind = statusKind,
-                subText = if (lastAt == 0L) {
-                    "还没同步过"
-                } else {
-                    "上次同步：${
-                        SimpleDateFormat("M月d日 HH:mm", Locale.CHINA).format(Date(lastAt))
-                    }"
-                },
-                reason = failureReason ?: if (lastFailed) {
-                    lastResult.removePrefix("同步失败：").ifBlank { "请检查账号和应用密码" }
-                } else null,
+                subText = relativeSyncTime(syncStatus.at),
+                reason = if (syncStatus.phase == SyncPhase.Failure) syncStatus.message else null,
                 onRetry = { startTest() }
             )
 
             Text(
-                "说明：APP 开着的时候每 20 秒同步一次，对方刚发的内容基本马上就能看到；" +
+                "说明：APP 开着的时候每 30 秒同步一次，对方刚发的内容基本马上就能看到；" +
                     "退到后台后系统只允许每 15 分钟同步一次（这是 Android 的硬限制，改不了）。" +
                     "所以想及时收到对方的消息，把下面这一项开了会更稳。",
                 style = MaterialTheme.typography.bodySmall,

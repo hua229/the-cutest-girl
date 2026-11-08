@@ -81,7 +81,11 @@ class SyncEngine(private val context: Context) {
         val pending: Int = 0,
         /** 本轮跳过的坏记录数（云端内容无法解析，例如日期非法） */
         val skipped: Int = 0,
-        val error: String? = null
+        val error: String? = null,
+        /** 值不值得让 WorkManager 退避重试（P2-3） */
+        val retryable: Boolean = true,
+        /** 失败时的结构化原因（P2-3） */
+        val errorKind: DavError? = null
     )
 
     private val db = AppDatabase.getInstance(context)
@@ -142,20 +146,19 @@ class SyncEngine(private val context: Context) {
                 user.trim(),
                 pass
             )
-            if (!candidate.testConnection()) {
-                return@withContext DavTestResult.Failure(
-                    "连接失败：请检查账号、应用密码或网络"
-                )
+            when (val test = candidate.testConnection()) {
+                is DavResult.Err -> return@withContext DavTestResult.Failure(test.error.userMessage())
+                is DavResult.Ok -> Unit
             }
             if (changed) {
-                val dirsOk = candidate.mkcol("thecutestgirl") &&
-                    candidate.mkcol("thecutestgirl/records") &&
-                    candidate.mkcol("thecutestgirl/photos") &&
-                    candidate.listDir("thecutestgirl/records") != null &&
-                    candidate.listDir("thecutestgirl/photos") != null
+                val dirsOk = candidate.mkcol("thecutestgirl") is DavResult.Ok &&
+                    candidate.mkcol("thecutestgirl/records") is DavResult.Ok &&
+                    candidate.mkcol("thecutestgirl/photos") is DavResult.Ok &&
+                    candidate.listDir("thecutestgirl/records") is DavResult.Ok &&
+                    candidate.listDir("thecutestgirl/photos") is DavResult.Ok
                 if (!dirsOk) {
                     return@withContext DavTestResult.Failure(
-                        "云端目录建不出来：请检查账号配额或网络"
+                        "云端目录建不出来：请检查账号、配额或网络"
                     )
                 }
             }
@@ -186,11 +189,11 @@ class SyncEngine(private val context: Context) {
             // 建目录 + 真列一次才算成功；失败则保持/写回 dirsReady=false，下一轮重试。
             // 只有目录准备失败才重置标记（见 catch），普通网络失败不重置，避免每轮多 3 次 MKCOL。
             if (!SyncStateStore.dirsReady(context)) {
-                val dirsOk = dav.mkcol("thecutestgirl") &&
-                    dav.mkcol("thecutestgirl/records") &&
-                    dav.mkcol("thecutestgirl/photos") &&
-                    dav.listDir("thecutestgirl/records") != null &&
-                    dav.listDir("thecutestgirl/photos") != null
+                val dirsOk = dav.mkcol("thecutestgirl") is DavResult.Ok &&
+                    dav.mkcol("thecutestgirl/records") is DavResult.Ok &&
+                    dav.mkcol("thecutestgirl/photos") is DavResult.Ok &&
+                    dav.listDir("thecutestgirl/records") is DavResult.Ok &&
+                    dav.listDir("thecutestgirl/photos") is DavResult.Ok
                 SyncStateStore.setDirsReady(context, dirsOk)
                 if (!dirsOk) {
                     throw DirectorySetupException("云端目录准备失败，请检查账号、配额或网络")
@@ -232,11 +235,12 @@ class SyncEngine(private val context: Context) {
             // 旧 id 的墓碑一并清掉：现在传墓碑反而可能误删对方还未升级的同名记录
             tombstoneDao.deleteLegacy()
 
-            val remoteRecords = dav.listDir("thecutestgirl/records")
-                ?: throw IOException("读不到云端记录目录，请检查账号或网络")
-            // photos 目录一次 PROPFIND 同时服务「上传去重」「补漏」「瘦身」三处，
-            // 原来阶段 1 和阶段 4 各拉一次，等于每轮白跑一趟。
-            val remotePhotos = dav.listDir("thecutestgirl/photos")
+            val remoteRecords = when (val r = dav.listDir("thecutestgirl/records")) {
+                is DavResult.Ok -> r.value
+                is DavResult.Err -> throw DavException(r.error)
+            }
+            // photos 目录一次 PROPFIND 同时服务「上传去重」「补漏」「瘦身」三处，失败可以容忍
+            val remotePhotos = (dav.listDir("thecutestgirl/photos") as? DavResult.Ok)?.value
             val remotePhotoNames = remotePhotos?.map { it.name }?.toHashSet() ?: hashSetOf()
             val remotePhotosBySize: Map<String, Long> =
                 remotePhotos?.associate { it.name to it.size } ?: emptyMap()
@@ -314,8 +318,7 @@ class SyncEngine(private val context: Context) {
                 // 归属只是创建者身份；对方也能修改这条记录的备注。
                 // 必须读取 JSON 里的版本，服务器 Last-Modified 与手机时钟无法直接比较。
                 // 下载失败时停止本轮，避免用尚未合并的旧内容覆盖云端备注。
-                val text = dav.getString("thecutestgirl/records/$name")
-                    ?: throw IOException("下载记录失败，请重试同步")
+                val text = dav.getString("thecutestgirl/records/$name").getOrThrowDav()
                 // 记下这轮看到的指纹；「同一个指纹第二次出现」才算确认稳定
                 nextSigs[name] = sig
                 if (known != null && known == sig) nextConfirmed += name
@@ -339,7 +342,7 @@ class SyncEngine(private val context: Context) {
                     if (dav.downloadTo(
                             "thecutestgirl/photos/$photoName",
                             PhotoStore.file(context, photoName)
-                        )
+                        ) is DavResult.Ok
                     ) {
                         downloadedPhotos++
                     }
@@ -393,7 +396,7 @@ class SyncEngine(private val context: Context) {
                     if (dav.downloadTo(
                             "thecutestgirl/photos/$photoName",
                             PhotoStore.file(context, photoName)
-                        )
+                        ) is DavResult.Ok
                     ) {
                         downloadedPhotos++
                     }
@@ -404,7 +407,7 @@ class SyncEngine(private val context: Context) {
             // 单条失败只跳过这一条：一条"毒记录"（超配额、文件名被服务端拒收等）不能
             // 让排在它后面的所有待上传内容永远传不上去。失败记录保持 dirty，下一轮再来。
             suspend fun uploadRecord(json: String, id: String, photoName: String?): Boolean {
-                if (!dav.putBytes("thecutestgirl/records/$id.json", json.toByteArray(), WebDavClient.jsonType())) {
+                if (dav.putBytes("thecutestgirl/records/$id.json", json.toByteArray(), WebDavClient.jsonType()) is DavResult.Err) {
                     uploadErrors += "$id: 上传记录失败"
                     return false
                 }
@@ -412,7 +415,7 @@ class SyncEngine(private val context: Context) {
                 if (photoName != null && photoName !in remotePhotoNames) {
                     val local = PhotoStore.file(context, photoName)
                     if (local.exists()) {
-                        if (dav.uploadFrom("thecutestgirl/photos/$photoName", local, WebDavClient.jpegType())) {
+                        if (dav.uploadFrom("thecutestgirl/photos/$photoName", local, WebDavClient.jpegType()) is DavResult.Ok) {
                             uploadedPhotos++
                             // 及时补进已上传集合，同一张照片被多条记录引用时不再重复 PUT
                             remotePhotoNames += photoName
@@ -455,7 +458,7 @@ class SyncEngine(private val context: Context) {
             // ============ 3. 上传删除墓碑，并清掉云端对应的记录文件 ============
             for (t in tombstoneDao.getAll()) {
                 val body = """{"type":"tombstone","id":"${t.id}","updatedAt":${t.updatedAt}}"""
-                if (dav.putBytes("thecutestgirl/records/T_${t.id}.json", body.toByteArray(), WebDavClient.jsonType())) {
+                if (dav.putBytes("thecutestgirl/records/T_${t.id}.json", body.toByteArray(), WebDavClient.jsonType()) is DavResult.Ok) {
                     tombstoneDao.delete(t.id)
                     // 对方设备靠墓碑删除本地；记录文件及时清掉，避免另一台设备下载到残留
                     dav.delete("thecutestgirl/records/${t.id}.json")
@@ -481,7 +484,7 @@ class SyncEngine(private val context: Context) {
                         val localSize = file.length()
                         if (remoteSize != null && remoteSize in 1 until (localSize * 6 / 10)) {
                             // 云端已是压缩版，流式拉下来替换本地大图（原子写入）
-                            if (dav.downloadTo("thecutestgirl/photos/${file.name}", file)) {
+                            if (dav.downloadTo("thecutestgirl/photos/${file.name}", file) is DavResult.Ok) {
                                 shrunkPhotos++
                             }
                         } else {
@@ -492,7 +495,7 @@ class SyncEngine(private val context: Context) {
                                         "thecutestgirl/photos/${file.name}",
                                         file,
                                         WebDavClient.jpegType()
-                                    )
+                                    ) is DavResult.Ok
                                 ) {
                                     shrunkPhotos++
                                 }
@@ -531,20 +534,42 @@ class SyncEngine(private val context: Context) {
             )
         } catch (e: CancellationException) {
             throw e
+        } catch (e: DavException) {
+            val kind = e.error
+            val message = kind.userMessage()
+            SettingsStore.saveSyncStatus(
+                context, System.currentTimeMillis(), "同步失败：$message"
+            )
+            Result(
+                ok = false,
+                error = message,
+                retryable = kind.retryable(),
+                errorKind = kind
+            )
         } catch (e: DirectorySetupException) {
             // 目录没建好：明确把标记清掉，下一轮重新 MKCOL，不要永久卡住
             SyncStateStore.setDirsReady(context, false)
+            val message = e.message ?: "云端目录准备失败"
             SettingsStore.saveSyncStatus(
-                context, System.currentTimeMillis(),
-                "同步失败：${e.message ?: "云端目录准备失败"}"
+                context, System.currentTimeMillis(), "同步失败：$message"
             )
-            Result(ok = false, error = e.message ?: "云端目录准备失败")
+            Result(
+                ok = false,
+                error = message,
+                retryable = true,
+                errorKind = DavError.Network(message)
+            )
         } catch (e: Exception) {
             SettingsStore.saveSyncStatus(
                 context, System.currentTimeMillis(),
                 "同步失败：${e.message ?: "网络错误"}"
             )
-            Result(ok = false, error = e.message ?: "网络错误")
+            Result(
+                ok = false,
+                error = e.message ?: "网络错误",
+                retryable = true,
+                errorKind = DavError.Network(e.message ?: "网络错误")
+            )
         }
     }
 
@@ -804,15 +829,14 @@ class SyncEngine(private val context: Context) {
             SettingsStore.webdavUser(context),
             SettingsStore.webdavPass(context)
         )
-        if (!dav.testConnection()) return@withContext false
+        if (dav.testConnection() is DavResult.Err) return@withContext false
         if (!prepareDirectories) return@withContext true
-        dav.mkcol("thecutestgirl")
-        dav.mkcol("thecutestgirl/records")
-        dav.mkcol("thecutestgirl/photos")
-        // 两个目录都真列一次：能列出来才算这个新端点可以同步
-        if (dav.listDir("thecutestgirl/records") == null) return@withContext false
-        if (dav.listDir("thecutestgirl/photos") == null) return@withContext false
-        SyncStateStore.setDirsReady(context, true)
-        true
+        val ok = dav.mkcol("thecutestgirl") is DavResult.Ok &&
+            dav.mkcol("thecutestgirl/records") is DavResult.Ok &&
+            dav.mkcol("thecutestgirl/photos") is DavResult.Ok &&
+            dav.listDir("thecutestgirl/records") is DavResult.Ok &&
+            dav.listDir("thecutestgirl/photos") is DavResult.Ok
+        if (ok) SyncStateStore.setDirsReady(context, true)
+        ok
     }
 }

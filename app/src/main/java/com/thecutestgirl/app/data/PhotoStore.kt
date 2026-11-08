@@ -7,6 +7,8 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.thecutestgirl.app.sync.runCatchingCancellable
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -67,6 +69,8 @@ object PhotoStore {
                 raw.delete()
             }
             if (target.exists() && target.length() > 0) name else null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             raw.delete()
             null
@@ -75,7 +79,7 @@ object PhotoStore {
 
     fun delete(context: Context, name: String?) {
         if (name.isNullOrBlank()) return
-        runCatching { File(dir(context), name).delete() }
+        runCatchingCancellable { File(dir(context), name).delete() }
     }
 
     /**
@@ -125,7 +129,7 @@ object PhotoStore {
      * 如果压缩后反而更大（本来就是小图），保留原文件不动。
      */
     fun compressInPlace(file: File) {
-        runCatching {
+        runCatchingCancellable {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(file.absolutePath, bounds)
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return
@@ -176,7 +180,7 @@ object PhotoStore {
 
     /** 竖拍照片的方向信息存在 EXIF 里，重新编码前先按它把像素转正 */
     private fun applyExifRotation(file: File, bitmap: Bitmap): Bitmap {
-        val orientation = runCatching {
+        val orientation = runCatchingCancellable {
             ExifInterface(file.absolutePath)
                 .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
         }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
@@ -189,7 +193,7 @@ object PhotoStore {
         }
         if (degrees == 0f) return bitmap
 
-        return runCatching {
+        return runCatchingCancellable {
             val matrix = Matrix().apply { postRotate(degrees) }
             val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
             if (rotated != bitmap) bitmap.recycle()
