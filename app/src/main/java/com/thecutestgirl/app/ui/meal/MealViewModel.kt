@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.thecutestgirl.app.data.AppDatabase
 import com.thecutestgirl.app.data.MealRecord
@@ -19,7 +20,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.thecutestgirl.app.ui.savedNullableString
+import com.thecutestgirl.app.ui.savedString
 import java.time.LocalDate
 import java.util.UUID
 
@@ -49,14 +54,17 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 /** 记录某一餐 */
-class MealEditViewModel(app: Application) : AndroidViewModel(app) {
+class MealEditViewModel(app: Application, state: SavedStateHandle) : AndroidViewModel(app) {
+    /** 兼容设备回归里 `MealEditViewModel(app)` 的直接构造 */
+    constructor(app: Application) : this(app, SavedStateHandle())
+
     private val database = AppDatabase.getInstance(app)
     private val dao = database.mealDao()
 
-    var note by mutableStateOf("")
-    var photoPath by mutableStateOf<String?>(null)
+    var note by savedString(state, "note")
+    var photoPath by savedNullableString(state, "photoPath")
     /** 对方写的评论：上传人只读 */
-    var reply by mutableStateOf("")
+    var reply by savedString(state, "reply")
 
     private var editingId: String? = null
     private var editingCreatedAt: Long = 0
@@ -147,11 +155,14 @@ class MealEditViewModel(app: Application) : AndroidViewModel(app) {
             val baseReply = latest?.reply ?: originalReply
             val noteChanged = note.trim() != baseNote
             val replyChanged = reply.trim() != baseReply
+            val finalPhoto = withContext(Dispatchers.IO) {
+                PhotoStore.promoteDraft(getApplication(), photoPath)
+            }
             val record = MealRecord(
                 id = editingId ?: UUID.randomUUID().toString(),
                 date = date.toString(),
                 mealType = mealType,
-                photoPath = photoPath,
+                photoPath = finalPhoto,
                 note = note.trim(),
                 noteDevice = if (noteChanged) myDevice else (latest?.noteDevice ?: ""),
                 noteName = if (noteChanged) myName else (latest?.noteName ?: ""),

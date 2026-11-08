@@ -1148,12 +1148,13 @@ fun PhotoNoteCard(
             // 拍出来的原图很大，压缩后再使用
             scope.launch {
                 withContext(Dispatchers.IO) { PhotoStore.compressInPlace(file) }
-                val (next, orphans) = nextPhotoList(currentPhotos, listOf(file.name), maxPhotos)
+                val draftName = PhotoStore.makeDraft(context, file)
+                val (next, orphans) = nextPhotoList(currentPhotos, listOf(draftName), maxPhotos)
                 onPhotosChanged(next)
                 // 只清理本次新增里被丢弃的；被替换的旧图仍被数据库引用，
                 // 保存成功后才由 ViewModel 删除（否则取消编辑会把原记录弄坏）
                 withContext(Dispatchers.IO) {
-                    orphans.filter { it == file.name }.forEach { PhotoStore.delete(context, it) }
+                    orphans.filter { it == draftName }.forEach { PhotoStore.delete(context, it) }
                 }
             }
         } else {
@@ -1163,7 +1164,7 @@ fun PhotoNoteCard(
     val pickSingle = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             scope.launch {
-                PhotoStore.saveFromUri(context, uri)?.let { name ->
+                PhotoStore.saveFromUri(context, uri, draft = true)?.let { name ->
                     val (next, orphans) = nextPhotoList(currentPhotos, listOf(name), maxPhotos)
                     onPhotosChanged(next)
                     withContext(Dispatchers.IO) {
@@ -1183,7 +1184,7 @@ fun PhotoNoteCard(
             scope.launch {
                 // 先按剩余名额截断，再复制进私有目录，避免「复制了又丢弃」产生孤儿文件
                 val remaining = (maxPhotos - currentPhotos.size).coerceAtLeast(1)
-                val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it) }
+                val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it, draft = true) }
                 if (saved.isNotEmpty()) {
                     val (next, orphans) = nextPhotoList(currentPhotos, saved, maxPhotos)
                     onPhotosChanged(next)

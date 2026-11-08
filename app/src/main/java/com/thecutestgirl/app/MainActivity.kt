@@ -9,12 +9,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.mutableStateOf
+import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.sync.PartnerNotifier
 import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.ui.AppRoot
 import com.thecutestgirl.app.ui.NotificationTarget
 import com.thecutestgirl.app.ui.theme.TheCutestGirlTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -36,6 +40,10 @@ class MainActivity : ComponentActivity() {
         // 只有真正首次创建才触发同步排单；旋转屏幕等重建不重复入队
         if (savedInstanceState == null) {
             SyncManager.startAfterConfigured(this)
+        }
+        // P2-7：清理进程被杀留下的过期草稿照片
+        lifecycleScope.launch(Dispatchers.IO) {
+            PhotoStore.cleanupOldDrafts(this@MainActivity)
         }
         notificationTarget = intent.toNotificationTarget()
         setContent {

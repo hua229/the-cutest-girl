@@ -31,6 +31,7 @@ object SyncStateStore {
     private const val KEY_NOTIFIED = "notified_ids"
     private const val KEY_DIRS_READY = "dirs_ready"
     private const val KEY_LAST_MAINTENANCE = "last_maintenance_at"
+    private const val KEY_LAST_CLOUD_GC = "last_cloud_gc_at"
 
     /** 记住多少条已提醒记录，够去重就行，别把 prefs 撑大 */
     private const val NOTIFIED_KEEP = 400
@@ -98,6 +99,14 @@ object SyncStateStore {
         prefs(context).edit().putLong(KEY_LAST_MAINTENANCE, at).apply()
     }
 
+    /** 上次云端照片 GC 的时间（毫秒），0 = 从没做过 */
+    fun lastCloudGcAt(context: Context): Long =
+        prefs(context).getLong(KEY_LAST_CLOUD_GC, 0L)
+
+    fun setLastCloudGcAt(context: Context, at: Long) {
+        prefs(context).edit().putLong(KEY_LAST_CLOUD_GC, at).apply()
+    }
+
     // ---------------- 已提醒过的记录 ----------------
 
     fun notifiedIds(context: Context): MutableSet<String> {
@@ -155,6 +164,7 @@ object SyncStateStore {
             .remove(KEY_NOTIFIED)
             .remove(KEY_DIRS_READY)
             .remove(KEY_LAST_MAINTENANCE)
+            .remove(KEY_LAST_CLOUD_GC)
             .commit()
     }
 }

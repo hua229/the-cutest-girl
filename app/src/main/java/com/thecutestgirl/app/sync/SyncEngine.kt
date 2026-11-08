@@ -100,6 +100,13 @@ class SyncEngine(private val context: Context) {
         /** 大图瘦身 / 照片目录扫描的最低间隔：6 小时 */
         private const val MAINTENANCE_INTERVAL_MS = 6 * 60 * 60 * 1000L
 
+        /** 本地孤儿照片保留时长：24 小时（避开正在编辑的草稿） */
+        private const val PHOTO_ORPHAN_TTL_MS = 24 * 60 * 60 * 1000L
+
+        /** 云端孤儿照片 GC 间隔：24 小时；云端照片保留 7 天再删 */
+        private const val CLOUD_GC_INTERVAL_MS = 24 * 60 * 60 * 1000L
+        private const val CLOUD_PHOTO_TTL_MS = 7 * 24 * 60 * 60 * 1000L
+
         private val syncMutex = Mutex()
 
         /**
@@ -502,6 +509,48 @@ class SyncEngine(private val context: Context) {
                         }
                     }
                 SyncStateStore.setLastMaintenanceAt(context, nowForMaintenance)
+
+                // P2-8 本地照片 GC：只删「数据库不引用 + 超过 24h」的文件
+                val referencedPhotos = localPhotoRefs.toHashSet()
+                val orphanCutoff = nowForMaintenance - PHOTO_ORPHAN_TTL_MS
+                PhotoStore.dir(context).listFiles { f ->
+                    f.isFile && f.name !in referencedPhotos && f.lastModified() < orphanCutoff
+                }?.forEach { it.delete() }
+
+                // P2-8 云端照片 GC（每天一次，保守策略）：
+                // 先下载所有远端记录收集照片引用；任一条解析失败就整轮跳过，避免误删。
+                val lastCloudGc = SyncStateStore.lastCloudGcAt(context)
+                val cloudGcDue = lastCloudGc == 0L ||
+                    nowForMaintenance - lastCloudGc >= CLOUD_GC_INTERVAL_MS
+                if (cloudGcDue && remotePhotos != null) {
+                    val remoteRefs = mutableSetOf<String>()
+                    var remoteParseFailed = false
+                    for (entry in remoteRecords) {
+                        if (entry.name.startsWith("T_") || !entry.name.endsWith(".json")) continue
+                        val text = (dav.getString("thecutestgirl/records/${entry.name}") as? DavResult.Ok)?.value
+                        val rec = text?.let { parseSyncRecord(it) }
+                        if (rec == null) {
+                            remoteParseFailed = true
+                            break
+                        }
+                        val photo = when (rec) {
+                            is SyncRecord.Outfit -> rec.record.photoPath
+                            is SyncRecord.Meal -> rec.record.photoPath
+                            is SyncRecord.Event -> rec.record.photoPath
+                        }
+                        if (!photo.isNullOrBlank()) remoteRefs += photo
+                    }
+                    if (!remoteParseFailed) {
+                        val keep = remoteRefs + referencedPhotos
+                        val cloudOldCutoff = nowForMaintenance - CLOUD_PHOTO_TTL_MS
+                        remotePhotos.forEach { entry ->
+                            if (entry.name !in keep && entry.lastModified in 1 until cloudOldCutoff) {
+                                dav.delete("thecutestgirl/photos/${entry.name}")
+                            }
+                        }
+                        SyncStateStore.setLastCloudGcAt(context, nowForMaintenance)
+                    }
+                }
             }
 
             SettingsStore.setPropagatedName(context, currentName)

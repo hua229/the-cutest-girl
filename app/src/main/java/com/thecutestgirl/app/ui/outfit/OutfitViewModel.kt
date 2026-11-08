@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.thecutestgirl.app.data.AppDatabase
 import com.thecutestgirl.app.data.OutfitRecord
@@ -13,6 +14,7 @@ import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.data.Tombstone
 import com.thecutestgirl.app.data.parseRecordDate
 import com.thecutestgirl.app.sync.SyncManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +24,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.thecutestgirl.app.ui.savedDate
+import com.thecutestgirl.app.ui.savedNullableString
+import com.thecutestgirl.app.ui.savedString
+import com.thecutestgirl.app.ui.savedStringList
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
@@ -110,15 +117,18 @@ class OutfitViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 /** 添加 / 编辑单条穿搭（点列表里某张照片进来） */
-class OutfitEditViewModel(app: Application) : AndroidViewModel(app) {
+class OutfitEditViewModel(app: Application, state: SavedStateHandle) : AndroidViewModel(app) {
+    /** 兼容设备回归里 `OutfitEditViewModel(app)` 的直接构造 */
+    constructor(app: Application) : this(app, SavedStateHandle())
+
     private val database = AppDatabase.getInstance(app)
     private val dao = database.outfitDao()
 
-    var photoPath by mutableStateOf<String?>(null)
-    var date by mutableStateOf(LocalDate.now())
-    var note by mutableStateOf("")
+    var photoPath by savedNullableString(state, "photoPath")
+    var date by savedDate(state, "date")
+    var note by savedString(state, "note")
     /** 对方写的评论：上传人只读 */
-    var reply by mutableStateOf("")
+    var reply by savedString(state, "reply")
 
     private var editingId: String? = null
     private var editingCreatedAt: Long = 0
@@ -210,7 +220,9 @@ class OutfitEditViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
 
-            val path = photoPath ?: return@launch
+            val path = withContext(Dispatchers.IO) {
+                PhotoStore.promoteDraft(getApplication(), photoPath)
+            } ?: return@launch
             val owner = (latest?.origin ?: editingOrigin)
                 .takeIf { it.isNotBlank() && it != "local" } ?: myDevice
             val baseNote = latest?.note ?: originalNote
@@ -280,16 +292,21 @@ class OutfitEditViewModel(app: Application) : AndroidViewModel(app) {
  * - [existing] 实时观察这一天的已有记录，展示并支持删除（删除立即生效并同步墓碑）
  * - [newPhotos] 本次新选的照片，点保存时为每张照片各建一条记录，统一归到 [date] 下
  */
-class OutfitUploadViewModel(app: Application) : AndroidViewModel(app) {
+class OutfitUploadViewModel(app: Application, private val state: SavedStateHandle) : AndroidViewModel(app) {
+    /** 兼容设备回归里 `OutfitUploadViewModel(app)` 的直接构造 */
+    constructor(app: Application) : this(app, SavedStateHandle())
+
     private val database = AppDatabase.getInstance(app)
     private val dao = database.outfitDao()
 
-    private val _date = MutableStateFlow(LocalDate.now())
+    private val _date = MutableStateFlow(
+        parseRecordDate(state.get<String>("date") ?: "") ?: LocalDate.now()
+    )
     val date: StateFlow<LocalDate> = _date.asStateFlow()
 
-    /** 本次待保存的新照片文件名 */
-    var newPhotos by mutableStateOf<List<String>>(emptyList())
-    var note by mutableStateOf("")
+    /** 本次待保存的新照片文件名（草稿照片，保存时晋级为正式文件） */
+    var newPhotos by savedStringList(state, "newPhotos")
+    var note by savedString(state, "note")
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val existing = _date
@@ -314,6 +331,7 @@ class OutfitUploadViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setDate(date: LocalDate) {
         _date.value = date
+        state["date"] = date.toString()
     }
 
     fun addPhotos(names: List<String>) {
@@ -350,7 +368,11 @@ class OutfitUploadViewModel(app: Application) : AndroidViewModel(app) {
             val base = System.currentTimeMillis()
             val myDevice = SettingsStore.deviceId(getApplication())
             val myName = SettingsStore.myName(getApplication())
-            photos.forEachIndexed { index, path ->
+            // 草稿照片晋级为正式文件，再写库；进程被杀留下的 draft_ 由启动清理兜底
+            val finalPhotos = withContext(Dispatchers.IO) {
+                photos.mapNotNull { PhotoStore.promoteDraft(getApplication(), it) }
+            }
+            finalPhotos.forEachIndexed { index, path ->
                 dao.insert(
                     OutfitRecord(
                         id = UUID.randomUUID().toString(),

@@ -339,7 +339,7 @@ fun SheetPhotoPicker(
         if (ok && file != null && file.exists() && file.length() > 0) {
             scope.launch {
                 withContext(Dispatchers.IO) { PhotoStore.compressInPlace(file) }
-                deliver(listOf(file.name))
+                deliver(listOf(PhotoStore.makeDraft(context, file)))
             }
         } else {
             file?.delete()
@@ -347,7 +347,7 @@ fun SheetPhotoPicker(
     }
     val pickSingle = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
-            scope.launch { PhotoStore.saveFromUri(context, uri)?.let { deliver(listOf(it)) } }
+            scope.launch { PhotoStore.saveFromUri(context, uri, draft = true)?.let { deliver(listOf(it)) } }
         }
     }
     val pickMultiple = rememberLauncherForActivityResult(
@@ -357,7 +357,7 @@ fun SheetPhotoPicker(
             scope.launch {
                 // 先按剩余名额截断再复制，避免多余文件落盘
                 val remaining = (maxPhotos - photos.size).coerceAtLeast(1)
-                val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it) }
+                val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it, draft = true) }
                 deliver(saved)
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.thecutestgirl.app.data.AppDatabase
 import com.thecutestgirl.app.data.EVENT_TYPE_MOMENT
@@ -16,7 +17,13 @@ import com.thecutestgirl.app.data.parseRecordDate
 import com.thecutestgirl.app.sync.SyncManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.thecutestgirl.app.ui.savedDate
+import com.thecutestgirl.app.ui.savedInt
+import com.thecutestgirl.app.ui.savedNullableString
+import com.thecutestgirl.app.ui.savedString
 import java.time.LocalDate
 import java.util.UUID
 
@@ -29,17 +36,20 @@ class EventViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 /** 添加 / 编辑事件 */
-class EventEditViewModel(app: Application) : AndroidViewModel(app) {
+class EventEditViewModel(app: Application, state: SavedStateHandle) : AndroidViewModel(app) {
+    /** 兼容设备回归里 `EventEditViewModel(app)` 的直接构造 */
+    constructor(app: Application) : this(app, SavedStateHandle())
+
     private val database = AppDatabase.getInstance(app)
     private val dao = database.eventDao()
 
-    var type by mutableStateOf(EVENT_TYPE_MOMENT)
-    var title by mutableStateOf("")
-    var description by mutableStateOf("")
-    var photoPath by mutableStateOf<String?>(null)
-    var date by mutableStateOf(LocalDate.now())
+    var type by savedInt(state, "type", EVENT_TYPE_MOMENT)
+    var title by savedString(state, "title")
+    var description by savedString(state, "description")
+    var photoPath by savedNullableString(state, "photoPath")
+    var date by savedDate(state, "date")
     /** 对方写的评论：上传人只读 */
-    var reply by mutableStateOf("")
+    var reply by savedString(state, "reply")
 
     private var editingId: String? = null
     private var editingCreatedAt: Long = 0
@@ -134,6 +144,11 @@ class EventEditViewModel(app: Application) : AndroidViewModel(app) {
             val baseReply = latest?.reply ?: originalReply
             val noteChanged = description.trim() != baseNote
             val replyChanged = reply.trim() != baseReply
+            val finalPhoto = if (isMoment) {
+                withContext(Dispatchers.IO) {
+                    PhotoStore.promoteDraft(getApplication(), photoPath)
+                }
+            } else null
             val record = EventRecord(
                 id = editingId ?: UUID.randomUUID().toString(),
                 type = type,
@@ -145,7 +160,7 @@ class EventEditViewModel(app: Application) : AndroidViewModel(app) {
                 replyName = if (replyChanged) myName else (latest?.replyName ?: originalReplyName),
                 noteUpdatedAt = if (noteChanged) now else (latest?.noteUpdatedAt ?: 0L),
                 replyUpdatedAt = if (replyChanged) now else (latest?.replyUpdatedAt ?: originalReplyAt),
-                photoPath = if (isMoment) photoPath else null,
+                photoPath = if (isMoment) finalPhoto else null,
                 date = date.toString(),
                 createdAt = if (editingCreatedAt > 0) editingCreatedAt else now,
                 updatedAt = now,

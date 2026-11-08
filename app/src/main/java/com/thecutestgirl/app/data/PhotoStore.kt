@@ -31,6 +31,10 @@ object PhotoStore {
     private const val MAX_EDGE = 1920
     private const val JPEG_QUALITY = 85
 
+    /** 草稿前缀：新选/新拍、还没保存进数据库的照片。保存时晋级为 img_，取消/超 24h 删除 */
+    private const val DRAFT_PREFIX = "draft_"
+    private const val DRAFT_TTL_MS = 24 * 60 * 60 * 1000L
+
     /** 缓存 application context 对应的照片目录（避免每次 file() 都 mkdirs） */
     private val cachedDir = AtomicReference<File?>(null)
 
@@ -52,9 +56,9 @@ object PhotoStore {
         return file to uri
     }
 
-    /** 把相册选中的图片复制进私有目录并压缩，成功返回文件名 */
-    suspend fun saveFromUri(context: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
-        val name = "img_${UUID.randomUUID()}.jpg"
+    /** 把相册选中的图片复制进私有目录并压缩，成功返回文件名。[draft] = 还没保存进数据库 */
+    suspend fun saveFromUri(context: Context, uri: Uri, draft: Boolean = false): String? = withContext(Dispatchers.IO) {
+        val name = if (draft) "draft_${UUID.randomUUID()}.jpg" else "img_${UUID.randomUUID()}.jpg"
         val dir = dir(context)
         val raw = File(dir, "raw_${UUID.randomUUID()}.jpg")
         try {
@@ -80,6 +84,36 @@ object PhotoStore {
     fun delete(context: Context, name: String?) {
         if (name.isNullOrBlank()) return
         runCatchingCancellable { File(dir(context), name).delete() }
+    }
+
+    // ---------------- 草稿照片（P2-7） ----------------
+
+    fun isDraft(name: String?): Boolean = name?.startsWith(DRAFT_PREFIX) == true
+
+    /** 相机临时文件 → 草稿名，进程被杀也只会留下可清理的 draft_ 文件 */
+    fun makeDraft(context: Context, file: File): String {
+        if (file.name.startsWith(DRAFT_PREFIX)) return file.name
+        val target = File(dir(context), DRAFT_PREFIX + file.name)
+        return if (file.renameTo(target)) target.name else file.name
+    }
+
+    /** 保存成功：草稿晋级为正式 img_ 文件，返回最终文件名 */
+    fun promoteDraft(context: Context, name: String?): String? {
+        if (name == null || !name.startsWith(DRAFT_PREFIX)) return name
+        val src = File(dir(context), name)
+        if (!src.exists()) return name
+        val target = File(dir(context), "img_" + name.removePrefix(DRAFT_PREFIX))
+        return if (src.renameTo(target)) target.name else name
+    }
+
+    /** 启动时清理超过 24h 的草稿（编辑一半被系统杀掉的残留） */
+    fun cleanupOldDrafts(context: Context) {
+        val cutoff = System.currentTimeMillis() - DRAFT_TTL_MS
+        runCatchingCancellable {
+            dir(context).listFiles { f ->
+                f.isFile && f.name.startsWith(DRAFT_PREFIX) && f.lastModified() < cutoff
+            }?.forEach { it.delete() }
+        }
     }
 
     /**

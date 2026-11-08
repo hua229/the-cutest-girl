@@ -3,7 +3,20 @@
 > 最后更新：2026-11-08 ｜ 当前版本 **v4.1.0**（versionCode 40）  
 > 本文档写给接手本项目的 AI 或工程师，包含全部关键上下文。用户是代码小白，中文沟通，所有面向用户的文案均为中文。
 >
-> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**，见下六节。
+> **本次同步（2026-11-08）**：按 `OPTIMIZATION_PROMPT.md` 完成 **Batch 1（P0）**、**Batch 2 / 2b（P1-UI 全部）**、**Batch 3（P1-PERF 1–9）**、**Batch 4（P2-2/3/4）**、**Batch 5（P2-5/6）**、**Batch 6（P2-7/8）**，见下七节。
+
+## Batch 6（P2-7 / P2-8，v4.1.0 未升版本）
+
+| ID | 改动 |
+|---|---|
+| P2-7 | 新增 `ui/SavedStateValues.kt`（`mutableStateOf` + `SavedStateHandle` 双写委托，支持 String/Int/LocalDate/List）；`OutfitEditViewModel` / `MealEditViewModel` / `EventEditViewModel` / `OutfitUploadViewModel` 表单字段改为可恢复（保留 `(Application)` 次构造器兼容设备回归）。照片新增 `draft_` 草稿：相册/相机选图先落草稿，保存时 `PhotoStore.promoteDraft()` 晋级为 `img_` 再写库；启动时 `cleanupOldDrafts()` 清超过 24h 的草稿 |
+| P2-8 | 本地照片 GC：维护轮（6h）删除「数据库不引用 + 超过 24h」的文件；云端照片 GC：每天一次，先下载所有远端记录收集引用（任一条解析失败就整轮跳过），只删「本地/远端都不引用 + 服务器时间超过 7 天」的照片；换端点会清 `last_cloud_gc_at` |
+
+### 验证
+- 编译 + androidTest 编译 + `lintDebug`：0 errors / **6 warnings**；JVM 单测 4/4
+- 设备回归 **26/26**（`.verification/tests-v4.1.0-p2-drafts.txt`）
+- 装机：新增记录抽屉能正常打开（证明默认 ViewModel 工厂能构造带 `SavedStateHandle` 的 VM）；`logcat -b crash` 0 条
+- **未验证**：开发者选项「不保留活动」杀进程后表单恢复；草稿 24h 清理（未改时间）；云端 GC 的真实删除（测试服务器上没有 7 天前的照片）；本地 GC 实际删除数量
 
 ## Batch 5（P2-5 / P2-6，v4.1.0 未升版本）
 
