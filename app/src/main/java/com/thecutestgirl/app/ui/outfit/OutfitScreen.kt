@@ -267,7 +267,7 @@ fun OutfitScreen(
                 }
             }
 
-            // ---------- 悬浮顶栏：内容从它下面滚过；右侧是全局设置菜单 ----------
+            // ---------- 悬浮顶栏：内容从它下面滚过；左上角是唯一的设置菜单入口 ----------
             FloatingTopBar(
                 collapsed = scrolled,
                 onOpenMenu = onOpenMenu,

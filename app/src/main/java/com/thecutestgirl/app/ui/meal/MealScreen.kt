@@ -142,7 +142,6 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
  */
 fun MealScreen(
     onOpenMeal: (LocalDate, Int, String?) -> Unit,
-    onOpenMenu: () -> Unit,
     initialDate: LocalDate? = null,
     onInitialTargetConsumed: () -> Unit = {}
 ) {
@@ -250,7 +249,6 @@ fun MealScreen(
         // ---------- 悬浮顶栏：滚动后收起日期行与副标题 ----------
         FloatingTopBar(
             collapsed = scrolled,
-            onOpenMenu = onOpenMenu,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }

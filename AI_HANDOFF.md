@@ -43,7 +43,7 @@
 
 ## v4.2.2（2026-11-08）：侧边菜单 + 四个独立设置页
 
-- **单一入口**：删除穿搭页齿轮、饮食/点滴「长按标题进设置」；三个列表页右上角统一为菜单按钮（`FloatingTopBar(onOpenMenu=...)`）。菜单位于左侧，只放设置，不混入「穿搭 / 饮食 / 点滴」模块入口。
+- **单一入口**：删除穿搭页齿轮、饮食/点滴「长按标题进设置」；现在只在**穿搭页左上角**保留一个菜单按钮（`FloatingTopBar(onOpenMenu=...)`），饮食/点滴没有按钮，边缘滑动也只允许在穿搭页触发。菜单位于左侧，只放设置，不混入「穿搭 / 饮食 / 点滴」模块入口。
 - **四个独立页面**：`SettingsModule` 枚举提供四个模块及路由，分别是 `settings/profile`、`settings/sync`、`settings/backup`、`settings/battery`。每个模块有独立顶栏、独立页面和返回栈，不再共用一张可滚动设置页。
 - **全局抽屉**：`ui/settings/SettingsMenu.kt` 的 `SettingsMenuDrawer`，用 Material3 `ModalNavigationDrawer`。宽度 `min(78% 屏宽, 340dp)`，右侧圆角 24，表面完全不透明，40% 黑遮罩；遮罩点击 / 右滑 / 返回键均可关闭，行高 ≥56dp。
 - **展开动画**：抽屉自身滑入之外，内容按 `drawerState.targetValue` 做 240ms 淡入 + 18dp 右移（`FastOutSlowInEasing`），与滑入同向叠加，避免内容突然出现。
@@ -79,6 +79,7 @@
 - `.verification/tests-v4.2.1-final.txt`（32/32）
 - `.verification/screens/v430/`（侧边设置菜单：默认/抽屉/分组定位/遮罩/边缘滑动/返回键/小屏）
 - `.verification/screens/v422/`（四个独立设置页、菜单文案精简、返回栈）
+- `.verification/screens/v422b/`（只有穿搭页左上角一个菜单入口；饮食/点滴无按钮、无边缘滑动）
 - `.verification/screens/v421/`（抽屉空态/有内容/键盘/小屏、列表浅色与系统深色、对方/自己编辑页、通知落点、大图缩放）
 - `.verification/screens/v410/`（浅色品牌截图）
 - `app/schemas/com.thecutestgirl.app.data.AppDatabase/6.json`

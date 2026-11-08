@@ -108,7 +108,6 @@ import androidx.compose.foundation.background
 fun EventScreen(
     onAdd: () -> Unit,
     onOpen: (String) -> Unit,
-    onOpenMenu: () -> Unit,
     initialDate: LocalDate? = null,
     initialRecordId: String? = null,
     onInitialTargetConsumed: () -> Unit = {}
@@ -269,7 +268,6 @@ fun EventScreen(
             // ---------- 悬浮顶栏（事件是时间线，只有标题行） ----------
             FloatingTopBar(
                 collapsed = scrolled,
-                onOpenMenu = onOpenMenu,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }

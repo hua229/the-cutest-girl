@@ -158,10 +158,11 @@ fun AppRoot(
     }
 
     // 全局侧边菜单：只做设置，不混入模块导航。
-    // 打开手势只在三个列表页生效，编辑页/设置页不会被边缘滑动误触。
+    // 入口只在穿搭页，边缘滑动也只允许在穿搭页触发；
+    // 饮食/点滴不提供设置入口，编辑页/设置页也不会误触。
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = showBottomBar,
+        gesturesEnabled = currentRoute == "outfit",
         scrimColor = SettingsScrim,
         drawerContent = {
             // NavHost 在抽屉之后组合，它的返回回调会先吃掉 Back；
@@ -272,8 +273,7 @@ fun AppRoot(
                                     val base = "mealEdit/$date/$mealType"
                                     // id 用查询参数（?id=xx）传递，新增记录时可省略
                                     navController.navigate(if (recordId != null) "$base?id=$recordId" else base)
-                                },
-                                onOpenMenu = openSettingsMenu
+                                }
                             )
                         }
                         composable(
@@ -300,7 +300,6 @@ fun AppRoot(
                             EventScreen(
                                 onAdd = { navController.navigate("eventEdit") },
                                 onOpen = { id -> navController.navigate("eventEdit/$id") },
-                                onOpenMenu = openSettingsMenu,
                                 initialDate = pendingTarget
                                     ?.takeIf { it.route == "event" }
                                     ?.date

@@ -114,10 +114,10 @@ SharedPreferences 按「能不能进备份」拆文件：
 ## 4. UI 层
 
 - `AppRoot`：底部液态导航 + NavHost；持有底栏 Haze 采样源；通知落点 `pendingTarget`（route/date/recordId），页面消费后清空
-- 全局设置抽屉：`AppRoot` 用 `ModalNavigationDrawer` 包住 Scaffold，抽屉内容为 `SettingsMenuDrawer`；`gesturesEnabled = showBottomBar`（只在三个列表页可边缘滑开）；返回键的 `BackHandler` 注册在 `drawerContent` 内、NavHost 之后，保证先关抽屉；内容按 `targetValue` 做 240ms 淡入 + 18dp 位移
+- 全局设置抽屉：`AppRoot` 用 `ModalNavigationDrawer` 包住 Scaffold，抽屉内容为 `SettingsMenuDrawer`；`gesturesEnabled = currentRoute == "outfit"`（只有穿搭页可边缘滑开）；返回键的 `BackHandler` 注册在 `drawerContent` 内、NavHost 之后，保证先关抽屉；内容按 `targetValue` 做 240ms 淡入 + 18dp 位移
 - 设置路由：四个独立页面 `settings/profile`、`settings/sync`、`settings/backup`、`settings/battery`；`SettingsModule` 枚举提供标题/图标/路由，每个页面只呈现本模块内容并有独立顶栏与返回栈
 - 菜单：只放四个设置模块，不混入「穿搭 / 饮食 / 点滴」；菜单行显示昵称与同步状态，打开抽屉时重读
-- 列表页：`FloatingTopBar(onOpenMenu=...)`（展开高度只记录一次）+ LazyColumn + 页面专属内容；设置入口只此一个，`PageHeader` 不再有长按手势
+- 列表页：`FloatingTopBar`（展开高度只记录一次）+ LazyColumn + 页面专属内容；只有穿搭页传 `onOpenMenu`，按钮在左上角；饮食/点滴不传，顶栏占满宽度。`PageHeader` 不再有长按手势
 - 新增记录：统一 `AddRecordSheet`（约 82% 屏高、表面 0.98、40% 遮罩、放弃确认）；编辑已有记录仍走全屏页
 - 对方编辑页：标题/日期只读，不显示「修改」；保存只写 `reply`
 - 表单：`SavedStateHandle` + Compose 状态双写（`ui/SavedStateValues.kt`）

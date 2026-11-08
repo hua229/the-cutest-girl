@@ -40,7 +40,7 @@
 | `glassPanel` / `GlassCard` | 92% 白 + 顶部内发光（白 55%→透明）+ 1dp 8% 边框 + 8dp 中性投影；无 `glow/elevation` 参数；抽屉 100% 不透明、顶栏 0.96 |
 | `solidCard` | `glassPanel` 别名，圆角 16、固定 8dp 投影 |
 | `AppTopBar` | `quietTopAppBar` + `IconTitle`，`windowInsets=0`（根 Scaffold 已处理状态栏） |
-| `FloatingTopBar` | 玻璃面板 24dp → 收起 16dp；宽度动画 300ms；右侧可带「设置菜单」圆形按钮（三页共用同一个入口） |
+| `FloatingTopBar` | 玻璃面板 24dp → 收起 16dp；宽度动画 300ms；穿搭页左侧可带唯一「设置菜单」圆形按钮，饮食/点滴不带按钮 |
 | `SettingsMenuDrawer` | 左侧全局设置菜单：屏宽 78%（上限 340dp）、右侧圆角 24、表面完全不透明、40% 黑遮罩；顶栏只有「设置」+ 关闭按钮，无副标题和底部说明；行高 ≥56dp，支持遮罩/右滑/返回键关闭；展开时内容 240ms 淡入 + 18dp 位移 |
 | `SettingsPage` | 四个独立设置页共用骨架：模块名顶栏 + 24dp 页边距 + 实体卡片；每页只呈现一个模块，不再分组滚动 |
 | `PrimaryButton` | 品牌粉底 + 白字、48dp、圆角 8、按压 98% |

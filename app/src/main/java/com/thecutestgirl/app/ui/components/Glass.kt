@@ -11,7 +11,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -221,14 +220,13 @@ fun Modifier.quietTopAppBar(): Modifier {
 
 private val CollapsedBarWidth = 136.dp
 private val CollapsedBarCorner = 16.dp
-private val MenuSlot = 64.dp
 
 /**
- * 顶部悬浮面板（v4.0）：玻璃面板 24dp 圆角 + 可选菜单按钮；
+ * 顶部悬浮面板（v4.0）：玻璃面板 24dp 圆角；
  * 滚动后收成左上角 16dp 圆角的小胶囊。宽度动画 300ms，内容只测量一次。
  *
- * v4.2.2：右侧齿轮改为「设置菜单」按钮。三个列表页共用这一个入口，
- * 点开全局侧边菜单，不再出现「每页一个齿轮 / 长按标题」的分裂入口。
+ * v4.2.2：设置菜单只放在穿搭页，按钮在左上角；[onOpenMenu] 为 null 时
+ * （饮食 / 点滴）不渲染按钮，顶栏占满可用宽度。
  */
 @Composable
 fun FloatingTopBar(
@@ -242,7 +240,8 @@ fun FloatingTopBar(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        val menuSpace = if (onOpenMenu != null) MenuSlot else 0.dp
+        // 48dp 按钮 + 12dp 间距
+        val menuSpace = if (onOpenMenu != null) 60.dp else 0.dp
         val expandedWidth = (maxWidth - menuSpace).coerceAtLeast(CollapsedBarWidth)
         val barWidth by animateDpAsState(
             targetValue = if (collapsed) CollapsedBarWidth else expandedWidth,
@@ -256,9 +255,23 @@ fun FloatingTopBar(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top
         ) {
+            if (onOpenMenu != null) {
+                SolidCircleButton(
+                    onClick = onOpenMenu,
+                    diameter = 48.dp,
+                    contentDescription = "打开设置菜单"
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Menu,
+                        contentDescription = "打开设置菜单",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+            }
             Box(
                 modifier = Modifier
                     .width(barWidth)
@@ -277,22 +290,6 @@ fun FloatingTopBar(
                     layout(constraints.maxWidth, placeable.height) {
                         placeable.place(0, 0)
                     }
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            if (onOpenMenu != null) {
-                SolidCircleButton(
-                    onClick = onOpenMenu,
-                    diameter = 48.dp,
-                    contentDescription = "打开设置菜单",
-                    modifier = Modifier.padding(top = if (collapsed) 0.dp else 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Menu,
-                        contentDescription = "打开设置菜单",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
             }
         }
