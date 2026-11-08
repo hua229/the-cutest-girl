@@ -5,7 +5,7 @@
 - 界面：Jetpack Compose（Material 3，浅色品牌主题：简洁白 + 粉红，玻璃卡面）
 - 数据：Room 数据库；数据默认只在本机，开启同步后两台手机通过私有坚果云 WebDAV 目录互相同步
 - 最低支持 Android 8.0（minSdk 26）
-- 当前版本：`4.2.1`（versionCode 42）
+- 当前版本：`4.2.2`（versionCode 43）
 
 ## 功能
 
@@ -15,9 +15,9 @@
 | 饮食 | 按天记录早 / 午 / 晚三餐，照片 + 文字；可以给对方写评论 |
 | 事件 | 纪念日自动算「第 N 天 / 还有 N 天」，日常点滴可配图文 |
 
-设置入口只有一处：三个列表页右上角的**菜单按钮**。点开左侧设置菜单，再选「我的信息 / 云同步 / 数据备份 / 后台不被冻结」，会直接跳到设置页对应分组。列表页不再单独放齿轮，也没有「长按标题进设置」的隐藏手势。
+设置入口只有一处：三个列表页右上角的**菜单按钮**。点开左侧设置菜单，再选「我的信息 / 云同步 / 数据备份 / 后台不被冻结」，会进入各自**独立的设置页**。列表页不再单独放齿轮，也没有「长按标题进设置」的隐藏手势；四个模块也不再挤在同一张设置页里。
 
-| 设置分组 | 内容 |
+| 设置模块（独立页面） | 内容 |
 | --- | --- |
 | 我的信息 | 昵称（会同步给对方） |
 | 云同步 | 坚果云 WebDAV 服务器、账号、应用密码、立即同步 |
@@ -76,7 +76,7 @@ python tools/sync_test_server.py --port 18765 --root .verification/dav
 ./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest -PverificationApp --offline
 
 # 3) 安装并运行
-adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.2.1_debug.apk
+adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.2.2_debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -r com.thecutestgirl.app.verification.test/com.thecutestgirl.app.sync.SyncRegressionRunner
 ```

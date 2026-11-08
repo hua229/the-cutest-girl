@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
  *
  * ⚠️ 15 分钟是 Android 的硬下限，且 Doze / 厂商省电会把实际间隔拉长到几十分钟甚至更久。
  * 这就是「不打开 App 基本收不到通知」的根因，不是代码写错了。要真正稳住后台，
- * 只能让用户把 App 加进电池优化白名单（设置页有入口，见 SettingsScreen 的「后台不被冻结」）。
+ * 只能让用户把 App 加进电池优化白名单（设置菜单 →「后台不被冻结」）。
  */
 object SyncManager {
 

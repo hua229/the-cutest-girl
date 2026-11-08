@@ -1,6 +1,6 @@
 # the cutest girl —— 交接速查
 
-> 当前版本 **4.2.1**（versionCode 42）｜最后更新 2026-11-08  
+> 当前版本 **4.2.2**（versionCode 43）｜最后更新 2026-11-08
 > 给接手的 AI / 工程师：先读本页，再按需读 `docs/`。用户是代码小白，中文沟通，所有用户文案中文。
 
 ## 5 分钟上手
@@ -24,7 +24,7 @@
 | --- | --- |
 | `docs/architecture.md` | 数据层、数据库 v6、同步协议/流程、业务规则、错误模型、验证命令 |
 | `docs/design-system.md` | v4.1/4.2 浅色品牌 tokens（含对比度修订）、字体、形状、组件、动效规范 |
-| `docs/changelog.md` | v1 → v4.2.1 版本摘要 |
+| `docs/changelog.md` | v1 → v4.2.2 版本摘要 |
 | `README.md` | 功能、权限、构建、测试、项目结构 |
 
 ## 不可违反的约束
@@ -41,18 +41,18 @@
 10. 照片写入必须原子化；新选照片先落 `draft_` 草稿，保存时 `promoteDraft`。
 11. 所有用户可见文案中文、无 emoji 当功能图标；粉色只用于操作与焦点。
 
-## 工作区未发版改动（2026-11-08）：侧边设置菜单
+## v4.2.2（2026-11-08）：侧边菜单 + 四个独立设置页
 
-> 代码已构建、已装机验证，**版本号仍是 4.2.1 / 42**；发版由用户拍板。
-
-- **单一入口**：删除穿搭页齿轮、饮食/点滴「长按标题进设置」；三个列表页右上角统一为菜单按钮（`FloatingTopBar(onOpenMenu=...)`）。
+- **单一入口**：删除穿搭页齿轮、饮食/点滴「长按标题进设置」；三个列表页右上角统一为菜单按钮（`FloatingTopBar(onOpenMenu=...)`）。菜单位于左侧，只放设置，不混入「穿搭 / 饮食 / 点滴」模块入口。
+- **四个独立页面**：`SettingsModule` 枚举提供四个模块及路由，分别是 `settings/profile`、`settings/sync`、`settings/backup`、`settings/battery`。每个模块有独立顶栏、独立页面和返回栈，不再共用一张可滚动设置页。
 - **全局抽屉**：`ui/settings/SettingsMenu.kt` 的 `SettingsMenuDrawer`，用 Material3 `ModalNavigationDrawer`。宽度 `min(78% 屏宽, 340dp)`，右侧圆角 24，表面完全不透明，40% 黑遮罩；遮罩点击 / 右滑 / 返回键均可关闭，行高 ≥56dp。
-- **只放设置**：4 个分组（我的信息、云同步、数据备份、后台不被冻结），不与底部导航的模块切换重复；行内显示昵称和同步状态，打开时用 `refreshKey` 重读，避免缓存旧值。
-- **设置页定位**：路由改为 `settings?section={section}`，`SettingsSection` 枚举同时驱动菜单项与页面锚点；设置页改为 `LazyColumn`，进入时 `scrollToItem` 到对应分组。
-- **返回键**：`BackHandler` 必须注册在 `drawerContent` 内、NavHost 之后，否则 NavHost 先消费返回事件；通知到达时顺带收起抽屉。
-- **不改数据/同步**：仅 UI 与导航参数变化，未触碰同步协议、房间库结构或删除语义。
+- **展开动画**：抽屉自身滑入之外，内容按 `drawerState.targetValue` 做 240ms 淡入 + 18dp 右移（`FastOutSlowInEasing`），与滑入同向叠加，避免内容突然出现。
+- **文案精简**：删除顶栏「设置」下方的说明文字和抽屉底部说明文字；四个菜单行保留标题 + 一句功能说明。
+- **设置页拆分**：公共卡片、输入行、操作行和电池优化跳转抽到 `SettingsCommon.kt`；昵称防抖同步、同步测试流程、备份导出、白名单状态刷新均原样保留。
+- **版本**：`versionName 4.2.2` / `versionCode 43`。
+- **不改数据/同步**：仅 UI、导航与版本号变化，未触碰同步协议、Room 结构或删除语义。
 
-验证：`:app:assembleDebug` 成功；JVM 7/7；lint 0 错误 / 6 警告（基线）；模拟器覆盖安装验证抽屉开合、遮罩、左缘滑动、返回键、小屏 300dp、分组跳转，`logcat -b crash` 无本应用 FATAL。截图：`.verification/screens/v430/01–18`。
+验证：`:app:assembleDebug` 成功；JVM 7/7；lint 0 错误 / 6 警告（基线）；模拟器覆盖安装验证菜单、四个独立页面、返回栈与昵称/同步状态展示，`logcat -b crash` 无本应用 FATAL。截图：`.verification/screens/v422/`。
 
 ## 最近一轮（2026-11-08）：v4.2.1 验收修复
 
@@ -78,6 +78,7 @@
 
 - `.verification/tests-v4.2.1-final.txt`（32/32）
 - `.verification/screens/v430/`（侧边设置菜单：默认/抽屉/分组定位/遮罩/边缘滑动/返回键/小屏）
+- `.verification/screens/v422/`（四个独立设置页、菜单文案精简、返回栈）
 - `.verification/screens/v421/`（抽屉空态/有内容/键盘/小屏、列表浅色与系统深色、对方/自己编辑页、通知落点、大图缩放）
 - `.verification/screens/v410/`（浅色品牌截图）
 - `app/schemas/com.thecutestgirl.app.data.AppDatabase/6.json`
