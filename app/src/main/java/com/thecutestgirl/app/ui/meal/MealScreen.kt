@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,6 +77,7 @@ import com.thecutestgirl.app.ui.components.SheetTextField
 import com.thecutestgirl.app.ui.components.photoFrame
 import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import com.thecutestgirl.app.ui.components.PageHeader
 import com.thecutestgirl.app.ui.components.PartnerMark
 import com.thecutestgirl.app.ui.components.PhotoImage
@@ -85,9 +87,9 @@ import com.thecutestgirl.app.ui.components.UiSpringStiffness
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.PhotoViewerDialog
+import com.thecutestgirl.app.ui.components.pressTint
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
-import dev.chrisbanes.haze.haze
 import java.time.LocalDate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.layout.onSizeChanged
@@ -115,7 +117,7 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
             Modifier
                 .size(size * 1.6f)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         )
         Icon(
             imageVector = mealIcon(mealType),
@@ -128,7 +130,7 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
 
 /**
  * v2.5.3：顶栏高度改实测（原因同穿搭页）。原来按字号手算的 140dp，只要动一次
- * PageHeader 的内边距或副标题字号就会失效，表现为「早餐」被玻璃卡压住。
+ * PageHeader 的内边距或标题字号就会失效，表现为「早餐」被顶栏卡片压住。
  */
 
 /**
@@ -225,7 +227,7 @@ fun MealScreen(
                     // 底部留出玻璃导航栏的高度，内容能滚到玻璃底下而不被永久遮住
                     bottom = LocalAppBottomInset.current + 16.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(3) { mealType ->
@@ -255,7 +257,6 @@ fun MealScreen(
         ) {
             PageHeader(
                 title = "饮食",
-                subtitle = "好好吃饭，天天开心",
                 icon = Icons.Outlined.Restaurant,
                 collapsed = scrolled,
                 // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
@@ -274,8 +275,8 @@ fun MealScreen(
                 val isToday = date == today
                 DateNavRow(
                     label = "${date.toCnShort()} ${date.toWeekday()}",
-                    // 今天时是静态胶囊徽标；不是今天时变成可点的「回到今天」胶囊按钮
-                    subLabel = if (isToday) "今天" else "回到今天",
+                    // 非当天保留快捷返回按钮；当天不再重复显示一行状态小字。
+                    subLabel = if (isToday) null else "回到今天",
                     subLabelClickable = !isToday,
                     onSubLabelClick = { vm.setDate(LocalDate.now()) },
                     onLabelClick = { showDatePicker = true },
@@ -304,7 +305,6 @@ fun MealScreen(
         }
         AddRecordSheet(
             title = "记录${MEAL_NAMES[mealType]}",
-            subtitle = "${date.toCnShort()} ${date.toWeekday()}",
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
             hasUnsavedChanges = addVm.photoPath != null || addVm.note.isNotBlank(),
@@ -326,7 +326,7 @@ fun MealScreen(
             SheetTextField(
                 value = addVm.note,
                 onValueChange = { addVm.note = it },
-                placeholder = "这一餐吃了什么，比如：楼下那家豆浆油条",
+                placeholder = "吃了什么（可选）",
                 singleLine = false,
                 minLines = 3
             )
@@ -347,6 +347,7 @@ private fun MealSection(
     onOpenTheirs: (MealRecord) -> Unit,
     onViewPhoto: (String) -> Unit
 ) {
+    val emptyPress = remember { MutableInteractionSource() }
     Column {
         // 餐次标题
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -375,28 +376,27 @@ private fun MealSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .dashedCard(cornerRadius = 16.dp)
-                    .clickable(onClick = onAddMine)
+                    .dashedCard(cornerRadius = 12.dp)
+                    .pressTint(emptyPress, cornerRadius = 12.dp)
+                    .clickable(
+                        interactionSource = emptyPress,
+                        indication = null,
+                        onClick = onAddMine
+                    )
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     Icons.Outlined.Add,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "记${MEAL_NAMES[mealType]}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "我的",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -436,23 +436,34 @@ private fun MealContentCard(
     partnerName: String = ""
 ) {
     val context = LocalContext.current
-    val accent = MaterialTheme.colorScheme.primary
+    val palette = LocalAppPalette.current
+    val cardPress = remember { MutableInteractionSource() }
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp)
-            // 对方的记录：卡片左缘压一条 4dp 主色（粉色）竖条（裁剪后只露内侧圆角内的部分），
-            // 不额外占布局宽度，也不改变卡片圆角。颜色与代码保持一致，不再写「钴蓝」。
+            .solidCard(cornerRadius = 12.dp)
+            // 对方的记录：卡片左缘压一条 3dp 中性纸墨竖条，不额外占布局宽度。
             .drawBehind {
                 if (partner) {
                     drawRect(
-                        color = accent,
+                        color = palette.paperInk,
                         topLeft = Offset(0f, 0f),
-                        size = Size(4.dp.toPx(), size.height)
+                        size = Size(3.dp.toPx(), size.height)
                     )
                 }
             }
-            .then(if (clickable) Modifier.clickable(onClick = onClick) else Modifier)
+            .pressTint(cardPress, cornerRadius = 12.dp)
+            .then(
+                if (clickable) {
+                    Modifier.clickable(
+                        interactionSource = cardPress,
+                        indication = null,
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
+            )
     ) {
         Column {
             Row(
@@ -488,7 +499,7 @@ private fun MealContentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoShape(8.dp)
+                                .photoShape(10.dp)
                                 .clickable { onViewPhoto(record.photoPath!!) }
                         )
                     } else {
@@ -498,7 +509,7 @@ private fun MealContentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoFrame(8.dp)
+                                .photoFrame(10.dp)
                         )
                     }
                 }
@@ -527,7 +538,7 @@ private fun MealContentCard(
                             .width(2.dp)
                             .fillMaxHeight()
                             .background(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                LocalAppPalette.current.hairline,
                                 RoundedCornerShape(1.dp)
                             )
                     )
@@ -538,7 +549,7 @@ private fun MealContentCard(
                             // 拿它给评论署名，自己上传的记录收到评论就会显示成「我的评论」
                             if (record.replyName.isNotBlank()) "${record.replyName} 的评论" else "ta 的评论",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(

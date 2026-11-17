@@ -13,8 +13,8 @@ android {
         applicationId = "com.thecutestgirl.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 43
-        versionName = "4.2.2"
+        versionCode = 44
+        versionName = "4.3.0"
         testInstrumentationRunner = "com.thecutestgirl.app.sync.SyncRegressionRunner"
     }
 
@@ -84,7 +84,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.okhttp)
 
-    // 玻璃拟态模糊（底部导航栏）
+    // 保留原有悬浮液态玻璃底部导航栏。
     implementation(libs.haze)
     implementation(libs.haze.materials)
 }

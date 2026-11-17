@@ -2,48 +2,85 @@ package com.thecutestgirl.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ---------------- v4.1 浅色品牌体系（简洁白 + 粉红）----------------
-// 页面底为带一丝暖粉的简洁白；卡面为 78% 白玻璃 + 1dp 半透边框 + 顶部内发光 + 柔和中性投影。
-// 真实背景模糊只保留给底部液态导航栏；其余卡面共享同一套玻璃「外观」。
+// 温柔手账 · 奶油纸感。浅色是中性米纸，深色是无紫调的暖黑牛皮纸。
+val CanvasLight = Color(0xFFF3EDE2)
+val CardWhite = Color(0xFFFCF8F1)
+val ElevatedLight = Color(0xFFFFFCF7)
+val GlassTint = CardWhite // 兼容旧符号；纸面恒为不透明实色
+val BorderHairline = Color(0xFFE2D6C2)
+val DividerSoft = Color(0xFFD6C8B2)
+val SegmentSlotLight = Color(0xFFEFE7D9)
+val PhotoPaperLight = Color(0xFFFBF6EE)
+val BarPaperLight = Color(0xFFFBF6EC)
+val PaperInkLight = Color(0xFF8A7A62)
+val TapeLight = Color(0x8CE7D9BE)
+val PaperShadowLight = Color(0xFF6B5B45)
 
-val CanvasLight = Color(0xFFEFE8EB)       // 页面底：带暖粉的浅灰，卡片对比度 ≈ 1.19:1
-val CardWhite = Color(0xFFFFFFFF)         // 卡片实底
-val GlassTint = Color(0xE6FFFFFF)         // 90% 白：玻璃态填充（叠加在卡底上）
-val BorderHairline = Color(0x14201A1D)    // 8% 深：1dp 半透边框
-val DividerSoft = Color(0x14201A1D)       // 8% 深：发丝分割线
+val TextPrimary = Color(0xFF2B2621)
+val TextSecondary = Color(0xFF5C544A)
+val TextMuted = Color(0xFF6E655A)
 
-val TextPrimary = Color(0xFF201A1D)       // 主文字（对比度 ≈ 15.6:1）
-val TextSecondary = Color(0xFF625A5F)     // 次文字（≈ 6.9:1）
-val TextMuted = Color(0xFF7E757C)         // 辅助（≈ 4.9:1）
+val Pink = Color(0xFFC92661)
+val PinkInk = Pink // 粉容器上的短标签与选中文字
+val PinkSoft = Color(0xFFF9E8EC)
+val PinkMist = Color(0xFFFDF3F5)
+val OnPinkLight = Color(0xFFFFF9F4)
 
-val Pink = Color(0xFFC92661)              // 品牌粉：主操作 / 选中（白底 ≈ 5.3:1）
-val PinkInk = Color(0xFF7A1038)           // 深粉：粉底上的文字
-val PinkSoft = Color(0xFFFCE4EC)          // 粉容器 / 选中底
-val PinkMist = Color(0xFFFDF2F6)          // 极淡粉：光晕 / 空态底
+val MutedRose = TextSecondary
+val EmberWarm = Color(0xFF7C5220)
+val SuccessGreen = Color(0xFF3B664A)
+val WarningAmber = Color(0xFF7C5220)
+val DangerRed = Color(0xFFA03C3A)
+val SuccessDeep = Color(0xFFE8F0E9)
+val WarningDeep = Color(0xFFF6EBD7)
+val DangerDeep = Color(0xFFF7EAE7)
 
-val MutedRose = Color(0xFF8A6572)         // 次强调（少量使用）
-val EmberWarm = Color(0xFF9A5B00)         // 余烬橙降级为「警告」语义色
+val OutlineNeutral = BorderHairline
+val ScrimLight = Color(0x522B2621)
+val ScrimBlack = ScrimLight // 兼容旧引用；深色请读 LocalAppPalette.scrim
 
-val SuccessGreen = Color(0xFF2E7D5B)
-val WarningAmber = Color(0xFF9A5B00)
-val DangerRed = Color(0xFFC62828)
-val SuccessDeep = Color(0xFFE6F4EC)
-val WarningDeep = Color(0xFFFDF3E3)
-val DangerDeep = Color(0xFFFDECEC)
-
-val OutlineNeutral = Color(0xFFE6DEE2)
-val ScrimBlack = Color(0x66000000)        // 40% 黑：抽屉遮罩
-
-// 兼容旧引用（v4.0 深色组件里少量名字），统一映射到浅色色板
+// 旧组件符号继续保留，避免视觉迁移带动业务代码改名。
 val Void = CanvasLight
 val Panel = CardWhite
-val PanelRaised = Color(0xFFF5EFF2)
+val PanelRaised = SegmentSlotLight
 val OutlineDark = OutlineNeutral
 val Plum = Pink
 val PlumDeep = PinkSoft
 val Cobalt = MutedRose
-val CobaltDeep = Color(0xFFF3EAEE)
+val CobaltDeep = PinkMist
 val Ember = Pink
 val EmberDeep = PinkMist
 val PrimaryLight = Pink
 val PrimaryDark = Pink
+
+val CanvasDark = Color(0xFF171412)
+val CardDark = Color(0xFF221E1A)
+val ElevatedDark = Color(0xFF2C2722)
+val PanelRaisedDark = Color(0xFF1C1815)
+val DividerDark = Color(0xFF3B332C)
+val DashedDark = Color(0xCC4A4038)
+val PhotoPaperDark = CardDark
+val BarPaperDark = Color(0xFF201B17)
+val PaperInkDark = Color(0xFFC9B79B)
+val TapeDark = Color(0x734A3A28)
+
+val TextPrimaryDark = Color(0xFFF3ECE2)
+val TextSecondaryDark = Color(0xFFC9BFB2)
+val TextMutedDark = Color(0xFFADA293)
+
+val PinkDark = Color(0xFFE8699C)
+val PinkInkDark = Color(0xFF3A0F22)
+val PinkContainerDark = Color(0xFF3A2029)
+val PinkMistDark = Color(0xFF2A1C21)
+
+val MutedRoseDark = TextSecondaryDark
+val EmberDark = Color(0xFFD9AE72)
+val SuccessDark = Color(0xFF8FB79A)
+val WarningDark = Color(0xFFD9AE72)
+val DangerDark = Color(0xFFE38C84)
+val SuccessDeepDark = Color(0xFF253129)
+val WarningDeepDark = Color(0xFF332A1C)
+val DangerDeepDark = Color(0xFF33211F)
+
+val OutlineNight = DividerDark
+val ScrimDark = Color(0x7A000000)

@@ -14,3 +14,12 @@
 
 /tmp
 /.kotlin
+
+# Local credentials and signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx

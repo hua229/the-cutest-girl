@@ -1,6 +1,6 @@
 # 架构说明（the cutest girl）
 
-> 当前版本 4.2.2（versionCode 43）｜最后更新 2026-11-08
+> 当前版本 4.3.0（versionCode 44）｜最后更新 2026-11-09
 
 ## 1. 总览
 
@@ -11,7 +11,7 @@
 - WorkManager 2.9.1（后台同步）+ 前台轮询
 - OkHttp 4.12（手写 WebDAV 客户端）
 - Coil 2.7（照片）
-- Haze 1.1.1（仅底部导航栏的真实背景模糊）
+- Haze 1.1.1（仅原版悬浮玻璃底部导航栏使用）
 
 包结构：
 
@@ -113,12 +113,13 @@ SharedPreferences 按「能不能进备份」拆文件：
 
 ## 4. UI 层
 
-- `AppRoot`：底部液态导航 + NavHost；持有底栏 Haze 采样源；通知落点 `pendingTarget`（route/date/recordId），页面消费后清空
+- `AppRoot`：原版悬浮玻璃导航 + NavHost；根层 `paperBackground()` 统一铺页面纸纹，并保留底栏 Haze 采样源；通知落点 `pendingTarget`（route/date/recordId），页面消费后清空
 - 全局设置抽屉：`AppRoot` 用 `ModalNavigationDrawer` 包住 Scaffold，抽屉内容为 `SettingsMenuDrawer`；`gesturesEnabled = currentRoute == "outfit"`（只有穿搭页可边缘滑开）；返回键的 `BackHandler` 注册在 `drawerContent` 内、NavHost 之后，保证先关抽屉；内容按 `targetValue` 做 240ms 淡入 + 18dp 位移
-- 设置路由：四个独立页面 `settings/profile`、`settings/sync`、`settings/backup`、`settings/battery`；`SettingsModule` 枚举提供标题/图标/路由，每个页面只呈现本模块内容并有独立顶栏与返回栈
-- 菜单：只放四个设置模块，不混入「穿搭 / 饮食 / 点滴」；菜单行显示昵称与同步状态，打开抽屉时重读
-- 列表页：`FloatingTopBar`（展开高度只记录一次）+ LazyColumn + 页面专属内容；只有穿搭页传 `onOpenMenu`，按钮在左上角；饮食/点滴不传，顶栏占满宽度。`PageHeader` 不再有长按手势
-- 新增记录：统一 `AddRecordSheet`（约 82% 屏高、表面 0.98、40% 遮罩、放弃确认）；编辑已有记录仍走全屏页
+- 设置路由：五个独立页面 `settings/profile`、`settings/sync`、`settings/backup`、`settings/battery`、`settings/appearance`；`SettingsModule` 枚举提供标题/图标/路由，每个页面只呈现本模块内容并有独立顶栏与返回栈
+- 菜单：只放五个设置模块，不混入「穿搭 / 饮食 / 点滴」；菜单行显示昵称与同步状态，打开抽屉时重读；外观行尾直接显示当前档位（反应式收集 `ThemeStore.mode`，不靠 `refreshKey`）
+- 主题：`MainActivity` 收集 `ThemeStore.mode` + `isSystemInDarkTheme()` → `ThemeMode.resolve()` → `TheCutestGirlTheme(darkTheme)`；材质色经 `LocalAppPalette` 下发，Activity 侧的系统栏图标与窗口底色由 `applyWindowChrome` 同步。档位存 `settings.xml`，本机偏好，不进同步与备份
+- 列表页：`FloatingTopBar` + LazyColumn + 页面专属内容；穿搭页分别记录展开 / 收起高度，菜单移入 `PageHeader`，与日期区共用外框；饮食 / 点滴没有菜单入口。页头只保留标题，收起态点标题回到顶部
+- 新增记录：统一 `AddRecordSheet`（约 82% 屏高、不透明抬升面、32% / 48% 遮罩、放弃确认，IME 按可用高度重算）；编辑已有记录仍走全屏页
 - 对方编辑页：标题/日期只读，不显示「修改」；保存只写 `reply`
 - 表单：`SavedStateHandle` + Compose 状态双写（`ui/SavedStateValues.kt`）
 - 同步状态：设置页/三个列表页收集 `SyncStatusStore.status`
@@ -138,7 +139,7 @@ SharedPreferences 按「能不能进备份」拆文件：
 
 python tools/sync_test_server.py --port 18765 --root .verification/dav
 ./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest -PverificationApp --offline
-adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.2.2_debug.apk
+adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.3.0_debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -r com.thecutestgirl.app.verification.test/com.thecutestgirl.app.sync.SyncRegressionRunner
 ```

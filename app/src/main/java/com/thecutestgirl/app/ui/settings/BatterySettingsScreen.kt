@@ -2,8 +2,6 @@ package com.thecutestgirl.app.ui.settings
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatterySaver
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -44,15 +42,9 @@ fun BatterySettingsScreen(onBack: () -> Unit) {
         icon = Icons.Outlined.BatterySaver,
         onBack = onBack
     ) {
-        Text(
-            "把本 App 加进电池优化白名单。不加的话，手机放着一会儿后台同步就会被系统" +
-                "掐掉，对方的通知可能延迟很久才到。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
         SettingsCard {
             SettingsActionRow(
-                text = if (isIgnoringBatteryOptimizations) "已加入白名单" else "去设置",
+                text = if (isIgnoringBatteryOptimizations) "已允许后台运行" else "允许后台运行",
                 icon = true,
                 iconVector = Icons.Outlined.BatterySaver,
                 enabled = !isIgnoringBatteryOptimizations,

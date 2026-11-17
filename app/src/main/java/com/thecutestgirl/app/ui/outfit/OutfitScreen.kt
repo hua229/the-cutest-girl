@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -11,7 +12,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +41,7 @@ import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -54,6 +57,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,6 +81,7 @@ import com.thecutestgirl.app.ui.components.FabNavSpacing
 import com.thecutestgirl.app.ui.components.FloatingTopBar
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
 import com.thecutestgirl.app.ui.components.PageHeader
+import com.thecutestgirl.app.ui.components.PaperIconButton
 import com.thecutestgirl.app.ui.components.PhotoImage
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.rememberToday
@@ -84,15 +90,17 @@ import com.thecutestgirl.app.ui.components.SheetPhotoPicker
 import com.thecutestgirl.app.ui.components.SheetTextField
 import com.thecutestgirl.app.ui.components.SoftCapsuleButton
 import com.thecutestgirl.app.ui.components.SolidCircleButton
+import com.thecutestgirl.app.ui.components.pressTint
 import com.thecutestgirl.app.ui.components.UiSpringDamping
 import com.thecutestgirl.app.ui.components.UiSpringStiffness
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
-import dev.chrisbanes.haze.haze
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import java.time.LocalDate
 import java.time.YearMonth
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
@@ -208,13 +216,25 @@ fun OutfitScreen(
     }
     // 顶栏 / FAB 共用的模糊采样源已移除：底栏的采样源在 AppRoot，页面内再挂一份是纯开销
 
-    // 只记录展开态高度：折叠动画期间不再改 contentPadding，避免整表每帧重排
+    // 顶栏两种形态各记一次实测高度：列表顶部让位跟着「当前形态」走。
+    // v4.3.0 之前只记展开态，收起后列表仍让着展开态的高度，顶栏和首个日期组之间
+    // 会空出一大截页面底（真机截图反馈）；改成按 scrolled 切换目标高度并用同一条
+    // 弹簧补间，折叠动画期间列表让位跟着一起收，稳态不再留空。
     var expandedHeaderHeightPx by remember { mutableIntStateOf(0) }
+    var collapsedHeaderHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    val topArea = with(density) { expandedHeaderHeightPx.toDp() } + 10.dp
+    val targetTopArea by animateDpAsState(
+        targetValue = with(density) {
+            (if (scrolled && collapsedHeaderHeightPx > 0) collapsedHeaderHeightPx
+             else expandedHeaderHeightPx).toDp()
+        } + 10.dp,
+        animationSpec = spring(dampingRatio = UiSpringDamping, stiffness = UiSpringStiffness),
+        label = "outfitTopArea"
+    )
+    val topArea = targetTopArea
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Box(
@@ -229,9 +249,7 @@ fun OutfitScreen(
             ) {
                 if (dayGroups.isEmpty()) {
                     EmptyHint(
-                        text = "",
                         title = "这个月还没有穿搭记录",
-                        hint = "点右下角「记穿搭」，照片会归到选中的那天",
                         icon = Icons.Outlined.Checkroom,
                         modifier = Modifier.padding(top = topArea)
                     )
@@ -246,7 +264,7 @@ fun OutfitScreen(
                             // 底部留出玻璃导航栏的高度，最后一张卡片能完整滚出玻璃区域
                             bottom = LocalAppBottomInset.current + 16.dp
                         ),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(items = dayGroups, key = { it.date.toString() }) { group ->
@@ -270,17 +288,21 @@ fun OutfitScreen(
             // ---------- 悬浮顶栏：内容从它下面滚过；左上角是唯一的设置菜单入口 ----------
             FloatingTopBar(
                 collapsed = scrolled,
-                onOpenMenu = onOpenMenu,
+                // 菜单随标题一起收进同一张卡；大字体下为标题保留足够宽度。
+                collapsedWidth = 56.dp + 136.dp * density.fontScale.coerceAtLeast(1f),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .onSizeChanged { if (!scrolled) expandedHeaderHeightPx = it.height }
+                    .onSizeChanged {
+                        if (scrolled) collapsedHeaderHeightPx = it.height
+                        else expandedHeaderHeightPx = it.height
+                    }
             ) {
                 PageHeader(
                     title = "穿搭",
-                    subtitle = "今天穿的也很漂亮",
                     icon = Icons.Outlined.Checkroom,
                     collapsed = scrolled,
-                    // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
+                    onOpenMenu = onOpenMenu,
+                    // 收起态点标题回列表顶部，左侧菜单仍独立打开设置。
                     onClick = if (scrolled) ({
                         topBarScope.launch { listState.animateScrollToItem(0) }
                     }) else null
@@ -334,7 +356,7 @@ fun OutfitScreen(
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "记穿搭",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -350,7 +372,6 @@ fun OutfitScreen(
         }
         AddRecordSheet(
             title = "记穿搭",
-            subtitle = "${addDate.toCnShort()} ${addDate.toWeekday()}",
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
             hasUnsavedChanges = addVm.newPhotos.isNotEmpty() || addVm.note.isNotBlank(),
@@ -370,7 +391,7 @@ fun OutfitScreen(
             SheetTextField(
                 value = addVm.note,
                 onValueChange = { addVm.note = it },
-                placeholder = "写点备注（可选），比如：奶白针织衫 + 牛仔半身裙",
+                placeholder = "备注（可选）",
                 singleLine = false,
                 minLines = 3
             )
@@ -385,7 +406,7 @@ fun OutfitScreen(
                     Text(
                         "管理这一天的 $addDayExistingCount 张照片",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = LocalContentColor.current
                     )
                 }
             }
@@ -408,6 +429,7 @@ private fun OutfitDaySection(
     onOpen: (String) -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
+    val dayHeaderPress = remember { MutableInteractionSource() }
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
@@ -418,25 +440,29 @@ private fun OutfitDaySection(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clickable(onClick = onSelectDay)
+                    .clip(RoundedCornerShape(10.dp))
+                    .pressTint(dayHeaderPress, cornerRadius = 10.dp)
+                    .clickable(
+                        interactionSource = dayHeaderPress,
+                        indication = null,
+                        onClick = onSelectDay
+                    )
+                    .semantics { selected = isSelected }
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
                 Text(
                     "${group.date.toCnShort()} ${group.date.toWeekday()}",
                     style = MaterialTheme.typography.titleMedium,
+                    color = if (isSelected) LocalAppPalette.current.accentText else scheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    "${group.records.size} 件" + if (isSelected) " · 已选中" else "",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isSelected) scheme.primary else scheme.onSurfaceVariant
-                )
             }
-            IconButton(onClick = onAddThisDay, modifier = Modifier.size(48.dp)) {
+            PaperIconButton(onClick = onAddThisDay) {
                 Icon(
                     Icons.Filled.Add,
                     contentDescription = "添加这一天的穿搭",
-                    tint = scheme.primary,
+                    tint = scheme.onSurface,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -476,11 +502,18 @@ private fun OutfitThumb(
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
+    val palette = LocalAppPalette.current
+    val thumbPress = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .aspectRatio(4f / 5f)
-            .solidCard(cornerRadius = 16.dp)
-            .clickable(onClick = onClick)
+            .solidCard(cornerRadius = 12.dp)
+            .pressTint(thumbPress, cornerRadius = 12.dp)
+            .clickable(
+                interactionSource = thumbPress,
+                indication = null,
+                onClick = onClick
+            )
     ) {
         val photoFile = PhotoStore.file(context, record.photoPath)
         if (photoFile.exists()) {
@@ -503,15 +536,16 @@ private fun OutfitThumb(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(scheme.surface.copy(alpha = 0.82f))
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(palette.elevatedSurface)
+                    .border(1.dp, palette.hairline, RoundedCornerShape(10.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
                     contentDescription = "来自对方",
-                    tint = scheme.primary,
+                    tint = scheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(4.dp))
@@ -532,8 +566,9 @@ private fun OutfitThumb(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(scheme.surface.copy(alpha = 0.88f))
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(palette.elevatedSurface)
+                    .border(1.dp, palette.hairline, RoundedCornerShape(10.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

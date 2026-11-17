@@ -2,6 +2,38 @@
 
 > 详细交接记录见 git 历史；本文件只保留版本级摘要。
 
+## 未发布 — 温柔手账 · 奶油纸感（`workbuddy` 分支）
+
+- 全站从玻璃拟态迁移为不透明纸卡：浅色中性米纸 `#F3EDE2` / 卡面 `#FCF8F1`，深色暖黑纸 `#171412` / 卡面 `#221E1A`；品牌粉保持 `#C92661` / `#E8699C`，仅作印泥点缀
+- 新增程序化纸纹（固定种子 + `drawWithCache`）、顶缘高光、左缘压痕、暖墨投影；删除 Haze 依赖与全部模糊采样，底栏改为 64dp 纸带 + 32dp 实心粉圆选中态
+- 圆角统一 10 / 12 / 20，页面卡间距 20dp，纪念日数字 44→48sp；200% 字体下按最终 72–88sp 补偿并独占一行
+- 组件六态补齐：hovered / pressed / selected / disabled / error / focused；按钮 98% 缩放、行类 6% 纸墨；主题级关闭 M3 ripple，新增 2dp 焦点框
+- `SegmentedChoices` 选中块改中性抬升底 + 粉边，去除 18% 粉底；SoftCapsule 禁用改实色底 + 实色字；AddRecordSheet 增加 IME 高度重算和全屏表单兜底
+- 同步协议、Room、删除语义、照片原子写均未改；版本号仍为 4.3.0
+- 验证：JVM 12/12、compileDebugKotlin / compileDebugAndroidTestKotlin 通过、lint 0 错误 / 6 既有警告；真机视觉与性能走查待执行
+
+## 未发布 — v4.3.0 之后的 UI 打磨（随下一个版本号一起发布）
+
+- **对比度**：占位符与空态文字从「alpha 压过的 onSurfaceVariant」（浅色 ≈2.6:1）改为 `palette.mutedText`（浅 4.9 / 深 6.5）；supporting 小字去掉 0.85 alpha；落在页面底/半透表面上的粉色文字新增 `palette.accentText`（浅 `PinkInk` ≈8.9:1 / 深 `PinkDark` ≈5.6:1），卡面上的粉色文字仍用 `primary`。规则写进 design-system §1b
+- **按压反馈**：新增 `Modifier.pressTint`（按压期间 6% 主色底，破坏性操作传自己的语义色），接到 7 处原本「点下去毫无反应」的可点面：设置菜单行、设置操作行、分段控件、日期格、页头收起态、破坏性操作行。底栏仍用震动 + 液态滑块
+- **护栏**：新增 `ComponentPreviews.kt`，玻璃卡/主按钮/分段控件各出浅+深一对 Preview；`SheetSegmented` 改名 `SegmentedChoices`（它早就不只属于抽屉）
+- **穿搭页两处真机反馈修复**：① 左上角设置菜单入口去掉白圆 chip，改成融进页面底的无边框图标按钮（48dp 热区 + 圆形 `pressTint` 按压底）；② 列表顶部让位原来只记展开态顶栏高度，顶栏收起后与首个日期组之间空出一整段页面底，改为展开/收起各记一次实测高度并按 `scrolled` 用同一条弹簧补间切换
+- 未改同步协议、数据结构与权限；版本号待用户拍板后再 bump
+
+## v4.3.0（versionCode 44）— 深色模式
+
+- 主题从「全站浅色」改为**浅 + 深双主题**：`Theme.kt` 补一份与浅色 token 一一对应的 `darkColorScheme`；深色是暖黑（页面底 `#141113`、卡面 `#211C20`）+ 提亮品牌粉 `#E8699C`，不是把浅色取反
+- 新增 `ui/theme/AppPalette.kt`：M3 `colorScheme` 没槽位的材质色（发丝边框、卡面内发光、玻璃表面、底栏 Haze 着色、遮罩、投影开关）收进一份 palette，组件经 `LocalAppPalette` 读取，不在组件里判断深浅
+- 共享组件层 16 处写死 `Color.White/Black` 分流：页面表面改走 palette（`glassPanel` 内发光、`dashedCard`、`SolidCircleButton`、`SoftCapsuleButton`、底栏滑块高光/描边与模糊着色、照片移除键），**压在真实照片上的浮层保持深底白字不翻**（看大图、缩略图移除键），各带注释
+- 深色不打投影（`shadowAmbient/SpotAlpha=0`）：暖黑底上黑投影看不见只会糊边，层次由明度差 + 1dp 边框 + 7% 内发光承担
+- 档位：`ThemeMode` = 跟随系统（默认）/ 浅色 / 深色，存 `settings.xml` 的 `theme_mode`；本机偏好，不进云同步、不进备份 `identity.json`
+- 生效链路不重建 Activity：`ThemeStore`（StateFlow）+ `isSystemInDarkTheme()` → `resolve()` → 色板；`MainActivity.applyWindowChrome` 同步翻 `enableEdgeToEdge` 系统栏图标与 `window` 底色
+- `values-night(-v31)` 原本还继承 `Material.Light` 且 `windowLightStatusBar=true`、底色 `#FAF7F8`，改为真深色（`#141113` + 白状态栏图标），冷启动不再闪白
+- 新增第 5 个独立设置页「外观」（`settings/appearance`）：三选一分段控件复用 `SegmentedChoices`（当时还叫 `SheetSegmented`，同轮打磨里改名），点选即存即生效；抽屉给它单独一组，行尾显示当前档位，手动固定时染成主色
+- 已知限制：`values-night` 只跟随机身 uiMode，手动固定深色而机身是浅色时，系统启动窗仍可能有约一帧浅底（Compose 起来后即正确）
+- JVM 单测 5 项：`ThemeModeTest` 覆盖 key 往返、未知/缺失值回落 `System`、`resolve` 四组组合
+- 未改同步协议、数据结构与权限
+
 ## v4.2.2（versionCode 43）— 设置入口收敛与独立设置页
 
 - 设置入口收敛为**唯一一处**：只保留穿搭页左上角菜单按钮；移除穿搭齿轮、饮食/点滴「长按标题进设置」和这两页的边缘滑动；菜单本身固定在左侧

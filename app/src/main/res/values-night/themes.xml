@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.TheCutestGirl" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">#FAF7F8</item>
+    <!--
+        机身深色时的窗口底色与系统栏。这一份只管「跟随系统」的冷启动首帧
+        （还有 Android 12+ 的启动闪屏）；用户在「设置 · 外观」里手动固定档位时，
+        资源仍按机身设置取，那一路由 MainActivity.applyWindowChrome 在代码里改。
+        色值要和 Color.kt 的 CanvasDark / TextPrimaryDark 对齐，否则首帧会闪一下别的底。
+    -->
+    <style name="Theme.TheCutestGirl" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">#171412</item>
     </style>
 </resources>

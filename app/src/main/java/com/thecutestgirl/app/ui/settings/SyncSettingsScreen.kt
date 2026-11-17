@@ -35,6 +35,7 @@ import com.thecutestgirl.app.sync.SyncEngine
 import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.sync.SyncPhase
 import com.thecutestgirl.app.sync.SyncStatusStore
+import com.thecutestgirl.app.ui.components.PaperIconButton
 import com.thecutestgirl.app.ui.components.PrimaryButton
 import com.thecutestgirl.app.ui.components.SyncStatusBar
 import com.thecutestgirl.app.ui.components.SyncStatusKind
@@ -64,6 +65,7 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
     }
     var busy by remember { mutableStateOf(false) }
     var showEndpointConfirm by remember { mutableStateOf(false) }
+    var showSyncHelp by remember { mutableStateOf(false) }
 
     val notifPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -103,19 +105,11 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
         icon = Icons.Outlined.CloudSync,
         onBack = onBack
     ) {
-        Text(
-            "两台手机都填同一个坚果云账号并开启同步，" +
-                "你添加的穿搭 / 三餐 / 点滴会自动出现在对方手机上，对方会收到提醒。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
         SettingsCard {
             SettingsField(
                 label = "服务器地址",
                 value = url,
                 onValueChange = { url = it },
-                supporting = "坚果云用户不用改",
                 keyboardType = KeyboardType.Uri
             )
             SettingsDivider()
@@ -132,17 +126,13 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
                 value = pass,
                 onValueChange = { pass = it },
                 placeholder = "在坚果云生成的 16 位密码",
-                supporting = "获取方法：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码",
                 visualTransformation = if (showPass) {
                     VisualTransformation.None
                 } else {
                     PasswordVisualTransformation()
                 },
                 trailing = {
-                    IconButton(
-                        onClick = { showPass = !showPass },
-                        modifier = Modifier.size(40.dp)
-                    ) {
+                    PaperIconButton(onClick = { showPass = !showPass }) {
                         Icon(
                             imageVector = if (showPass) {
                                 Icons.Outlined.VisibilityOff
@@ -211,12 +201,24 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
             onRetry = { startTest() }
         )
 
-        Text(
-            "说明：APP 开着的时候每 30 秒同步一次，对方刚发的内容基本马上就能看到；" +
-                "退到后台后系统只允许每 15 分钟同步一次（这是 Android 的硬限制，改不了）。" +
-                "想更及时收到对方的消息，可以在设置菜单里打开「后台不被冻结」。",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        TextButton(onClick = { showSyncHelp = true }) {
+            Text("同步帮助")
+        }
+    }
+    if (showSyncHelp) {
+        AlertDialog(
+            onDismissRequest = { showSyncHelp = false },
+            title = { Text("同步帮助") },
+            text = {
+                Text(
+                    "两台手机使用同一个坚果云账号。\n\n" +
+                        "应用密码：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码。\n\n" +
+                        "坚果云用户可保留默认服务器地址。后台通知延迟时，可在设置中允许后台运行。"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showSyncHelp = false }) { Text("知道了") }
+            }
         )
     }
 }

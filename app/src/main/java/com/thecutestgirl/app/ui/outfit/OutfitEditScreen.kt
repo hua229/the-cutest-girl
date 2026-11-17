@@ -1,6 +1,7 @@
 ﻿package com.thecutestgirl.app.ui.outfit
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
@@ -43,9 +44,11 @@ import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
 import com.thecutestgirl.app.ui.components.DestructiveAction
 import com.thecutestgirl.app.ui.components.PhotoNoteCard
+import com.thecutestgirl.app.ui.components.pressTint
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.toCnFull
 import com.thecutestgirl.app.ui.components.toWeekday
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 
 /** 添加 / 编辑穿搭：选照片 + 日期 + 备注 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +74,7 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
     )
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
@@ -96,8 +99,9 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                 .imePadding()
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            val datePress = remember { MutableInteractionSource() }
             // 照片 + 备注（上传人写）+ 评论（对方写）合成一张卡片。
             // allowRemove = false：穿搭记录必须保留一张照片。
             PhotoNoteCard(
@@ -105,7 +109,7 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                 onPhotosChanged = { vm.photoPath = it.firstOrNull() },
                 note = vm.note,
                 onNoteChange = { vm.note = it },
-                notePlaceholder = "写点备注（可选），比如：奶白针织衫 + 牛仔半身裙",
+                notePlaceholder = "备注（可选）",
                 allowRemove = false,
                 noteEditable = vm.amUploader,
                 noteAuthorName = vm.noteAuthorName,
@@ -113,7 +117,7 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                 reply = vm.reply,
                 onReplyChange = { vm.reply = it },
                 replyEditable = !vm.amUploader,
-                replyPlaceholder = "说点什么…比如：这件我也想穿",
+                replyPlaceholder = "写评论…",
                 // 对方进来只是评论，不该能换掉上传人的照片
                 photoEditable = vm.amUploader
             )
@@ -122,8 +126,13 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .solidCard(cornerRadius = 16.dp)
-                    .clickable(enabled = vm.amUploader) {
+                    .solidCard(cornerRadius = 12.dp)
+                    .pressTint(datePress, cornerRadius = 12.dp, enabled = vm.amUploader)
+                    .clickable(
+                        interactionSource = datePress,
+                        indication = null,
+                        enabled = vm.amUploader
+                    ) {
                         if (vm.amUploader) showDatePicker = true
                     }
                     .padding(16.dp),
@@ -132,7 +141,7 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                 Icon(
                     Icons.Filled.Event,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
@@ -145,7 +154,7 @@ fun OutfitEditScreen(id: String?, onDone: () -> Unit) {
                     Text(
                         "修改",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

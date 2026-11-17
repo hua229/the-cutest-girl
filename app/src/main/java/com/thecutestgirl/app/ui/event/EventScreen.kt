@@ -4,7 +4,9 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +46,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,7 +73,7 @@ import com.thecutestgirl.app.ui.components.FabNavSpacing
 import com.thecutestgirl.app.ui.components.FloatingTopBar
 import com.thecutestgirl.app.ui.components.SheetDateRow
 import com.thecutestgirl.app.ui.components.SheetPhotoPicker
-import com.thecutestgirl.app.ui.components.SheetSegmented
+import com.thecutestgirl.app.ui.components.SegmentedChoices
 import com.thecutestgirl.app.ui.components.SheetTextField
 import com.thecutestgirl.app.ui.components.SolidCircleButton
 import com.thecutestgirl.app.ui.components.photoFrame
@@ -83,8 +88,7 @@ import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.toCnFull
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
-import com.thecutestgirl.app.ui.theme.BigNumeralStyle
-import dev.chrisbanes.haze.haze
+import com.thecutestgirl.app.ui.theme.responsiveBigNumeralStyle
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import androidx.compose.runtime.mutableIntStateOf
@@ -94,6 +98,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
+import com.thecutestgirl.app.ui.components.pressTint
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
+import com.thecutestgirl.app.ui.theme.LocalDegradationLevel
 import androidx.compose.foundation.background
 
 /** 展开态玻璃顶栏占的高度（面板竖向 6dp×2 + 标题行 56 + 副标题 16 ≈ 78，取 84 略留余量） */
@@ -197,7 +205,7 @@ fun EventScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Box(
@@ -220,7 +228,7 @@ fun EventScreen(
                         // 底部留出玻璃导航栏的高度，最后一张卡片能完整滚出玻璃区域
                         bottom = LocalAppBottomInset.current + 16.dp
                     ),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (anniversaries.isNotEmpty()) {
@@ -243,11 +251,8 @@ fun EventScreen(
                     if (moments.isEmpty()) {
                         item {
                             EmptyHint(
-                                text = "",
                                 title = "还没有点滴记录",
-                                hint = "点右下角「记一笔」写下今天",
-                                icon = Icons.Outlined.FavoriteBorder,
-                                accent = MaterialTheme.colorScheme.primary
+                                icon = Icons.Outlined.FavoriteBorder
                             )
                         }
                     } else {
@@ -274,7 +279,6 @@ fun EventScreen(
             ) {
                 PageHeader(
                     title = "点滴",
-                    subtitle = "值得记住的每一件小事",
                     icon = Icons.Outlined.FavoriteBorder,
                     collapsed = scrolled,
                     // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
@@ -299,7 +303,7 @@ fun EventScreen(
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "记一笔",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -327,14 +331,13 @@ fun EventScreen(
         val isMoment = addVm.type == EVENT_TYPE_MOMENT
         AddRecordSheet(
             title = if (isMoment) "记一条点滴" else "记一个纪念日",
-            subtitle = if (isMoment) "日常点滴 · 可配一张照片" else "纪念日 · 自动计算天数",
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
             hasUnsavedChanges = addVm.title.isNotBlank() ||
                 addVm.description.isNotBlank() || addVm.photoPath != null,
             onPrimary = { addVm.save { showAddSheet = false } }
         ) {
-            SheetSegmented(
+            SegmentedChoices(
                 options = listOf("日常点滴", "纪念日"),
                 selectedIndex = if (isMoment) 0 else 1,
                 onSelect = {
@@ -344,7 +347,7 @@ fun EventScreen(
             SheetTextField(
                 value = addVm.title,
                 onValueChange = { addVm.title = it },
-                placeholder = if (isMoment) "比如：一起去看了日落" else "比如：在一起"
+                placeholder = if (isMoment) "点滴标题" else "纪念日名称"
             )
             SheetDateRow(
                 label = if (isMoment) "发生日期" else "开始日期",
@@ -365,7 +368,7 @@ fun EventScreen(
             SheetTextField(
                 value = addVm.description,
                 onValueChange = { addVm.description = it },
-                placeholder = "写点什么（可选）",
+                placeholder = "备注（可选）",
                 singleLine = false,
                 minLines = 3
             )
@@ -382,10 +385,10 @@ private fun SectionLabel(text: String) {
     ) {
         Box(
             modifier = Modifier
-                .width(4.dp)
+                .width(3.dp)
                 .height(16.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.primary)
+                .clip(RoundedCornerShape(2.dp))
+                .background(LocalAppPalette.current.paperInk)
         )
         Spacer(Modifier.width(8.dp))
         Text(
@@ -415,23 +418,41 @@ private fun AnniversaryCard(record: EventRecord, onClick: () -> Unit) {
         }
     }
     val accent = MaterialTheme.colorScheme.primary
+    val palette = LocalAppPalette.current
+    val degradation = LocalDegradationLevel.current
+    val interactionSource = remember { MutableInteractionSource() }
 
     Column(
         modifier = Modifier
             .width(288.dp)
             .heightIn(min = 112.dp)
-            .solidCard(cornerRadius = 16.dp)
-            // v4.0：保留用户确认过的左缘横向渐变光（余烬橙 12% → 透明），
-            // 数字坐在光里，右侧文字留在干净的玻璃面上。
+            .solidCard(cornerRadius = 12.dp)
+            .pressTint(interactionSource, cornerRadius = 12.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
             .drawBehind {
-                drawRect(
-                    Brush.horizontalGradient(
-                        colors = listOf(accent.copy(alpha = 0.12f), Color.Transparent),
-                        endX = 176.dp.toPx()
+                if (degradation.level < 2) {
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(accent.copy(alpha = 0.60f), Color.Transparent),
+                            endX = 3.dp.toPx()
+                        )
                     )
-                )
+                }
+                if (degradation.level < 3) {
+                    rotate(degrees = -3f, pivot = Offset(size.width - 40.dp.toPx(), 8.dp.toPx())) {
+                        drawRoundRect(
+                            color = palette.tape,
+                            topLeft = Offset(size.width - 64.dp.toPx(), 0f),
+                            size = Size(48.dp.toPx(), 16.dp.toPx()),
+                            cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
+                        )
+                    }
+                }
             }
-            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier
@@ -446,18 +467,33 @@ private fun AnniversaryCard(record: EventRecord, onClick: () -> Unit) {
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(verticalAlignment = Alignment.Bottom) {
+                val bigNumeral = responsiveBigNumeralStyle()
+                val largeText = LocalDensity.current.fontScale >= 2f
+                if (largeText) {
                     Text(
                         "$days",
-                        style = BigNumeralStyle,
+                        style = bigNumeral,
                         color = accent
                     )
                     Text(
-                        " 天",
+                        "天",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                } else {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            "$days",
+                            style = bigNumeral,
+                            color = accent
+                        )
+                        Text(
+                            " 天",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                 }
             }
             Spacer(Modifier.width(16.dp))
@@ -482,17 +518,17 @@ private fun AnniversaryCard(record: EventRecord, onClick: () -> Unit) {
                     Text(
                         record.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                // 纪念日卡窄，评论只用一行主色小字，不铺竖线
+                // 纪念日卡窄，评论使用辅助文字，不额外占用粉色配额
                 if (record.reply.isNotBlank()) {
                     Text(
                         record.reply,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -514,12 +550,18 @@ private fun MomentCard(
 ) {
     val context = LocalContext.current
     val day = remember(record.date) { parseRecordDate(record.date) ?: LocalDate.now() }
+    val cardPress = remember { MutableInteractionSource() }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 18.dp)
-            .clickable(onClick = onClick)
+            .solidCard(cornerRadius = 12.dp)
+            .pressTint(cardPress, cornerRadius = 12.dp)
+            .clickable(
+                interactionSource = cardPress,
+                indication = null,
+                onClick = onClick
+            )
     ) {
         Column {
             if (record.photoPath != null) {
@@ -539,7 +581,7 @@ private fun MomentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoShape(8.dp)
+                                .photoShape(10.dp)
                         )
                     } else {
                         PhotoSyncPlaceholder(
@@ -548,7 +590,7 @@ private fun MomentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoFrame(8.dp)
+                                .photoFrame(10.dp)
                         )
                     }
                 }
@@ -600,10 +642,10 @@ private fun MomentCard(
                             modifier = Modifier
                                 .width(2.dp)
                                 .fillMaxHeight()
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                    RoundedCornerShape(1.dp)
-                                )
+                        .background(
+                            LocalAppPalette.current.hairline,
+                            RoundedCornerShape(1.dp)
+                        )
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
@@ -611,7 +653,7 @@ private fun MomentCard(
                                 // 署名用 replyName（见 MealScreen 里的说明）
                                 if (record.replyName.isNotBlank()) "${record.replyName} 的评论" else "ta 的评论",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(

@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -33,12 +34,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +50,7 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Warning
@@ -65,6 +62,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
@@ -113,8 +111,7 @@ import coil.request.ImageRequest
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.ui.theme.DateNumberStyle
 import com.thecutestgirl.app.ui.theme.EmptyTitleStyle
-import com.thecutestgirl.app.ui.theme.SuccessGreen
-import com.thecutestgirl.app.ui.theme.TextMuted
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -192,7 +189,7 @@ fun AppTopBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onBack) {
+            PaperIconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "返回",
@@ -212,20 +209,25 @@ fun DestructiveAction(
     modifier: Modifier = Modifier
 ) {
     val color = MaterialTheme.colorScheme.error
+    val background = MaterialTheme.colorScheme.errorContainer
     val interactionSource = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(8.dp)
+    val shape = RoundedCornerShape(10.dp)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .heightIn(min = 48.dp)
             .clip(shape)
-            .border(1.dp, color.copy(alpha = 0.35f), shape)
+            .background(background)
+            .border(1.dp, color.copy(alpha = 0.45f), shape)
+            .pressTint(interactionSource, color = color, cornerRadius = 10.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = true,
                 role = Role.Button,
                 onClick = onClick
-            ),
+            )
+            .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -271,23 +273,14 @@ fun rememberToday(): LocalDate {
  */
 @Composable
 fun EmptyHint(
-    text: String,
+    title: String,
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Outlined.FavoriteBorder,
-    title: String? = null,
-    hint: String? = null,
     action: (@Composable () -> Unit)? = null,
-    accent: Color = MaterialTheme.colorScheme.primary,
+    accent: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     showFeltIllustration: Boolean = true
 ) {
     val scheme = MaterialTheme.colorScheme
-    // 兼容旧调用：只传一段文字时按换行符切成主文案 + 引导语，主文案吃重字重
-    val (resolvedTitle, resolvedHint) = when {
-        title != null -> title to hint
-        else -> text.split('\n', limit = 2).let {
-            it.first() to (hint ?: it.getOrNull(1))
-        }
-    }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -300,7 +293,7 @@ fun EmptyHint(
                 modifier = Modifier
                     .size(112.dp)
                     .clip(CircleShape)
-                    .background(accent.copy(alpha = 0.12f)),
+                    .background(LocalAppPalette.current.buttonFill),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -309,7 +302,7 @@ fun EmptyHint(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(88.dp)
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(12.dp))
                 )
             }
         } else {
@@ -317,33 +310,24 @@ fun EmptyHint(
                 modifier = Modifier
                     .size(64.dp)
                     .clip(CircleShape)
-                    .background(accent.copy(alpha = 0.12f)),
+                    .background(LocalAppPalette.current.buttonFill),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = accent.copy(alpha = 0.9f),
+                    tint = accent,
                     modifier = Modifier.size(24.dp)
                 )
             }
         }
         Spacer(Modifier.height(16.dp))
         Text(
-            resolvedTitle,
+            title,
             color = scheme.onBackground,
             style = EmptyTitleStyle,
             textAlign = TextAlign.Center
         )
-        if (!resolvedHint.isNullOrBlank()) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                resolvedHint,
-                color = scheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
-            )
-        }
         if (action != null) {
             Spacer(Modifier.height(24.dp))
             action()
@@ -358,7 +342,7 @@ fun PartnerMark(name: String, modifier: Modifier = Modifier) {
         Icon(
             imageVector = Icons.Outlined.FavoriteBorder,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(16.dp)
         )
         Spacer(Modifier.width(8.dp))
@@ -416,7 +400,7 @@ fun IconTitle(
 }
 
 /**
- * 页面头部：三页完全一致。这行不放任何会条件出现/消失的控件。
+ * 页面头部：只显示标题与可选菜单；滚动动画由外层顶栏和日期区承载。
  *
  * v3.0：自身不画背景（由外层 [FloatingTopBar] 的实色卡面承载），避免两层底色叠加；
  * 标题图标由 emoji 换成与底部导航同套的线性图标。
@@ -425,61 +409,67 @@ fun IconTitle(
 @Composable
 fun PageHeader(
     title: String,
-    subtitle: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     collapsed: Boolean = false,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    onOpenMenu: (() -> Unit)? = null
 ) {
+    val headerPress = remember { MutableInteractionSource() }
+    val titleStyle = if (
+        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 360
+    ) {
+        MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp)
+    } else {
+        MaterialTheme.typography.headlineMedium
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(
-                start = 16.dp,
+                start = if (onOpenMenu != null) 8.dp else 16.dp,
                 // 收起成胶囊时右侧留白与左侧对齐，标题不会挤在圆角上
                 end = if (collapsed) 16.dp else 8.dp,
                 top = 8.dp,
                 bottom = 8.dp
-            )
-            // v4.2.2：收起态点标题回列表顶部。设置入口已经统一收进侧边菜单，
-            // 这里不再用长按做隐藏入口，避免和「点一下回顶部」互相干扰。
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onClick
-                    )
-                } else Modifier
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        if (onOpenMenu != null) {
+            PaperIconButton(onClick = onOpenMenu) {
+                Icon(
+                    imageVector = Icons.Outlined.Menu,
+                    contentDescription = "打开设置菜单",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
+        // 菜单独立响应点击，收起态仅点标题回到列表顶部。
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (onClick != null) {
+                        Modifier
+                            .pressTint(headerPress, cornerRadius = 12.dp)
+                            .clickable(
+                                interactionSource = headerPress,
+                                indication = null,
+                                onClick = onClick
+                            )
+                    } else Modifier
+                )
+        ) {
             if (icon == null) {
-                Text(title, style = MaterialTheme.typography.headlineMedium)
+                Text(title, style = titleStyle)
             } else {
                 IconTitle(
                     icon = icon,
                     text = title,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = titleStyle,
                     softWrap = !collapsed
-                )
-            }
-            // 滚动后收起副标题：高度与透明度一起动画，由 AnimatedVisibility 自己算出高度差
-            AnimatedVisibility(
-                visible = !collapsed,
-                enter = fadeIn(),
-                exit = fadeOut() + shrinkVertically(
-                    animationSpec = spring(dampingRatio = UiSpringDamping, stiffness = UiSpringStiffness),
-                    shrinkTowards = Alignment.Top
-                )
-            ) {
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -513,13 +503,21 @@ fun DateNavRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // v4.0：可点区 40→48dp（8dp 网格）
-        IconButton(onClick = onPrev, modifier = Modifier.size(48.dp)) {
+        PaperIconButton(onClick = onPrev) {
             Icon(Icons.Outlined.ChevronLeft, contentDescription = prevContentDescription, modifier = Modifier.size(20.dp))
         }
+        val labelPress = remember { MutableInteractionSource() }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .clickable(onClick = onLabelClick),
+                .clip(RoundedCornerShape(10.dp))
+                .pressTint(labelPress, cornerRadius = 10.dp)
+                .clickable(
+                    interactionSource = labelPress,
+                    indication = null,
+                    onClick = onLabelClick
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -538,7 +536,7 @@ fun DateNavRow(
                         Text(
                             subLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = scheme.primary,
+                            color = LocalAppPalette.current.accentText,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -549,14 +547,14 @@ fun DateNavRow(
                     Text(
                         subLabel,
                         style = MaterialTheme.typography.labelSmall,
-                        color = scheme.primary,
+                        color = scheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         }
-        IconButton(onClick = onNext, modifier = Modifier.size(48.dp)) {
+        PaperIconButton(onClick = onNext) {
             Icon(Icons.Outlined.ChevronRight, contentDescription = nextContentDescription, modifier = Modifier.size(20.dp))
         }
     }
@@ -597,6 +595,8 @@ fun DayStrip(
             val isSelected = day == selected
             val isToday = day == today
             val hasPhoto = day in daysWithPhotos
+            val dayPress = remember { MutableInteractionSource() }
+            val dayShape = RoundedCornerShape(10.dp)
             val textColor = when {
                 isSelected -> scheme.primary
                 isToday -> scheme.primary
@@ -605,22 +605,19 @@ fun DayStrip(
             Column(
                 modifier = Modifier
                     .width(48.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(dayShape)
                     .background(
-                        if (isSelected) scheme.primary.copy(alpha = 0.18f) else Color.Transparent
+                        if (isSelected) LocalAppPalette.current.elevatedSurface else Color.Transparent
                     )
-                    .then(
-                        if (isToday && !isSelected) {
-                            Modifier.border(
-                                width = 1.dp,
-                                color = scheme.primary.copy(alpha = 0.40f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        } else Modifier
+                    .border(
+                        width = 1.dp,
+                        color = if (isSelected || isToday) scheme.primary else Color.Transparent,
+                        shape = dayShape
                     )
+                    .pressTint(dayPress, cornerRadius = 10.dp)
                     .selectable(
                         selected = isSelected,
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = dayPress,
                         indication = null,
                         onClick = { onSelect(day) },
                         role = Role.Tab
@@ -644,7 +641,11 @@ fun DayStrip(
                         .size(4.dp)
                         .clip(CircleShape)
                         .background(
-                            if (hasPhoto) scheme.primary.copy(alpha = 0.7f) else Color.Transparent
+                            if (hasPhoto) {
+                                if (isSelected) scheme.primary else LocalAppPalette.current.mutedText
+                            } else {
+                                Color.Transparent
+                            }
                         )
                 )
             }
@@ -671,7 +672,7 @@ fun AppMonthPickerDialog(
         text = {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
+                    PaperIconButton(
                         onClick = { if (year > minYear) year-- },
                         enabled = year > minYear
                     ) {
@@ -683,7 +684,7 @@ fun AppMonthPickerDialog(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(
+                    PaperIconButton(
                         onClick = { if (year < maxYear) year++ },
                         enabled = year < maxYear
                     ) {
@@ -697,16 +698,27 @@ fun AppMonthPickerDialog(
                             for (col in 0..2) {
                                 val m = row * 3 + col + 1
                                 val selected = m == month
+                                val monthPress = remember { MutableInteractionSource() }
+                                val monthShape = RoundedCornerShape(10.dp)
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .then(
-                                            if (selected) {
-                                                Modifier.background(scheme.primary.copy(alpha = 0.18f))
-                                            } else Modifier
+                                        .heightIn(min = 48.dp)
+                                        .clip(monthShape)
+                                        .background(
+                                            if (selected) LocalAppPalette.current.elevatedSurface
+                                            else Color.Transparent
                                         )
-                                        .clickable { month = m }
+                                        .border(
+                                            1.dp,
+                                            if (selected) scheme.primary else Color.Transparent,
+                                            monthShape
+                                        )
+                                        .pressTint(monthPress, cornerRadius = 10.dp)
+                                        .clickable(
+                                            interactionSource = monthPress,
+                                            indication = null
+                                        ) { month = m }
                                         .padding(vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -783,7 +795,7 @@ enum class SyncStatusKind { Idle, Syncing, Success, Failure }
  * 同步状态条：图标 + 场景化文案 + 可选原因 + 失败重试。
  * - 空闲：灰色小图标「还没同步」
  * - 同步中：环形进度 +「同步中…」（调用方同时禁用触发按钮）
- * - 成功：绿色对勾 +「刚刚同步」+ 上次时间
+ * - 成功：一行显示最近同步时间，不重复堆叠状态文案
  * - 失败：红色 +「同步失败」+ 简短原因 + 重试按钮
  */
 @Composable
@@ -795,60 +807,62 @@ fun SyncStatusBar(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
+    val palette = LocalAppPalette.current
     val title = when (kind) {
         SyncStatusKind.Idle -> "还没同步"
         SyncStatusKind.Syncing -> "同步中…"
-        SyncStatusKind.Success -> "刚刚同步"
+        SyncStatusKind.Success -> when {
+            subText.isBlank() -> "同步成功"
+            subText == "刚刚同步" -> subText
+            else -> "已同步 · $subText"
+        }
         SyncStatusKind.Failure -> "同步失败"
     }
-    val iconTint = when (kind) {
-        SyncStatusKind.Success -> SuccessGreen
+    val statusColor = when (kind) {
+        SyncStatusKind.Success -> palette.success
         SyncStatusKind.Failure -> scheme.error
-        SyncStatusKind.Idle -> TextMuted
-        SyncStatusKind.Syncing -> scheme.secondary
+        SyncStatusKind.Idle -> palette.mutedText
+        SyncStatusKind.Syncing -> palette.mutedText
     }
-    val titleColor = when (kind) {
-        SyncStatusKind.Failure -> scheme.error
-        else -> scheme.onSurface
+    val titleColor = if (kind == SyncStatusKind.Failure) scheme.error else scheme.onSurface
+    val backgroundColor = when (kind) {
+        SyncStatusKind.Success -> palette.successBackground
+        SyncStatusKind.Failure -> scheme.errorContainer
+        else -> scheme.surface
     }
-
+    val shape = RoundedCornerShape(10.dp)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp)
-            .padding(16.dp),
+            .heightIn(min = 48.dp)
+            .clip(shape)
+            .background(backgroundColor)
+            .border(
+                1.dp,
+                if (kind == SyncStatusKind.Failure) scheme.error.copy(alpha = 0.45f) else palette.hairline,
+                shape
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (kind == SyncStatusKind.Syncing) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-                color = scheme.secondary
-            )
-        } else {
-            Icon(
-                imageVector = when (kind) {
-                    SyncStatusKind.Success -> Icons.Outlined.CheckCircleOutline
-                    SyncStatusKind.Failure -> Icons.Outlined.CloudOff
-                    else -> Icons.Outlined.CloudQueue
-                },
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(statusColor)
+        )
+        Spacer(Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 title,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            val detail = reason?.takeIf { it.isNotBlank() } ?: subText.takeIf { it.isNotBlank() }
+            val detail = reason?.takeIf { kind == SyncStatusKind.Failure && it.isNotBlank() }
             if (detail != null) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
                 Text(
                     detail,
                     style = MaterialTheme.typography.labelSmall,
@@ -863,7 +877,7 @@ fun SyncStatusBar(
             SoftCapsuleButton(onClick = onRetry) {
                 Text(
                     "重试",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     color = scheme.error
                 )
             }
@@ -883,30 +897,30 @@ fun PhotoSyncPlaceholder(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
-            .background(scheme.surfaceVariant)
-            .clickable(onClick = onRetry),
+            .background(LocalAppPalette.current.photoPlaceholder)
+            .pressTint(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onRetry
+            ),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = if (failed) Icons.Outlined.CloudOff else Icons.Outlined.CloudSync,
                 contentDescription = null,
-                tint = scheme.onSurfaceVariant.copy(alpha = 0.7f),
+                tint = scheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = if (failed) "现在同步不了" else "照片还在路上…",
+                text = if (failed) "同步失败，点击重试" else "照片同步中…",
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurface
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = if (failed) "点一下重新同步" else "同步完成后会自动出现",
-                style = MaterialTheme.typography.labelSmall,
-                color = scheme.onSurfaceVariant
             )
         }
     }
@@ -957,6 +971,8 @@ fun PhotoViewerDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                // 看大图是全幅照片，底与控件恒定：深色 96% 黑 + 白字白图标。
+                // 这里**不跟主题翻**——翻成浅底会把照片边缘洗白，白底上的白图标也会糊掉。
                 .background(Color.Black.copy(alpha = 0.96f))
         ) {
             HorizontalPager(
@@ -1049,7 +1065,6 @@ private fun ZoomablePhoto(file: File, onTap: () -> Unit) {
 /** 照片右上角的小圆底删除键：视觉 32dp，热区 48dp（Android 最小触摸目标）。 */
 @Composable
 private fun PhotoRemoveButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .size(48.dp)
@@ -1060,14 +1075,15 @@ private fun PhotoRemoveButton(modifier: Modifier = Modifier, onClick: () -> Unit
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.88f))
-                .border(1.dp, scheme.onSurface.copy(alpha = 0.12f), CircleShape),
+                // 压在缩略图上的移除键：恒定深底白图标，属于规范允许的两处白字/白图标例外
+                .background(Color.Black.copy(alpha = 0.58f))
+                .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.Close,
                 contentDescription = "移除照片",
-                tint = scheme.onSurface,
+                tint = Color.White,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -1109,7 +1125,7 @@ fun PhotoNoteCard(
     allowRemove: Boolean = true,
     maxPhotos: Int = 1,
     photoRatio: Float = 4f / 5f,
-    cardCorner: Dp = 16.dp,
+    cardCorner: Dp = 12.dp,
     /** 我是不是上传人；false 时备注只读 */
     noteEditable: Boolean = true,
     /** 备注区标签；空 = 我就是上传人，不贴标签 */
@@ -1232,7 +1248,7 @@ fun PhotoNoteCard(
                     SoftCapsuleButton(
                         onClick = launchGallery,
                         modifier = Modifier.weight(1f),
-                        cornerRadius = 8.dp,
+                        cornerRadius = 10.dp,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
                         Icon(
@@ -1244,7 +1260,7 @@ fun PhotoNoteCard(
                         Text(
                             if (maxPhotos > 1) "选照片" else "从相册选择",
                             style = MaterialTheme.typography.labelLarge,
-                            color = scheme.onSurface,
+                            color = LocalContentColor.current,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1252,7 +1268,7 @@ fun PhotoNoteCard(
                     SoftCapsuleButton(
                         onClick = launchCamera,
                         modifier = Modifier.weight(1f),
-                        cornerRadius = 8.dp,
+                        cornerRadius = 10.dp,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
                         Icon(
@@ -1264,7 +1280,7 @@ fun PhotoNoteCard(
                         Text(
                             "拍一张",
                             style = MaterialTheme.typography.labelLarge,
-                            color = scheme.onSurface,
+                            color = LocalContentColor.current,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1279,7 +1295,7 @@ fun PhotoNoteCard(
                         .fillMaxWidth()
                         .padding(16.dp)
                         .aspectRatio(photoRatio)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(10.dp))
                         .clickable { viewerPhoto = photos.first() }
                 ) {
                     PhotoImage(
@@ -1312,7 +1328,7 @@ fun PhotoNoteCard(
                                     modifier = Modifier
                                         .weight(1f)
                                         .aspectRatio(photoRatio)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(10.dp))
                                         .clickable { viewerPhoto = name }
                                 ) {
                                     PhotoImage(
@@ -1347,7 +1363,7 @@ fun PhotoNoteCard(
                 SoftCapsuleButton(
                     onClick = launchGallery,
                     modifier = Modifier.weight(1f),
-                    cornerRadius = 8.dp,
+                    cornerRadius = 10.dp,
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     Icon(
@@ -1359,7 +1375,7 @@ fun PhotoNoteCard(
                     Text(
                         if (maxPhotos > 1) "再加" else "换一张",
                         style = MaterialTheme.typography.labelLarge,
-                        color = scheme.onSurface,
+                        color = LocalContentColor.current,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1367,7 +1383,7 @@ fun PhotoNoteCard(
                 SoftCapsuleButton(
                     onClick = launchCamera,
                     modifier = Modifier.weight(1f),
-                    cornerRadius = 8.dp,
+                    cornerRadius = 10.dp,
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     Icon(
@@ -1379,7 +1395,7 @@ fun PhotoNoteCard(
                     Text(
                         "拍一张",
                         style = MaterialTheme.typography.labelLarge,
-                        color = scheme.onSurface,
+                        color = LocalContentColor.current,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1388,7 +1404,7 @@ fun PhotoNoteCard(
                     SoftCapsuleButton(
                         onClick = { onPhotosChanged(emptyList()) },
                         modifier = Modifier.weight(1f),
-                        cornerRadius = 8.dp,
+                        cornerRadius = 10.dp,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
                         Text(
@@ -1432,7 +1448,7 @@ fun PhotoNoteCard(
                 onValueChange = { onReplyChange?.invoke(it) },
                 placeholder = replyPlaceholder,
                 editable = replyEditable,
-                accent = scheme.primary,
+                accent = scheme.onSurfaceVariant,
                 leadingIcon = Icons.Outlined.ChatBubbleOutline
             )
         }
@@ -1447,7 +1463,7 @@ private fun Hairline(scheme: ColorScheme) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .height(1.dp)
-            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+            .background(LocalAppPalette.current.hairline)
     )
 }
 
@@ -1525,14 +1541,14 @@ private fun TextNoteBlock(
                 Icon(
                     imageVector = leadingIcon ?: Icons.Outlined.Add,
                     contentDescription = null,
-                    tint = accent.copy(alpha = 0.8f),
+                    tint = scheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     shortHint,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = accent.copy(alpha = 0.85f),
+                    color = scheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1608,7 +1624,7 @@ fun ReadOnlyNote(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp)
+            .solidCard(cornerRadius = 12.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         if (label != null) {
@@ -1644,10 +1660,13 @@ fun CommentField(
     placeholder: String = "说点什么…"
 ) {
     val scheme = MaterialTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp)
+            .solidCard(cornerRadius = 12.dp)
+            .focusRing(focused, 12.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
@@ -1662,7 +1681,7 @@ fun CommentField(
                     Text(
                         placeholder,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = scheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = LocalAppPalette.current.mutedText
                     )
                 }
                 BasicTextField(
@@ -1671,6 +1690,7 @@ fun CommentField(
                     minLines = 2,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
                     cursorBrush = SolidColor(scheme.primary),
+                    interactionSource = interactionSource,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1678,7 +1698,7 @@ fun CommentField(
             Text(
                 value.ifBlank { "还没有评论" },
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (value.isBlank()) scheme.onSurfaceVariant.copy(alpha = 0.6f)
+                color = if (value.isBlank()) LocalAppPalette.current.mutedText
                 else scheme.onSurface
             )
         }
@@ -1707,10 +1727,13 @@ fun PlainField(
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     val scheme = MaterialTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 16.dp)
+            .solidCard(cornerRadius = 12.dp)
+            .focusRing(focused, 12.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         if (label != null) {
@@ -1726,7 +1749,7 @@ fun PlainField(
                 Text(
                     placeholder,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = scheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = LocalAppPalette.current.mutedText
                 )
             }
             BasicTextField(
@@ -1737,6 +1760,7 @@ fun PlainField(
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
                 cursorBrush = SolidColor(scheme.primary),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                interactionSource = interactionSource,
                 modifier = Modifier.fillMaxWidth()
             )
         }

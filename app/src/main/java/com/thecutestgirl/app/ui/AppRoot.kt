@@ -43,6 +43,7 @@ import androidx.navigation.NavType
 import com.thecutestgirl.app.ui.components.GlassBottomBar
 import com.thecutestgirl.app.ui.components.GlassTab
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
+import com.thecutestgirl.app.ui.components.paperBackground
 import com.thecutestgirl.app.ui.event.EventEditScreen
 import com.thecutestgirl.app.ui.event.EventScreen
 import com.thecutestgirl.app.ui.meal.MealEditScreen
@@ -50,13 +51,14 @@ import com.thecutestgirl.app.ui.meal.MealScreen
 import com.thecutestgirl.app.ui.outfit.OutfitEditScreen
 import com.thecutestgirl.app.ui.outfit.OutfitScreen
 import com.thecutestgirl.app.ui.outfit.OutfitUploadScreen
+import com.thecutestgirl.app.ui.settings.AppearanceSettingsScreen
 import com.thecutestgirl.app.ui.settings.BackupSettingsScreen
 import com.thecutestgirl.app.ui.settings.BatterySettingsScreen
 import com.thecutestgirl.app.ui.settings.ProfileSettingsScreen
 import com.thecutestgirl.app.ui.settings.SettingsMenuDrawer
 import com.thecutestgirl.app.ui.settings.SettingsModule
-import com.thecutestgirl.app.ui.settings.SettingsScrim
 import com.thecutestgirl.app.ui.settings.SyncSettingsScreen
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import kotlinx.coroutines.launch
@@ -93,7 +95,7 @@ fun AppRoot(
     onNotificationTargetConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    // 模糊采样源状态：包住 NavHost 的 Box 是被模糊的内容，玻璃栏从它采样
+    // 仅供原有悬浮底栏采样，页面卡片仍使用纸面材质。
     val hazeState = remember { HazeState() }
     // v4.2.2：全局设置入口 = 一个左侧菜单。三个列表页只留右上角菜单按钮，
     // 不再各自放齿轮 / 长按标题的隐藏入口。
@@ -163,7 +165,7 @@ fun AppRoot(
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = currentRoute == "outfit",
-        scrimColor = SettingsScrim,
+        scrimColor = LocalAppPalette.current.scrim,
         drawerContent = {
             // NavHost 在抽屉之后组合，它的返回回调会先吃掉 Back；
             // 这里在抽屉打开时再注册一个（后注册先执行），保证返回键先关抽屉。
@@ -199,6 +201,7 @@ fun AppRoot(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = padding.calculateTopPadding())
+                        .paperBackground()
                         .haze(hazeState)
                 ) {
                     // v2.5.3：页面切换加一层「轻微位移 + 淡入」的转场（SharedAxis 的简化版）。
@@ -321,7 +324,7 @@ fun AppRoot(
                             )
                         }
 
-                        // ---------- 设置（四个独立页面） ----------
+                        // ---------- 设置（五个独立页面） ----------
                         composable("settings/profile") {
                             ProfileSettingsScreen(
                                 onBack = { navController.popBackStack() }
@@ -339,6 +342,11 @@ fun AppRoot(
                         }
                         composable("settings/battery") {
                             BatterySettingsScreen(
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("settings/appearance") {
+                            AppearanceSettingsScreen(
                                 onBack = { navController.popBackStack() }
                             )
                         }

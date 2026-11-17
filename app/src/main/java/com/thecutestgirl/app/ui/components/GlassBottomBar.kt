@@ -1,4 +1,4 @@
-﻿package com.thecutestgirl.app.ui.components
+package com.thecutestgirl.app.ui.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.setValue
@@ -51,6 +51,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 
 /** 玻璃栏每个 tab 的数据 */
 data class GlassTab(
@@ -107,13 +108,14 @@ fun GlassBottomBar(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
+    val palette = LocalAppPalette.current
     val scope = rememberCoroutineScope()
     val view = LocalView.current
 
     // 选中块：品牌粉 18% 的玻璃糖浆 + 白色顶部高光
     val pillBody = scheme.primary.copy(alpha = 0.18f)
-    val pillHighlight = Color.White.copy(alpha = 0.55f)
-    val pillEdge = Color.White.copy(alpha = 0.65f)
+    val pillHighlight = palette.pillHighlight.copy(alpha = 0.55f)
+    val pillEdge = palette.pillHighlight.copy(alpha = 0.65f)
 
     val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
     val lastIndex = (tabs.size - 1).coerceAtLeast(0)

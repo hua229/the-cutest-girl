@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,10 +17,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -54,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -61,7 +67,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thecutestgirl.app.data.PhotoStore
-import com.thecutestgirl.app.ui.theme.BorderHairline
+import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import com.thecutestgirl.app.ui.theme.TheCutestGirlTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -72,7 +78,7 @@ import java.io.File
  * 统一的新增记录抽屉（v4.0）。
  *
  * 规范：
- * - 半屏（约 0.55 屏高），顶部圆角 24，玻璃面板
+ * - 半屏（约 0.55 屏高），顶部圆角 20，玻璃面板
  * - 40% 黑色遮罩，点击遮罩 / 下滑关闭
  * - 进出一个 spring（约 300ms），遮罩同步淡入淡出（Material3 Sheet 默认行为）
  * - 内容 8dp 网格；主操作 PrimaryButton 全宽 48dp
@@ -82,7 +88,6 @@ import java.io.File
 @Composable
 fun AddRecordSheet(
     title: String,
-    subtitle: String,
     onDismiss: () -> Unit,
     primaryEnabled: Boolean,
     onPrimary: () -> Unit,
@@ -97,16 +102,17 @@ fun AddRecordSheet(
             if (hasUnsavedChanges) showDiscardConfirm = true else onDismiss()
         },
         sheetState = sheetState,
-        scrimColor = Color.Black.copy(alpha = 0.40f),
+        // 遮罩统一取 palette（两套主题都是 40% 黑），和设置抽屉同一个来源
+        scrimColor = LocalAppPalette.current.scrim,
         containerColor = Color.Transparent,
         dragHandle = null
     ) {
         AddRecordSheetContent(
             title = title,
-            subtitle = subtitle,
             primaryEnabled = primaryEnabled,
             onPrimary = onPrimary,
             primaryLabel = primaryLabel,
+            onCancel = onDismiss,
             content = content
         )
     }
@@ -132,46 +138,72 @@ fun AddRecordSheet(
 @Composable
 fun AddRecordSheetContent(
     title: String,
-    subtitle: String,
     primaryEnabled: Boolean,
     onPrimary: () -> Unit,
     primaryLabel: String = "保存",
+    onCancel: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val topOnly = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        // 抽屉高度自适应：约 82% 屏高，小屏至少 360dp；内容区可滚动
-        val sheetHeight = (maxHeight * 0.82f).coerceAtLeast(360.dp)
+    val topOnly = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+    val density = LocalDensity.current
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().imePadding()) {
+        // 键盘弹起时按 IME 之上的可用高度重算：无键盘约 82% 且 ≥360dp；
+        // IME 态 360dp 下限失效、兜底 240dp；可用高不足 240dp 时切同一 Sheet 的全屏表单态。
+        val imeBottom = WindowInsets.ime.getBottom(density)
+        val imeHeight = with(density) { imeBottom.toDp() }
+        val keyboardVisible = imeHeight > 0.dp
+        val availableHeight = maxHeight - imeHeight
+        val fullForm = keyboardVisible && availableHeight < 240.dp
+        val desiredHeight = if (keyboardVisible) {
+            minOf(maxHeight * 0.82f, availableHeight)
+        } else {
+            maxHeight * 0.82f
+        }
+        val sheetHeight = if (fullForm) {
+            maxHeight
+        } else {
+            desiredHeight.coerceAtLeast(if (keyboardVisible) 240.dp else 360.dp)
+                .coerceAtMost(maxHeight)
+        }
+        val sheetShape = if (fullForm) RoundedCornerShape(0.dp) else topOnly
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(sheetHeight)
                 // 抽屉必须完全不透明：半透明会让底层文字/图标透上来，读不清
-                .glassPanel(shape = topOnly, surfaceAlpha = 1f)
-                // ModalBottomSheet 自带系统栏 insets；这里只补键盘，避免双倍留白
-                .imePadding()
+                .glassPanel(shape = sheetShape, elevated = true)
                 .padding(24.dp)
         ) {
-        // 拖动指示条（装饰，本身不占点击）
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(32.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f))
-        )
-        Spacer(Modifier.height(24.dp))
+        if (fullForm) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = { onCancel?.invoke() }) {
+                    Text("取消", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onPrimary, enabled = primaryEnabled) {
+                    Text("保存")
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        } else {
+            // 拖动指示条（装饰，本身不占点击）
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(32.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f))
+            )
+            Spacer(Modifier.height(24.dp))
+        }
         Text(
             title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(24.dp))
         Column(
@@ -183,12 +215,14 @@ fun AddRecordSheetContent(
             content()
         }
         Spacer(Modifier.height(16.dp))
-        PrimaryButton(
-            text = primaryLabel,
-            onClick = onPrimary,
-            enabled = primaryEnabled
-        )
-        Spacer(Modifier.height(8.dp))
+        if (!fullForm) {
+            PrimaryButton(
+                text = primaryLabel,
+                onClick = onPrimary,
+                enabled = primaryEnabled
+            )
+            Spacer(Modifier.height(8.dp))
+        }
         }
     }
 }
@@ -215,19 +249,29 @@ fun SheetTextField(
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     val scheme = MaterialTheme.colorScheme
+    val palette = LocalAppPalette.current
+    val hairline = palette.hairline
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(10.dp)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .heightIn(min = 48.dp)
+            .clip(shape)
             .background(scheme.surfaceVariant)
-            .border(1.dp, BorderHairline, RoundedCornerShape(8.dp))
-            .padding(16.dp)
+            .border(
+                width = if (focused) 2.dp else 1.dp,
+                color = if (focused) scheme.primary else hairline,
+                shape = shape
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         if (value.isEmpty()) {
             Text(
                 placeholder,
                 style = MaterialTheme.typography.bodyLarge,
-                color = scheme.onSurfaceVariant.copy(alpha = 0.7f)
+                color = palette.mutedText
             )
         }
         BasicTextField(
@@ -238,6 +282,7 @@ fun SheetTextField(
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
             cursorBrush = SolidColor(scheme.primary),
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            interactionSource = interactionSource,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -250,15 +295,29 @@ fun SheetDateRow(
     value: String,
     onClick: (() -> Unit)? = null
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val shape = RoundedCornerShape(10.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .heightIn(min = 48.dp)
+            .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, BorderHairline, RoundedCornerShape(8.dp))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp),
+            .border(1.dp, LocalAppPalette.current.hairline, shape)
+            .then(
+                if (onClick != null) {
+                    Modifier
+                        .pressTint(interactionSource, cornerRadius = 10.dp)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onClick
+                        )
+                } else {
+                    Modifier
+                }
+            )
+            .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -275,34 +334,47 @@ fun SheetDateRow(
     }
 }
 
-/** 抽屉分段选择（日常点滴 / 纪念日）。 */
+/**
+ * 全 app 唯一的分段选择控件（v4.3.0 从 `SheetSegmented` 改名：它早就不只属于抽屉，
+ * 饮食 / 点滴 / 外观页都在用）。选中项中性实色底 + 主色实色描边，未选中 surfaceVariant；
+ * 按压反馈走 [pressTint]，和行类一致。
+ */
 @Composable
-fun SheetSegmented(
+fun SegmentedChoices(
     options: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val hairline = LocalAppPalette.current.hairline
+    val slot = LocalAppPalette.current.segmentSlot
+    val selectedSurface = LocalAppPalette.current.elevatedSurface
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(slot)
+            .border(1.dp, hairline, RoundedCornerShape(10.dp))
+            .padding(3.dp)
+    ) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
+            val interactionSource = remember { MutableInteractionSource() }
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                        else MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    .heightIn(min = 40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (selected) selectedSurface else Color.Transparent)
                     .border(
                         1.dp,
-                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                        else BorderHairline,
-                        RoundedCornerShape(8.dp)
+                        if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        RoundedCornerShape(10.dp)
                     )
+                    .pressTint(interactionSource, cornerRadius = 10.dp)
                     .selectable(
                         selected = selected,
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        interactionSource = interactionSource,
                         indication = null,
                         role = Role.Tab,
                         onClick = { onSelect(index) }
@@ -314,7 +386,8 @@ fun SheetSegmented(
                     style = MaterialTheme.typography.labelLarge,
                     color = if (selected) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
         }
@@ -398,7 +471,7 @@ fun SheetPhotoPicker(
                     Box(
                         modifier = Modifier
                             .size(72.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(10.dp))
                     ) {
                         PhotoImage(
                             file = PhotoStore.file(context, name),
@@ -409,13 +482,19 @@ fun SheetPhotoPicker(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.55f))
+                                .padding(0.dp)
+                                .size(48.dp)
                                 .clickable { onRemove(name) },
                             contentAlignment = Alignment.Center
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    // 压在照片上的移除键：恒定深底白图标，不跟主题翻，
+                                    // 否则深色主题下「深圆 + 浅图标」会在浅照片上消失
+                                    .background(Color.Black.copy(alpha = 0.55f))
+                            )
                             Icon(
                                 Icons.Outlined.Close,
                                 contentDescription = "移除照片",
@@ -486,7 +565,6 @@ private fun AddRecordSheetContentPreview() {
     TheCutestGirlTheme {
         AddRecordSheetContent(
             title = "记录午餐",
-            subtitle = "8月24日 · 我的",
             primaryEnabled = true,
             onPrimary = {},
             content = {
@@ -499,7 +577,7 @@ private fun AddRecordSheetContentPreview() {
                 SheetTextField(
                     value = "",
                     onValueChange = {},
-                    placeholder = "这一餐吃了什么，比如：楼下那家豆浆油条",
+                    placeholder = "吃了什么（可选）",
                     minLines = 3,
                     singleLine = false
                 )
@@ -514,12 +592,11 @@ private fun AddRecordSheetFilledPreview() {
     TheCutestGirlTheme {
         AddRecordSheetContent(
             title = "记一条点滴",
-            subtitle = "今天 · 日常点滴",
             primaryEnabled = false,
             onPrimary = {},
             primaryLabel = "保存",
             content = {
-                SheetSegmented(
+                SegmentedChoices(
                     options = listOf("日常点滴", "纪念日"),
                     selectedIndex = 0,
                     onSelect = {}

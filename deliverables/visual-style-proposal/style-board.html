@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the cutest girl · 温柔手账 / 奶油纸感 — 规范预览</title>
+<style>
+/* ===== 1. 双主题 token：切换只改 data-theme，组件只读 token，不写深浅分支 ===== */
+html[data-theme="light"]{
+  --page:#F3EDE2; --card:#FCF8F1; --elev:#FFFCF7;
+  --hairline:#E2D6C2; --dashed:#D6C8B2;
+  --ink:#2B2621; --ink2:#5C544A; --ink3:#6E655A;
+  --accent:#C92661; --accent60:rgba(201,38,97,.6);
+  --pink-container:#F9E8EC; --pink-soft:#FDF3F5; --on-accent:#FFF9F4;
+  --disabled:#E2D6C2; --segment-slot:#EFE7D9; --photo:#FBF6EE;
+  --tape:#E7D9BE; --scrim:rgba(43,38,33,.32); --bar:#FBF6EC;
+  --glow:#FFFCF7; --gloss:#FFFCF7;
+  --shadow:0 2px 6px rgba(107,91,69,.08);
+  --press:rgba(43,38,33,.06);
+  --success-ink:#3B664A; --success-bg:#E8F0E9;
+  --warn-ink:#7C5220; --warn-bg:#F6EBD7;
+  --error-ink:#A03C3A; --error-bg:#F7EAE7;
+  --paper-ink:#8A7A62;
+  --tex-dot:rgba(138,122,98,.14); --tex-line:rgba(138,122,98,.05);
+  --shell:#EFE6D6;
+}
+html[data-theme="dark"]{
+  --page:#171412; --card:#221E1A; --elev:#2C2722;
+  --hairline:#3B332C; --dashed:#4A4038;
+  --ink:#F3ECE2; --ink2:#C9BFB2; --ink3:#ADA293;
+  --accent:#E8699C; --accent60:rgba(232,105,156,.6);
+  --pink-container:#3A2029; --pink-soft:#2A1C21; --on-accent:#3A0F22;
+  --disabled:#3B332C; --segment-slot:#1C1815; --photo:#221E1A;
+  --tape:#4A3A28; --scrim:rgba(0,0,0,.48); --bar:#201B17;
+  --glow:#2C2722; --gloss:#2C2722;
+  --shadow:none;
+  --press:rgba(201,183,155,.06);
+  --success-ink:#8FB79A; --success-bg:#253129;
+  --warn-ink:#D9AE72; --warn-bg:#332A1C;
+  --error-ink:#E38C84; --error-bg:#33211F;
+  --paper-ink:#C9B79B;
+  --tex-dot:rgba(201,183,155,.03); --tex-line:rgba(201,183,155,.02);
+  --shell:#100E0D;
+}
+
+/* ===== 2. 基础：中性外壳、系统字体、无外部资源 ===== */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--shell); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  font-size:16px; line-height:26px; font-weight:400;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 20px 48px;min-width:0}
+h1,h2,h3,p,ul,ol{margin:0}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+
+/* 页头 */
+.board-head{
+  display:flex;gap:24px;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;background:var(--page);border:1px solid var(--hairline);
+  border-radius:20px;padding:24px;
+}
+.eyebrow{font-size:12px;line-height:16px;color:var(--ink3);letter-spacing:0}
+.board-head h1{font-size:30px;line-height:38px;font-weight:500;margin:8px 0 12px}
+.kw{font-size:14px;line-height:22px;color:var(--ink2)}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.badge{
+  font-size:12px;line-height:16px;padding:4px 10px;border-radius:4px;
+  border:1px solid var(--hairline);background:var(--elev);color:var(--ink2);
+}
+.badge.mark{background:var(--pink-container);color:var(--accent);border-color:var(--accent)}
+.head-side{display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:0}
+.toggle{
+  min-height:48px;display:inline-flex;align-items:center;gap:10px;
+  padding:0 16px;border-radius:999px;cursor:pointer;
+  background:var(--elev);color:var(--ink);border:1px solid var(--hairline);
+  font-size:16px;font-weight:500;font-family:inherit;
+}
+.toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.toggle-dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+html[data-theme="dark"] .toggle-dot{background:var(--accent)}
+.head-note{font-size:12px;line-height:16px;color:var(--ink3);text-align:right;max-width:220px}
+
+/* 区块 */
+.sec{margin-top:32px}
+.sec-h{
+  font-size:20px;line-height:28px;font-weight:500;
+  border-bottom:1px dashed var(--dashed);padding-bottom:8px;margin-bottom:16px;
+  display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;
+}
+.sec-h small{font-size:12px;line-height:16px;font-weight:400;color:var(--ink3)}
+.panel{background:var(--card);border:1px solid var(--hairline);border-radius:12px;padding:16px;min-width:0}
+.note{font-size:14px;line-height:22px;color:var(--ink3);margin-top:12px}
+.tbl-wrap{overflow-x:auto;max-width:100%}
+.tbl{width:100%;border-collapse:collapse;min-width:520px;font-size:14px;line-height:22px}
+.tbl th,.tbl td{border:1px solid var(--hairline);padding:8px 10px;text-align:left;vertical-align:top}
+.tbl th{background:var(--segment-slot);font-weight:500;color:var(--ink2)}
+.tbl td{color:var(--ink)}
+.tbl .k{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px}
+
+/* ===== 3. 纸卡：100% 不透明 + 1dp 实色纸边 + 顶缘 1dp 高光 + 左缘 1dp 压痕 ===== */
+.paper-card{
+  position:relative;background:var(--card);
+  border:1px solid var(--hairline);border-radius:12px;
+  box-shadow:var(--shadow);padding:16px;min-width:0;
+}
+.paper-card::before{
+  content:"";position:absolute;left:12px;right:12px;top:0;height:1px;
+  background:var(--glow);pointer-events:none;z-index:2;
+}
+.paper-card::after{
+  content:"";position:absolute;top:12px;bottom:12px;left:0;width:1px;
+  background:var(--hairline);pointer-events:none;z-index:2;
+}
+.paper-card > *{position:relative;z-index:1}
+.paper-card .tex-layer{position:absolute;inset:1px;border-radius:11px;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--tex-dot) 0 .6px, transparent .7px),
+    radial-gradient(circle at 4px 5px, var(--tex-dot) 0 .6px, transparent .7px),
+    repeating-linear-gradient(to bottom, transparent 0 11.5px, var(--tex-line) 11.5px 12px);
+  background-size:6px 6px,6px 6px,100% 12px;
+}
+
+/* ===== 4. 色板 ===== */
+.palettes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.palette{border-radius:12px;padding:16px;min-width:0}
+.palette.light{background:#F3EDE2;color:#2B2621;border:1px solid #E2D6C2}
+.palette.dark{background:#171412;color:#F3ECE2;border:1px solid #3B332C}
+.palette h3{font-size:16px;line-height:24px;font-weight:500;margin-bottom:12px}
+.palette .sub{font-size:12px;line-height:16px;opacity:.8;margin-bottom:12px}
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.sw{min-width:0}
+.chip{height:44px;border-radius:6px;background:var(--c);border:1px solid rgba(128,128,128,.28)}
+.chip.duo{background:linear-gradient(to right,var(--c1) 0 50%,var(--c2) 50% 100%)}
+.sw .n{font-size:12px;line-height:16px;font-weight:500;margin-top:4px}
+.sw .h{font-size:12px;line-height:16px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;opacity:.9}
+.sw .c{font-size:12px;line-height:16px;opacity:.78}
+.cr-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-top:16px}
+.cr-item{font-size:12px;line-height:18px;border:1px solid var(--hairline);border-radius:6px;padding:6px 8px;background:var(--elev)}
+
+/* ===== 5. 字阶 ===== */
+.type-row{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;border-bottom:1px dashed var(--dashed);padding:10px 0;min-width:0}
+.type-row:last-child{border-bottom:0}
+.type-tag{width:150px;flex:0 0 150px;font-size:12px;line-height:18px;color:var(--ink3)}
+.t-title{font-size:30px;line-height:38px;font-weight:500}
+.t-sec{font-size:20px;line-height:28px;font-weight:500}
+.t-body{font-size:16px;line-height:26px;font-weight:400}
+.t-aux{font-size:14px;line-height:22px;color:var(--ink3)}
+.t-badge{font-size:12px;line-height:16px;color:var(--ink3)}
+.t-btn{font-size:16px;line-height:24px;font-weight:500}
+.t-input{font-size:16px;line-height:24px}
+.t-date{font-size:16px;line-height:24px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.t-num{font-size:48px;line-height:56px;font-weight:300;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent)}
+.t-unit{font-size:14px;line-height:22px;color:var(--ink2)}
+@media (max-width:360px){.t-title{font-size:28px;line-height:36px}.type-tag{width:100%;flex:1 1 100%}}
+
+/* ===== 6. 形状与间距 ===== */
+.radius-row,.height-row,.space-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.radius-item{width:88px;text-align:center;min-width:0}
+.radius-box{height:56px;background:var(--elev);border:1px solid var(--hairline)}
+.cap{font-size:12px;line-height:16px;color:var(--ink3);margin-top:6px;display:block}
+.height-item{width:92px;text-align:center;min-width:0}
+.height-box{background:var(--segment-slot);border:1px solid var(--hairline);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:16px;color:var(--ink2)}
+.space-item{display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;color:var(--ink3)}
+.space-bar{height:16px;background:var(--segment-slot);border:1px solid var(--hairline);border-radius:2px}
+
+/* ===== 7. 组件预览 ===== */
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.demo{min-width:0}
+.demo > .cap{margin-top:8px}
+.demo .inner{background:var(--page);border:1px solid var(--hairline);border-radius:12px;padding:12px;min-width:0}
+.demo-title{font-size:14px;line-height:22px;font-weight:500;margin-bottom:8px}
+
+/* 悬浮顶栏 */
+.topbar{
+  height:56px;border-radius:16px;background:var(--card);
+  border:1px solid var(--hairline);box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:8px;padding:0 8px;margin:8px;
+}
+.menu-hit{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.menu-hit:active{background:var(--press)}
+.menu-lines i{display:block;width:24px;height:2px;background:var(--ink);margin:4px 0}
+.topbar-title{flex:1;font-size:16px;font-weight:500;color:var(--ink)}
+.topbar-right{font-size:14px;color:var(--ink3);padding-right:8px}
+
+/* 底栏 */
+.bottombar{
+  height:64px;position:relative;background:var(--bar);
+  border:1px solid var(--hairline);
+  display:grid;grid-template-columns:repeat(3,1fr);
+}
+.bottombar::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--gloss);pointer-events:none}
+.bb-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0}
+.bb-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink3)}
+.bb-item.on .bb-icon{border-radius:50%;background:var(--accent);color:var(--on-accent)}
+.bb-label{font-size:12px;line-height:16px;color:var(--ink3)}
+.bb-item.on .bb-label{color:var(--accent)}
+
+/* 按钮 */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:10px;font-size:16px;line-height:24px;font-weight:500;
+  min-height:48px;padding:0 20px;font-family:inherit;
+}
+.btn.primary{background:var(--accent);color:var(--on-accent);border:1px solid var(--accent)}
+.btn.soft{min-height:40px;border-radius:999px;background:var(--elev);color:var(--ink2);border:1px solid var(--hairline)}
+.btn.soft.disabled{background:var(--disabled);color:var(--ink2);border:1px solid var(--hairline)}
+.btn.destructive{min-height:48px;background:var(--error-bg);color:var(--error-ink);border:1px solid var(--error-ink)}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.fab{width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;border:1px solid var(--accent)}
+.err-note{font-size:14px;line-height:22px;color:var(--error-ink);margin-top:8px}
+
+/* 分段 */
+.segment{height:40px;background:var(--segment-slot);border:1px solid var(--hairline);border-radius:10px;padding:3px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.seg-item{border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink3)}
+.seg-item.on{background:var(--elev);border:1px solid var(--hairline);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+
+/* 抽屉缩略 */
+.drawer-wrap{position:relative;height:300px;background:var(--page);border:1px solid var(--hairline);border-radius:12px;overflow:hidden}
+.drawer-scrim{position:absolute;inset:0;background:var(--scrim)}
+.drawer{
+  position:absolute;left:0;top:0;bottom:0;width:min(84%,280px);
+  background:var(--card);border-right:1px solid var(--hairline);
+  border-radius:0 20px 20px 0;padding:8px 0;
+}
+.drawer-holes{position:absolute;left:8px;top:0;bottom:0;width:4px;display:flex;flex-direction:column;justify-content:space-evenly;pointer-events:none;z-index:2}
+.drawer-holes i{width:4px;height:4px;border-radius:50%;background:var(--paper-ink);opacity:.65}
+.drawer-head{min-height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 20px;font-size:16px;font-weight:500;border-bottom:1px solid var(--hairline)}
+.drawer-close{width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--ink3)}
+.drawer-row{position:relative;min-height:56px;display:flex;align-items:center;padding:0 12px 0 20px;font-size:14px;color:var(--ink);border-bottom:1px dashed var(--dashed)}
+.drawer-row.on{color:var(--accent);background:var(--card)}
+.drawer-row.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--accent)}
+
+/* 底部弹层 */
+.sheet{background:var(--card);border:1px solid var(--hairline);border-bottom:0;border-radius:20px 20px 0 0;padding:12px 16px 16px}
+.sheet-handle{width:32px;height:4px;border-radius:2px;background:var(--hairline);margin:0 auto 12px}
+.sheet-title{font-size:16px;font-weight:500;margin-bottom:12px}
+.sheet-field{height:48px;border:1px solid var(--hairline);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;padding:0 12px;font-size:14px;color:var(--ink3);background:var(--elev)}
+.sheet .btn{width:100%}
+
+/* 空态虚线卡 + 四角针脚 */
+.empty-card{position:relative;height:120px;border:1px dashed var(--dashed);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink3);background:transparent}
+.stitch{position:absolute;width:4px;height:4px;pointer-events:none}
+.stitch::before,.stitch::after{content:"";position:absolute;background:var(--paper-ink)}
+.stitch::before{left:0;top:1.5px;width:4px;height:1px}
+.stitch::after{top:0;left:1.5px;width:1px;height:4px}
+.stitch.tl{left:8px;top:8px}.stitch.tr{right:8px;top:8px}.stitch.bl{left:8px;bottom:8px}.stitch.br{right:8px;bottom:8px}
+
+/* 照片格 */
+.photo-grid{display:grid}
+.photo-grid.g3{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.photo-grid.g2{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ph{background:var(--photo);border:1px solid var(--hairline);border-radius:4px}
+.g3 .ph{aspect-ratio:1/1.2}
+.g2 .ph{aspect-ratio:1/1}
+
+/* 纪念日 */
+.anniversary{display:flex;align-items:baseline;gap:8px;overflow:hidden;flex-wrap:wrap}
+.ann-glow{position:absolute;left:0;top:12px;bottom:12px;width:3px;background:linear-gradient(to bottom,var(--accent60),transparent);pointer-events:none}
+.ann-sub{flex:1 1 100%;font-size:14px;line-height:22px;color:var(--ink3);margin-top:8px}
+
+/* 同步状态条 */
+.sync-row{min-height:32px;display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:22px;color:var(--ink2);padding:5px 8px;border:1px solid var(--hairline);border-radius:10px;background:var(--card);margin-bottom:8px}
+.sync-row .dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;margin-top:7px}
+.sync-row.ok .dot{background:var(--success-ink)}
+.sync-row.run .dot{background:var(--warn-ink)}
+.sync-row.fail .dot{background:var(--error-ink)}
+.sync-row.fail{color:var(--error-ink)}
+
+/* 五态 */
+.five{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.state{min-width:0;text-align:center}
+.state .btn{width:100%;font-size:14px;padding:0 8px}
+.is-pressed{transform:scale(.98);background-color:var(--elev);background-image:linear-gradient(var(--press),var(--press))}
+.is-error{border-color:var(--error-ink);color:var(--error-ink);background:var(--error-bg)}
+.is-focus{outline:2px solid var(--accent);outline-offset:2px}
+.state .cap{margin-top:8px}
+
+/* ===== 8. 装饰 ===== */
+.deco-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.binding{position:relative;min-height:200px;background:var(--page);border:1px solid var(--hairline);border-radius:12px;padding:16px 16px 16px 32px;overflow:hidden}
+.bind-line{position:absolute;left:12px;top:0;bottom:0;width:1px;pointer-events:none;background-image:repeating-linear-gradient(to bottom,var(--dashed) 0 6px,transparent 6px 10px)}
+.bind-hole{position:absolute;left:10px;width:4px;height:4px;border-radius:50%;background:var(--paper-ink);pointer-events:none}
+.bind-body{font-size:14px;line-height:22px;color:var(--ink2)}
+.tape{width:48px;height:16px;border-radius:2px;background:var(--tape);opacity:.55;transform:rotate(-3deg)}
+.dash-line{height:1px;background-image:repeating-linear-gradient(to right,var(--dashed) 0 6px,transparent 6px 10px)}
+.tex-sample{position:relative;height:140px;border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--hairline)}
+.tex-sample .tex-layer{position:absolute;inset:1px;border-radius:11px;pointer-events:none;
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--tex-dot) 0 .6px, transparent .7px),
+    radial-gradient(circle at 4px 5px, var(--tex-dot) 0 .6px, transparent .7px),
+    repeating-linear-gradient(to bottom, transparent 0 11.5px, var(--tex-line) 11.5px 12px);
+  background-size:6px 6px,6px 6px,100% 12px;
+}
+.tex-sample .label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink2)}
+.meal-tags{display:flex;flex-wrap:wrap;gap:12px}
+.meal-tag{height:20px;padding:0 8px;border-radius:4px;background:var(--elev);border:1px solid var(--hairline);font-size:12px;line-height:18px;color:var(--ink2);transform:rotate(-1.5deg)}
+
+/* ===== 9. 响应式 ===== */
+@media (max-width:760px){.palettes{grid-template-columns:1fr}}
+@media (max-width:600px){
+  .wrap{padding:16px 12px 48px}
+  .board-head{padding:16px;flex-direction:column}
+  .head-side{align-items:flex-start}
+  .head-note{text-align:left}
+  .sw-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="board-head">
+    <div class="head-main">
+      <div class="eyebrow">the cutest girl · 规范预览</div>
+      <h1>温柔手账 / 奶油纸感</h1>
+      <div class="kw">中性米纸 · 装订针脚 · 印泥粉 · 纸质抬升 · 手账留白</div>
+      <div class="badges">
+        <span class="badge mark">规范预览，未落地</span>
+        <span class="badge">材质主题，非色彩主题</span>
+        <span class="badge">不恢复 v4.0 奶油玫瑰 / 深色 plum</span>
+        <span class="badge">浅 #F3EDE2 ／ 深 #171412</span>
+        <span class="badge">零依赖单文件</span>
+      </div>
+    </div>
+    <div class="head-side">
+      <button class="toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换浅色与深色">
+        <span class="toggle-dot" aria-hidden="true"></span><span id="themeLabel">浅色</span>
+      </button>
+      <div class="head-note">切换只改 data-theme 属性；所有组件只读 token，不写深浅分支。</div>
+    </div>
+  </header>
+
+  <!-- ===== ① 双份色板 ===== -->
+  <section class="sec">
+    <h2 class="sec-h">① 双份色板 <small>逐角色色块 + 名称 + 色值 + 对比度；两份色样为固定标本，不随切换改变</small></h2>
+    <div class="palettes">
+
+      <div class="palette light">
+        <h3>浅色 · 中性米纸</h3>
+        <div class="sub">页面 H39° 无粉相；粉色只允许出现在约定位置，全屏面积 ≤8%、同屏 ≤3 位。</div>
+        <div class="sw-grid">
+          <div class="sw"><div class="chip" style="--c:#F3EDE2"></div><div class="n">页面底</div><div class="h">#F3EDE2</div><div class="c">主字 12.86:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#FCF8F1"></div><div class="n">卡面</div><div class="h">#FCF8F1</div><div class="c">主字 14.15:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#FFFCF7"></div><div class="n">抬升面</div><div class="h">#FFFCF7</div><div class="c">主字 14.64:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#E2D6C2"></div><div class="n">边框 hairline</div><div class="h">#E2D6C2</div><div class="c">1dp 实色，不承载文字</div></div>
+          <div class="sw"><div class="chip" style="--c:#D6C8B2"></div><div class="n">虚线 dashedFill</div><div class="h">#D6C8B2 @70%</div><div class="c">1dp dash(6,4)</div></div>
+          <div class="sw"><div class="chip" style="--c:#2B2621"></div><div class="n">主文字</div><div class="h">#2B2621</div><div class="c">12.86–14.64:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#5C544A"></div><div class="n">次文字</div><div class="h">#5C544A</div><div class="c">6.39–7.27:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#6E655A"></div><div class="n">辅文字 mutedText</div><div class="h">#6E655A</div><div class="c">4.66–5.59:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#C92661"></div><div class="n">品牌粉 accent / accentText</div><div class="h">#C92661</div><div class="c">粉字最紧 4.52:1（粉容器）</div></div>
+          <div class="sw"><div class="chip" style="--c:#F9E8EC"></div><div class="n">粉容器</div><div class="h">#F9E8EC</div><div class="c">粉色允许位之一</div></div>
+          <div class="sw"><div class="chip" style="--c:#FDF3F5"></div><div class="n">软粉</div><div class="h">#FDF3F5</div><div class="c">空态 / 标签底</div></div>
+          <div class="sw"><div class="chip" style="--c:#FFF9F4"></div><div class="n">主按钮字</div><div class="h">#FFF9F4</div><div class="c">5.11:1（按钮上）</div></div>
+          <div class="sw"><div class="chip" style="--c:#E2D6C2"></div><div class="n">禁用底</div><div class="h">#E2D6C2</div><div class="c">禁用实色字 5.18:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#EFE7D9"></div><div class="n">分段槽</div><div class="h">#EFE7D9</div><div class="c">未选中底，非文字</div></div>
+          <div class="sw"><div class="chip" style="--c:#FBF6EE"></div><div class="n">照片占位</div><div class="h">#FBF6EE</div><div class="c">浮层白字 4.74:1（白名单）</div></div>
+          <div class="sw"><div class="chip" style="--c:#E7D9BE"></div><div class="n">胶带</div><div class="h">#E7D9BE @55%</div><div class="c">装饰，全屏 ≤1</div></div>
+          <div class="sw"><div class="chip" style="--c:#2B2621"></div><div class="n">遮罩</div><div class="h">#2B2621 @32%</div><div class="c">装饰，不发声不聚焦</div></div>
+          <div class="sw"><div class="chip duo" style="--c1:#3B664A;--c2:#E8F0E9"></div><div class="n">成功 墨 / 底</div><div class="h">#3B664A / #E8F0E9</div><div class="c">仅同步语义</div></div>
+          <div class="sw"><div class="chip duo" style="--c1:#7C5220;--c2:#F6EBD7"></div><div class="n">警告 墨 / 底</div><div class="h">#7C5220 / #F6EBD7</div><div class="c">仅同步语义</div></div>
+          <div class="sw"><div class="chip duo" style="--c1:#A03C3A;--c2:#F7EAE7"></div><div class="n">失败 墨 / 底</div><div class="h">#A03C3A / #F7EAE7</div><div class="c">1dp 错误边 + 14sp 说明</div></div>
+          <div class="sw"><div class="chip" style="--c:#8A7A62"></div><div class="n">纸纹墨 paperInk</div><div class="h">#8A7A62</div><div class="c">密度 ≤3%，建议字段</div></div>
+          <div class="sw"><div class="chip" style="--c:#FBF6EC"></div><div class="n">底栏纸带 hazeTint</div><div class="h">#FBF6EC</div><div class="c">64dp，去 Haze</div></div>
+          <div class="sw"><div class="chip" style="--c:#FFFCF7"></div><div class="n">顶缘高光 cardGlow</div><div class="h">#FFFCF7</div><div class="c">1dp 实色，非渐变铺面</div></div>
+          <div class="sw"><div class="chip" style="--c:#6B5B45"></div><div class="n">投影暖墨</div><div class="h">#6B5B45 @8%</div><div class="c">y=2dp / blur=6dp</div></div>
+        </div>
+      </div>
+
+      <div class="palette dark">
+        <h3>深色 · 暖黑纸</h3>
+        <div class="sub">暖黑系无紫；文字用暖白 #F3ECE2，不用纯白；纸纹几乎不可见且不得补亮。</div>
+        <div class="sw-grid">
+          <div class="sw"><div class="chip" style="--c:#171412"></div><div class="n">页面底</div><div class="h">#171412</div><div class="c">主字 15.64:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#221E1A"></div><div class="n">卡面</div><div class="h">#221E1A</div><div class="c">主字 14.11:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#2C2722"></div><div class="n">抬升面</div><div class="h">#2C2722</div><div class="c">主字 12.61:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#3B332C"></div><div class="n">边框 hairline</div><div class="h">#3B332C</div><div class="c">1dp 实色，不承载文字</div></div>
+          <div class="sw"><div class="chip" style="--c:#4A4038"></div><div class="n">虚线 dashedFill</div><div class="h">#4A4038 @80%</div><div class="c">1dp dash(6,4)</div></div>
+          <div class="sw"><div class="chip" style="--c:#F3ECE2"></div><div class="n">主文字</div><div class="h">#F3ECE2</div><div class="c">12.61–15.64:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#C9BFB2"></div><div class="n">次文字</div><div class="h">#C9BFB2</div><div class="c">8.15–10.11:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#ADA293"></div><div class="n">辅文字 mutedText</div><div class="h">#ADA293</div><div class="c">4.93–7.31:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#E8699C"></div><div class="n">品牌粉 accent / accentText</div><div class="h">#E8699C</div><div class="c">粉字最紧 4.88:1（深抬升）</div></div>
+          <div class="sw"><div class="chip" style="--c:#3A2029"></div><div class="n">粉容器</div><div class="h">#3A2029</div><div class="c">粉色允许位之一</div></div>
+          <div class="sw"><div class="chip" style="--c:#2A1C21"></div><div class="n">软粉</div><div class="h">#2A1C21</div><div class="c">空态 / 标签底</div></div>
+          <div class="sw"><div class="chip" style="--c:#3A0F22"></div><div class="n">主按钮字</div><div class="h">#3A0F22</div><div class="c">5.45:1（按钮上）</div></div>
+          <div class="sw"><div class="chip" style="--c:#3B332C"></div><div class="n">禁用底</div><div class="h">#3B332C</div><div class="c">禁用实色字 6.83:1</div></div>
+          <div class="sw"><div class="chip" style="--c:#1C1815"></div><div class="n">分段槽</div><div class="h">#1C1815</div><div class="c">未选中底，非文字</div></div>
+          <div class="sw"><div class="chip" style="--c:#221E1A"></div><div class="n">照片占位</div><div class="h">#221E1A</div><div class="c">映射卡面，不新增色值</div></div>
+          <div class="sw"><div class="chip" style="--c:#4A3A28"></div><div class="n">胶带</div><div class="h">#4A3A28 @45%</div><div class="c">装饰，全屏 ≤1</div></div>
+          <div class="sw"><div class="chip" style="--c:#000000"></div><div class="n">遮罩</div><div class="h">#000000 @48%</div><div class="c">装饰，不发声不聚焦</div></div>
+          <div class="sw"><div class="chip duo" style="--c1:#8FB79A;--c2:#253129"></div><div class="n">成功 墨 / 底</div><div class="h">#8FB79A / #253129</div><div class="c">仅同步语义</div></div>
+          <div class="sw"><div class="chip duo" style="--c1:#D9AE72;--c2:#332A1C"></div><div class="n">警告 墨 / 底</div><div class="h">#D9AE72 / #332A1C</div><div class="c">仅同步语义</div></div>
+          <div class="sw"><div class="chip duo" style="--c1:#E38C84;--c2:#33211F"></div><div class="n">失败 墨 / 底</div><div class="h">#E38C84 / #33211F</div><div class="c">1dp 错误边 + 14sp 说明</div></div>
+          <div class="sw"><div class="chip" style="--c:#C9B79B"></div><div class="n">纸纹墨 paperInk</div><div class="h">#C9B79B @3%</div><div class="c">不可见时不得补亮</div></div>
+          <div class="sw"><div class="chip" style="--c:#201B17"></div><div class="n">底栏纸带 hazeTint</div><div class="h">#201B17</div><div class="c">64dp，去 Haze</div></div>
+          <div class="sw"><div class="chip" style="--c:#2C2722"></div><div class="n">顶缘高光 cardGlow</div><div class="h">#2C2722</div><div class="c">映射抬升，1dp 实色</div></div>
+          <div class="sw"><div class="chip" style="--c:#171412"></div><div class="n">无投影 · 明度差</div><div class="h">1.108 / 1.120 / 1.240</div><div class="c">卡页 / 抬升卡 / 抬升页</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr-list">
+      <div class="cr-item">浅主文字 12.86–14.64:1 ／ 深主文字 12.61–15.64:1</div>
+      <div class="cr-item">浅次 6.39–7.27:1 ／ 深次 8.15–10.11:1</div>
+      <div class="cr-item">浅辅 4.66–5.59:1 ／ 深辅 4.93–7.31:1</div>
+      <div class="cr-item">粉字最紧 4.52:1（浅粉容器）／ 4.88:1（深抬升）</div>
+      <div class="cr-item">按钮字 5.11:1 ／ 5.45:1</div>
+      <div class="cr-item">照片浮层白字 4.74:1（白名单，带暗底描边）</div>
+      <div class="cr-item">pressTint 后辅字 5.04:1 ／ 5.89:1</div>
+      <div class="cr-item">纸纹后辅字 4.78:1 ／ 6.97:1</div>
+      <div class="cr-item">禁用态实色 secondary 5.18:1 ／ 6.83:1</div>
+    </div>
+    <p class="note">标注「映射」的深色值由既有色值就地取值，未引入新配色；标注「不承载文字」者为底色或装饰色，不参与文字对比度核算。</p>
+  </section>
+
+  <!-- ===== ② 字阶 ===== -->
+  <section class="sec">
+    <h2 class="sec-h">② 字阶样本 <small>系统无衬线 + 数字 Monospace；不引字体文件；禁 ≥700 字重 / 斜体 / 负字距</small></h2>
+    <div class="panel">
+      <div class="type-row"><span class="type-tag">页面标题 30sp/500（&lt;360dp 用 28sp）</span><span class="t-title">今天的穿搭</span></div>
+      <div class="type-row"><span class="type-tag">区块标题 20sp/500</span><span class="t-sec">四月记录</span></div>
+      <div class="type-row"><span class="type-tag">正文 16sp/400 行高 26</span><span class="t-body">早餐一起吃了热粥，午后下过一阵小雨。</span></div>
+      <div class="type-row"><span class="type-tag">辅助 14sp/22</span><span class="t-aux">最近同步于 12 分钟前</span></div>
+      <div class="type-row"><span class="type-tag">角标 12sp/16</span><span class="t-badge">共 12 条</span></div>
+      <div class="type-row"><span class="type-tag">按钮 16sp/500</span><span class="t-btn">保存记录</span></div>
+      <div class="type-row"><span class="type-tag">输入 16sp/24</span><span class="t-input">写点什么吧…</span></div>
+      <div class="type-row"><span class="type-tag">日期 16sp Monospace</span><span class="t-date">2026-04-11</span></div>
+      <div class="type-row"><span class="type-tag">纪念日 48sp/300 Monospace + 「第/天」14sp</span><span><span class="t-unit">第 </span><span class="t-num">128</span><span class="t-unit"> 天</span></span></div>
+      <p class="note">200% 动态字体下：写死高度一律改 minHeight + 内容自适应；纪念日大数字独占一行，上限 88sp、下限 72sp；装饰尺寸用 dp，不随 sp 缩放；底栏隐藏标签只留图标 + 读屏文案；顶栏 minHeight ≥80dp。</p>
+    </div>
+  </section>
+
+  <!-- ===== ③ 形状与间距 ===== -->
+  <section class="sec">
+    <h2 class="sec-h">③ 形状与间距 <small>圆角 10 / 12 / 20 / 999 / 4 / 2；贴边侧直角、露出侧 20dp</small></h2>
+    <div class="panel">
+      <div class="demo-title">圆角</div>
+      <div class="radius-row">
+        <div class="radius-item"><div class="radius-box" style="border-radius:10px"></div><span class="cap">控件 10</span></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius:12px"></div><span class="cap">卡片 12</span></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius:0 20px 20px 0"></div><span class="cap">抽屉 20（右侧）</span></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius:20px 20px 0 0"></div><span class="cap">弹层 20（上侧）</span></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius:999px"></div><span class="cap">胶囊 999</span></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius:4px"></div><span class="cap">贴纸标签 4</span></div>
+        <div class="radius-item"><div class="radius-box" style="border-radius:2px"></div><span class="cap">胶带 2</span></div>
+      </div>
+      <div class="demo-title" style="margin-top:24px">控件高度（dp，示意按同比例绘制）</div>
+      <div class="height-row">
+        <div class="height-item"><div class="height-box" style="height:48px">48</div><span class="cap">主按钮 / 输入 / 列表行 / 顶栏? 顶栏 56</span></div>
+        <div class="height-item"><div class="height-box" style="height:40px">40</div><span class="cap">次按钮 / 分段</span></div>
+        <div class="height-item"><div class="height-box" style="height:56px">56</div><span class="cap">FAB / 顶栏 / 列表行</span></div>
+        <div class="height-item"><div class="height-box" style="height:64px">64</div><span class="cap">底栏</span></div>
+        <div class="height-item"><div class="height-box" style="height:32px">32</div><span class="cap">状态条</span></div>
+        <div class="height-item"><div class="height-box" style="height:120px">120</div><span class="cap">空态卡</span></div>
+        <div class="height-item"><div class="height-box" style="height:20px">20</div><span class="cap">贴纸标签</span></div>
+      </div>
+      <div class="demo-title" style="margin-top:24px">间距网格 4 / 8 / 12 / 16 / 24 / 32 / 48（dp）</div>
+      <div class="space-row">
+        <div class="space-item"><div class="space-bar" style="width:4px"></div>4</div>
+        <div class="space-item"><div class="space-bar" style="width:8px"></div>8</div>
+        <div class="space-item"><div class="space-bar" style="width:12px"></div>12</div>
+        <div class="space-item"><div class="space-bar" style="width:16px"></div>16</div>
+        <div class="space-item"><div class="space-bar" style="width:24px"></div>24</div>
+        <div class="space-item"><div class="space-bar" style="width:32px"></div>32</div>
+        <div class="space-item"><div class="space-bar" style="width:48px"></div>48</div>
+      </div>
+      <p class="note">页边距 24、卡内 16、卡间距 20（列表内部 16、网格内部 4/8）、段落 12、区块 Section 32、页底 48。纪念日卡 ↔ 点滴列表强制 32dp Section 间距。</p>
+    </div>
+  </section>
+
+  <!-- ===== ④ 组件预览 ===== -->
+  <section class="sec">
+    <h2 class="sec-h">④ 组件预览 <small>图标均为线条或文字占位，不用 emoji 当功能图标</small></h2>
+    <div class="demo-grid">
+
+      <div class="demo">
+        <div class="demo-title">纸卡（代码名 GlassCard 不变）</div>
+        <div class="inner">
+          <div class="paper-card">
+            <div class="tex-layer" aria-hidden="true"></div>
+            <div style="font-size:16px;font-weight:500">四月的穿搭</div>
+            <div style="font-size:14px;line-height:22px;color:var(--ink3);margin-top:8px">100% 不透明纸片 · 1dp 实色纸边 · 顶缘 1dp 高光 · 左缘 1dp 压痕 · 浅色暖墨影 / 深色无影。无玻璃模糊、无渐变高光铺面、无发光。</div>
+          </div>
+        </div>
+        <span class="cap">深色下投影为 none，层次只靠 card/page 1.108、elev/card 1.120、elev/page 1.240 的明度差 + 1dp 纸边。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">FloatingTopBar 56dp / 悬浮 8dp / 圆角 16</div>
+        <div class="inner">
+          <div class="topbar">
+            <div class="menu-hit" aria-label="设置菜单，48dp 热区"><span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span></div>
+            <div class="topbar-title">穿搭</div>
+            <div class="topbar-right">四月</div>
+          </div>
+        </div>
+        <span class="cap">菜单图标仅穿搭页左上 24dp + 48dp 热区；pressTint 圆底，不画白圆 chip；饮食 / 点滴无按钮、无长按标题、无边缘滑动。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">底栏 3 项（含 Ø32dp 选中圆）</div>
+        <div class="inner">
+          <div class="bottombar">
+            <div class="bb-item on"><div class="bb-icon">搭</div><div class="bb-label">穿搭</div></div>
+            <div class="bb-item"><div class="bb-icon">食</div><div class="bb-label">饮食</div></div>
+            <div class="bb-item"><div class="bb-icon">记</div><div class="bb-label">事件</div></div>
+          </div>
+        </div>
+        <span class="cap">64dp 纸质横条（浅 #FBF6EC / 深 #201B17）+ 1dp 纸边 + 1dp hazeGloss 顶光；去 Haze 后键名保留只改值。整格约 106×64dp 热区；选中震动 + 短弹簧，无系统 ripple。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">主按钮 / 胶囊 / FAB</div>
+        <div class="inner">
+          <div class="btn-row" style="margin-bottom:12px">
+            <div class="btn primary">保存记录</div>
+            <div class="btn soft">取消</div>
+          </div>
+          <div class="btn-row">
+            <div class="fab" aria-label="添加">+</div>
+            <div class="btn soft disabled">不可保存</div>
+          </div>
+        </div>
+        <span class="cap">PrimaryButton 48dp / 圆角 10；SoftCapsuleButton 40dp / 胶囊 999；FAB 56dp 实心圆。禁用态为实色禁用底 + 实色 secondary 文字，不降 alpha、不用 copy(alpha)。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">SegmentedChoices 40dp</div>
+        <div class="inner">
+          <div class="segment">
+            <div class="seg-item on">日</div><div class="seg-item">月</div><div class="seg-item">年</div>
+          </div>
+        </div>
+        <span class="cap">选中块用中性抬升底 #FCF8F1 / #2C2722 + 1dp hairline + accent 描边与文字；禁止沿用旧版「主色 18% 底」整块粉底。选中态语义不变。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">DestructiveAction</div>
+        <div class="inner">
+          <div class="btn destructive" style="width:100%">删除这条记录</div>
+          <div class="err-note">删除后无法恢复，需二次确认。</div>
+        </div>
+        <span class="cap">1dp 错误边 + 14sp 中文说明；必经二次确认，默认焦点「取消」，中文文案写明「删除」；无系统 ripple。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">设置抽屉缩略（280dp / ≤320dp 取 84%）</div>
+        <div class="inner" style="padding:0;overflow:hidden">
+          <div class="drawer-wrap">
+            <div class="drawer-scrim"></div>
+            <div class="drawer">
+              <div class="drawer-holes" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="drawer-head">设置 <span class="drawer-close" aria-label="关闭">×</span></div>
+              <div class="drawer-row on">我的信息</div>
+              <div class="drawer-row">云同步</div>
+              <div class="drawer-row">数据备份</div>
+              <div class="drawer-row">后台不被冻结</div>
+              <div class="drawer-row">外观</div>
+            </div>
+          </div>
+        </div>
+        <span class="cap">贴边侧（左上/左下）直角、露出侧（右上/右下）20dp。选中行 3dp accent 竖条 + accent 文字，背景中性纸色不铺粉底；左缘 x=8dp 三个装订孔降为纸纹墨、不与 accent 同色。48dp 关闭按钮 + 返回键 + 右滑三通道兜底；320×84%≈268.8dp，遮罩留白 51.2dp ≥48dp。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">AddRecordSheet（把手 / 上两角 20dp）</div>
+        <div class="inner" style="padding:0;overflow:hidden">
+          <div class="sheet">
+            <div class="sheet-handle" aria-hidden="true"></div>
+            <div class="sheet-title">添加记录</div>
+            <div class="sheet-field">日期 2026-04-11</div>
+            <div class="sheet-field">写点什么吧…</div>
+            <div class="sheet-field">添加照片</div>
+            <div class="btn primary">保存</div>
+          </div>
+        </div>
+        <span class="cap">把手 32×4dp；约 82% 屏高、最小 360dp。键盘弹起时按 IME 之上可用高度重算（360dp 下限失效、兜底 ≥240dp、&lt;240dp 切同一 Sheet 全屏表单态）；字段区独立滚动 + 焦点自动滚入 + 主按钮吸底在 IME 之上；把手与标题固定。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">空态虚线占位卡 120dp + 四角针脚</div>
+        <div class="inner">
+          <div class="empty-card">
+            <span class="stitch tl" aria-hidden="true"></span><span class="stitch tr" aria-hidden="true"></span>
+            <span class="stitch bl" aria-hidden="true"></span><span class="stitch br" aria-hidden="true"></span>
+            还没有记录，从右上角开始吧
+          </div>
+        </div>
+        <span class="cap">1dp 虚线 + 四角 4×4dp 十字针脚；针脚属装饰层，不发声、不可聚焦、不消费指针事件。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">照片格</div>
+        <div class="inner">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">穿搭：3 列 / 间距 4dp / 1:1.2</div>
+          <div class="photo-grid g3" style="margin-bottom:16px">
+            <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+            <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+          </div>
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">饮食 / 事件：2 列 / 间距 8dp / 1:1</div>
+          <div class="photo-grid g2"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+        </div>
+        <span class="cap">占位底色 #FBF6EE（深色映射卡面 #221E1A）；网格内部间距不被 20dp 卡间距覆盖。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">纪念日大数字 + 左缘渐变光</div>
+        <div class="inner">
+          <div class="paper-card anniversary">
+            <div class="ann-glow" aria-hidden="true"></div>
+            <span class="t-unit">第</span><span class="t-num">128</span><span class="t-unit">天</span>
+            <div class="ann-sub">我们的纪念日 · 每屏仅 1 处</div>
+          </div>
+        </div>
+        <span class="cap">48sp/300 Monospace（最多 4 位）、「第/天」14sp；左缘 3dp 竖向渐变光 accent@60%→0%，每屏 ≤1、仅纪念日卡。这是全站唯一允许的渐变装饰，不是纸面高光铺面。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">SyncStatusBar 32dp</div>
+        <div class="inner">
+          <div class="sync-row ok"><span class="dot" aria-hidden="true"></span><span>同步成功 · 12 条记录已更新</span></div>
+          <div class="sync-row run"><span class="dot" aria-hidden="true"></span><span>正在同步…</span></div>
+          <div class="sync-row fail"><span class="dot" aria-hidden="true"></span><span>同步失败：服务器地址不可达<br>请检查网络后重试</span></div>
+        </div>
+        <span class="cap">Ø8dp 状态点 + 14sp secondary 中文文字（必须含状态词）；失败原因允许 2 行；交互热区补足 48dp；色彩不得作为唯一信息载体。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">pressTint 五态对照</div>
+        <div class="inner">
+          <div class="five">
+            <div class="state"><div class="btn soft">默认态</div><span class="cap">中性抬升底 + 1dp 纸边</span></div>
+            <div class="state"><div class="btn soft is-pressed">按下态</div><span class="cap">98% 缩放 + 6% pressTint</span></div>
+            <div class="state"><div class="btn soft disabled">禁用态</div><span class="cap">实色底 / 实色字，无 alpha</span></div>
+            <div class="state"><div class="btn soft is-error">错误态</div><span class="cap">1dp 错误边 + 14sp 说明</span></div>
+            <div class="state"><div class="btn soft is-focus">焦点态</div><span class="cap">2dp accent 描边，每屏唯一</span></div>
+          </div>
+        </div>
+        <span class="cap">全站禁系统 ripple（落地时在主题级统一关闭 M3 默认 indication）；反馈三分不变：按钮 98% 缩放、行类 6% pressTint、底栏震动 + 选中圆弹簧。</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== ⑤ 装饰 ===== -->
+  <section class="sec">
+    <h2 class="sec-h">⑤ 装饰展示 <small>装饰层一律不发声 / 不可聚焦 / 不消费指针事件 / 不拦截点击 / 无 pressTint / 不参与动效</small></h2>
+    <div class="deco-grid">
+
+      <div class="demo">
+        <div class="demo-title">装订线 + Ø4dp 装订孔</div>
+        <div class="binding">
+          <div class="bind-line" aria-hidden="true"></div>
+          <div class="bind-hole" style="top:25%" aria-hidden="true"></div>
+          <div class="bind-hole" style="top:50%" aria-hidden="true"></div>
+          <div class="bind-hole" style="top:75%" aria-hidden="true"></div>
+          <div class="bind-body">三大模块主页左缘 x=12dp 的 1dp 竖虚线，配 3 个 Ø4dp 装订孔，位于内容高 25% / 50% / 75%。按首屏可见内容区绘制一次、相对页面固定，不随列表滚动重绘；孔的热区为 0 且点击穿透。</div>
+        </div>
+        <span class="cap">虚线为 1dp dash(6,4)；孔的墨料用纸纹墨，不与 accent 同色。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">胶带 48×16dp @−3°</div>
+        <div class="inner" style="min-height:88px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div class="tape" aria-hidden="true"></div>
+          <div class="tape" aria-hidden="true" style="opacity:.55"></div>
+        </div>
+        <span class="cap">圆角 2dp，浅 #E7D9BE@55% / 深 #4A3A28@45%，全屏 ≤1 处；不参与动效、不消费指针事件。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">区块分隔 1dp dash(6,4)</div>
+        <div class="inner">
+          <div style="font-size:14px;color:var(--ink2);margin-bottom:12px">四月记录</div>
+          <div class="dash-line" aria-hidden="true"></div>
+          <div style="font-size:14px;color:var(--ink2);margin-top:12px">五月记录</div>
+        </div>
+        <span class="cap">虚线墨 #D6C8B2@70% / #4A4038@80%；L7 降级时改实线。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">四角 4×4dp 十字针脚</div>
+        <div class="inner">
+          <div class="empty-card" style="height:100px">
+            <span class="stitch tl" aria-hidden="true"></span><span class="stitch tr" aria-hidden="true"></span>
+            <span class="stitch bl" aria-hidden="true"></span><span class="stitch br" aria-hidden="true"></span>
+            空态卡四角
+          </div>
+        </div>
+        <span class="cap">L5 降级时隐藏；尺寸用 dp，不随 200% 动态字体缩放。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">三餐纸质标签 20dp @−1.5°</div>
+        <div class="inner">
+          <div class="meal-tags">
+            <div class="meal-tag">早餐</div><div class="meal-tag">午餐</div><div class="meal-tag">晚餐</div>
+          </div>
+        </div>
+        <span class="cap">不设 clickable / pressTint / 焦点，朗读「早餐 / 午餐 / 晚餐」；L6 降级时拉直。</span>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">纸纹（CSS 模拟，无图片）</div>
+        <div class="tex-sample">
+          <div class="tex-layer" aria-hidden="true"></div>
+          <div class="label">6dp×6dp 散点 Ø0.6dp + 12dp 横线</div>
+        </div>
+        <span class="cap">密度按「覆盖率 × 不透明度」计 ≤3%；落地用固定种子 20240611 静态绘制 + 坐标缓存。深色固定 #C9B79B@3%，几乎不可见，不得额外补亮。文字最后绘制，不叠纹理。</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== ⑥ 降级优先级与约束摘要 ===== -->
+  <section class="sec">
+    <h2 class="sec-h">⑥ 降级优先级 L1–L8 与约束摘要 <small>仅在滚动掉帧或 overdraw 超预算时一次降一级</small></h2>
+    <div class="panel">
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th style="width:70px">级别</th><th>降级动作</th><th>触发条件 / 强制标记</th></tr></thead>
+          <tbody>
+            <tr><td class="k">L1</td><td>关纸纹</td><td>性能触发；高对比模式与 200% 字体下无障碍强制</td></tr>
+            <tr><td class="k">L2</td><td>渐变光改实色竖条或隐藏</td><td>性能触发；高对比模式与 200% 字体下无障碍强制</td></tr>
+            <tr><td class="k">L3</td><td>隐藏胶带</td><td>性能触发；高对比模式与 200% 字体下无障碍强制</td></tr>
+            <tr><td class="k">L4</td><td>隐藏装订孔</td><td>仅性能触发</td></tr>
+            <tr><td class="k">L5</td><td>隐藏针脚</td><td>性能触发；高对比模式与 200% 字体下无障碍强制</td></tr>
+            <tr><td class="k">L6</td><td>三餐标签拉直</td><td>仅性能触发</td></tr>
+            <tr><td class="k">L7</td><td>虚线改实线</td><td>性能触发；高对比模式与 200% 字体下无障碍强制</td></tr>
+            <tr><td class="k">L8</td><td>隐藏装订线</td><td>仅性能触发</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note"><strong>不可降级清单</strong>：纸卡不透明 + 实色边、48dp 热区、对比度、五态、反馈三分、中文文案与读屏、焦点可见、键盘避让、换档不丢状态、白字白名单、装饰不发声、单一入口与信息结构。</p>
+
+      <div class="tbl-wrap" style="margin-top:20px">
+        <table class="tbl">
+          <thead><tr><th style="width:190px">约束摘要</th><th>确定判定</th></tr></thead>
+          <tbody>
+            <tr><td>粉色 6 个允许位</td><td>主按钮 / 选中态（分段·底栏·抽屉行）/ FAB / 纪念日大数字与左缘光 / 少量标签底 / 焦点描边；三者同时成立：允许位 + 全屏面积 ≤8% + 同屏 ≤3 位</td></tr>
+            <tr><td>信息结构</td><td>零新增入口 / 页面 / 层级；设置入口仍唯一（穿搭页左上 24dp menu → 左侧抽屉 → 五个独立设置页）；饮食 / 点滴无按钮、无长按标题、无边缘滑动；底栏 3 项</td></tr>
+            <tr><td>白字白名单</td><td>收窄为 2 处：PhotoViewerDialog 96% 黑底白控件、AddRecordSheet 缩略图 24dp 移除键；必须带暗底 / 描边；纸面浮层禁用白字黑底</td></tr>
+            <tr><td>无障碍 P0</td><td>所有 &lt;48dp 控件补足热区；焦点可见 2dp accent 描边、每屏焦点唯一；色彩不得作为唯一信息载体；200% 字体下写死高度改 minHeight + 内容自适应</td></tr>
+            <tr><td>装饰层</td><td>不发声 / 不可聚焦 / 不消费指针事件 / 不拦截点击 / 无 pressTint / 不参与动效；Ø4dp 孔热区 0 且点击穿透</td></tr>
+            <tr><td>材质</td><td>取消 92% 玻璃与一切模糊；底栏去 Haze 属收紧、不违反约束 7；hazeTint / hazeGloss 键名保留只改纸带色值</td></tr>
+            <tr><td>动效</td><td>弹簧 0.72/420、按压 98%、行类 pressTint 6%、页面切换 300ms/220ms 位移淡入、深浅换档 220ms 淡入（不做交叉溶解）、全站禁系统 ripple</td></tr>
+            <tr><td>本轮边界</td><td>不改任何 App 代码、不写任何文件、不改 versionCode/versionName、不改正式文档、不加依赖与字体文件；本页仅为规范预览</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer style="margin-top:32px;padding:16px;border:1px dashed var(--dashed);border-radius:12px;font-size:12px;line-height:18px;color:var(--ink3)">
+    the cutest girl · 温柔手账 / 奶油纸感 — 规范预览，未落地。单文件 HTML，零外部依赖（无 CDN、无字体文件、无图片、无框架），仅用原生 JS 切换 data-theme。全部文案中文，图标为线条或文字占位。浅 / 深两套均使用暖白 #F3ECE2 而非纯白。
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  var label = document.getElementById('themeLabel');
+  function apply(theme){
+    root.setAttribute('data-theme', theme);
+    btn.setAttribute('aria-pressed', String(theme === 'dark'));
+    label.textContent = theme === 'dark' ? '深色' : '浅色';
+  }
+  btn.addEventListener('click', function(){
+    apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+  apply(root.getAttribute('data-theme') || 'light');
+})();
+</script>
+</body>
+</html>

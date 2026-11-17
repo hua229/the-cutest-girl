@@ -51,8 +51,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 onValueChange = {
                     myName = it
                     SettingsStore.saveMyName(context, it)
-                },
-                supporting = "昵称会自动同步到对方看到的历史记录和新内容通知"
+                }
             )
         }
     }

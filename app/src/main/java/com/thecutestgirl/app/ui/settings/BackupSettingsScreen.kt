@@ -57,13 +57,13 @@ fun BackupSettingsScreen(onBack: () -> Unit) {
         onBack = onBack
     ) {
         Text(
-            "导出数据库和全部照片（zip），不包含同步密码。导入功能后续版本提供。",
+            "仅支持导出，备份不含同步密码。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         SettingsCard {
             SettingsActionRow(
-                text = if (exporting) "正在导出…" else "导出备份",
+                text = if (exporting) "正在导出…" else "导出记录与照片（ZIP）",
                 icon = true,
                 iconVector = Icons.Outlined.Save,
                 enabled = !exporting,

@@ -58,7 +58,7 @@ fun MealEditScreen(
     )
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
@@ -83,7 +83,7 @@ fun MealEditScreen(
                 .imePadding()
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // 照片 + 备注（上传人写）+ 评论（对方写）合并成一张连贯卡片
             PhotoNoteCard(
@@ -91,14 +91,14 @@ fun MealEditScreen(
                 onPhotosChanged = { vm.photoPath = it.firstOrNull() },
                 note = vm.note,
                 onNoteChange = { vm.note = it },
-                notePlaceholder = "这一餐吃了什么？比如：和男朋友吃的火锅，超满足",
+                notePlaceholder = "吃了什么（可选）",
                 noteEditable = vm.amUploader,
                 noteAuthorName = vm.noteAuthorName,
                 replyAuthorName = vm.replyAuthorName,
                 reply = vm.reply,
                 onReplyChange = { vm.reply = it },
                 replyEditable = !vm.amUploader,
-                replyPlaceholder = "说点什么…比如：下次带我去",
+                replyPlaceholder = "写评论…",
                 photoEditable = vm.amUploader,
                 // 与饮食列表卡一致：3:2，避免列表/编辑页裁切跳变
                 photoRatio = 3f / 2f
