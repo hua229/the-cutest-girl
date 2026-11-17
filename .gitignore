@@ -23,3 +23,22 @@
 *.keystore
 *.p12
 *.pfx
+
+# Additional Android build and IDE files
+.gradle/
+build/
+.kotlin/
+local.properties
+*.log
+captures/
+.externalNativeBuild/
+.cxx/
+*.aab
+*.apk
+output-metadata.json
+.idea/
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+google-services.json
+*.hprof
