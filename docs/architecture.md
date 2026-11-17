@@ -1,6 +1,6 @@
 # 架构说明（the cutest girl）
 
-> 当前版本 4.3.0（versionCode 44）｜最后更新 2026-11-09
+> 当前版本 4.3.1（versionCode 45）｜最后更新 2026-11-17
 
 ## 1. 总览
 
@@ -139,7 +139,7 @@ SharedPreferences 按「能不能进备份」拆文件：
 
 python tools/sync_test_server.py --port 18765 --root .verification/dav
 ./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest -PverificationApp --offline
-adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.3.0_debug.apk
+adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.3.1_debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -r com.thecutestgirl.app.verification.test/com.thecutestgirl.app.sync.SyncRegressionRunner
 ```

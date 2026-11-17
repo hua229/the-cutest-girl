@@ -5,7 +5,7 @@
 - 界面：Jetpack Compose（Material 3，浅色 + 深色双主题：中性米纸 / 暖黑纸 + 粉红印泥，不透明纸卡与程序化纸纹；默认跟随系统，可在「设置 · 外观」手动固定）
 - 数据：Room 数据库；数据默认只在本机，开启同步后两台手机通过私有坚果云 WebDAV 目录互相同步
 - 最低支持 Android 8.0（minSdk 26）
-- 当前版本：`4.3.0`（versionCode 44）
+- 当前版本：`4.3.1`（versionCode 45）
 
 ## 功能
 
@@ -52,10 +52,13 @@
 # Windows PowerShell
 $env:JAVA_HOME = "C:\path\to\jdk-17"
 $env:GRADLE_USER_HOME = "C:\path\to\gradle-home"   # 可选
+$env:TCG_SIGNING_STORE_FILE = "C:\private\the-cutest-girl-debug.keystore"
 ./gradlew.bat :app:assembleDebug --offline
 ```
 
-产物：`app/build/outputs/apk/debug/the_cutest_girl_v<版本>_debug.apk`。两台手机覆盖安装（debug 签名一致，数据保留）。
+产物：`app/build/outputs/apk/debug/the_cutest_girl_v<版本>_debug.apk`。构建优先读取本机 `.signing/the-cutest-girl-debug.keystore`，也可通过上面的环境变量指定；密钥不提交到 Git。构建会校验固定证书 SHA-256：`b57546d5a5d3b7e4f395bded269c37ecb34cd7bc22cd9676d573588446221547`，不匹配时停止打包。
+
+4.3.1 使用新固定签名：旧版原签名密钥已无法找到，因此旧签名用户首次升级前需要完整备份并迁移数据；不能仅靠提高版本号实现覆盖安装。已迁移到该签名的安装可继续覆盖升级。需要独立安装的开发验证包时使用 `-PverificationApp`，它不替换日常应用。
 
 ## 测试
 
@@ -77,7 +80,7 @@ python tools/sync_test_server.py --port 18765 --root .verification/dav
 ./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest -PverificationApp --offline
 
 # 3) 安装并运行
-adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.3.0_debug.apk
+adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.3.1_debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -r com.thecutestgirl.app.verification.test/com.thecutestgirl.app.sync.SyncRegressionRunner
 ```

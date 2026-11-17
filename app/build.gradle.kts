@@ -1,3 +1,6 @@
+import java.security.KeyStore
+import java.security.MessageDigest
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -13,9 +16,23 @@ android {
         applicationId = "com.thecutestgirl.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 44
-        versionName = "4.3.0"
+        versionCode = 45
+        versionName = "4.3.1"
         testInstrumentationRunner = "com.thecutestgirl.app.sync.SyncRegressionRunner"
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            // 密钥只放本机；优先使用固定副本，避免环境变化后误用新生成的签名。
+            val signingStore = providers.gradleProperty("tcgSigningStoreFile")
+                .orElse(providers.environmentVariable("TCG_SIGNING_STORE_FILE"))
+            if (signingStore.isPresent) {
+                storeFile = rootProject.file(signingStore.get())
+            } else {
+                val stableKey = rootProject.file(".signing/the-cutest-girl-debug.keystore")
+                if (stableKey.isFile) storeFile = stableKey
+            }
+        }
     }
 
     buildTypes {
@@ -48,6 +65,41 @@ android {
                 "the_cutest_girl_v${defaultConfig.versionName}_${name}.apk"
         }
     }
+}
+
+// 正常包必须沿用 4.3.1 迁移后固定的签名；独立验证包可使用本机调试签名。
+val verifyDebugUpgradeSigning = tasks.register("verifyDebugUpgradeSigning") {
+    group = "verification"
+    description = "Verify that the app can update the existing installed version."
+    doLast {
+        if (!android.buildTypes.getByName("debug").applicationIdSuffix.isNullOrBlank()) {
+            return@doLast
+        }
+        val signing = android.signingConfigs.getByName("debug")
+        val keyFile = signing.storeFile
+            ?: throw GradleException("缺少固定签名文件，请设置 TCG_SIGNING_STORE_FILE。")
+        if (!keyFile.isFile) {
+            throw GradleException("固定签名文件不存在，请设置 TCG_SIGNING_STORE_FILE；不要生成新密钥替代。")
+        }
+        val keyStore = KeyStore.getInstance(
+            keyFile, signing.storePassword.orEmpty().toCharArray()
+        )
+        val certificate = keyStore.getCertificate(signing.keyAlias)
+            ?: throw GradleException("签名文件中找不到固定证书。")
+        val fingerprint = MessageDigest.getInstance("SHA-256")
+            .digest(certificate.encoded).joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        val expectedFingerprint = "b57546d5a5d3b7e4f395bded269c37ecb34cd7bc22cd9676d573588446221547"
+        if (fingerprint != expectedFingerprint) {
+            throw GradleException(
+                "签名与 4.3.1 固定证书不一致，已停止打包以避免手机安装冲突。" +
+                    "请将 TCG_SIGNING_STORE_FILE 指向已保存的固定密钥。" +
+                    "独立 UI 验证可使用 -PverificationApp。"
+            )
+        }
+    }
+}
+tasks.matching { it.name == "validateSigningDebug" }.configureEach {
+    dependsOn(verifyDebugUpgradeSigning)
 }
 
 dependencies {

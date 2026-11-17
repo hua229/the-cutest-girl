@@ -1,6 +1,6 @@
 # the cutest girl —— 交接速查
 
-> 当前版本 **4.3.0**（versionCode 44）｜最后更新 2026-11-17
+> 当前版本 **4.3.1**（versionCode 45）｜最后更新 2026-11-17
 > 给接手的 AI / 工程师：先读本页，再按需读 `docs/`。用户是代码小白，中文沟通，所有用户文案中文。
 
 ## 5 分钟上手
@@ -24,7 +24,7 @@
 | --- | --- |
 | `docs/architecture.md` | 数据层、数据库 v6、同步协议/流程、业务规则、错误模型、验证命令 |
 | `docs/design-system.md` | 奶油纸感双主题 tokens、纸纹材质、字阶、形状、六态组件与降级策略 |
-| `docs/changelog.md` | v1 → v4.3.0 版本摘要 |
+| `docs/changelog.md` | v1 → v4.3.1 版本摘要 |
 | `README.md` | 功能、权限、构建、测试、项目结构 |
 
 ## 不可违反的约束
@@ -40,6 +40,14 @@
 9. 版本号 / 打包由用户拍板；不要擅自改 `versionCode/versionName`。
 10. 照片写入必须原子化；新选照片先落 `draft_` 草稿，保存时 `promoteDraft`。
 11. 所有用户可见文案中文、无 emoji 当功能图标；粉色仅出现在 6 个允许位（主按钮、选中态、FAB、纪念日数字、左缘光、≤20dp 标签底），全屏面积 ≤8%、同屏 ≤3 位。
+
+## v4.3.1 — 版本升级与签名冲突排查（2026-11-17）
+
+- 用户手机安装报签名冲突；模拟器已安装旧版的证书 SHA-256 为 `dcdc21df5edc6bb08523157a6dae4b517b53dd16214c33aa484bcf82fda8968e`，此前交付 APK / 当前用户目录调试密钥为 `b57546d5a5d3b7e4f395bded269c37ecb34cd7bc22cd9676d573588446221547`，两者不匹配。
+- 当前用户目录调试密钥创建于 2026-11-17；用户确认旧包来自同机 WorkBuddy。已检索常用构建位置、WorkBuddy 文件历史 / 快照 / blob 与回收站路径元数据，未找到原密钥。
+- 用户明确批准备份后迁移：备份数据库、照片、身份及旧 APK，在电脑与手机下载目录保存两份，并先在独立模拟器包演练恢复。授权卸载后安装新签名的 4.3.1，恢复并逐项验证记录内容哈希、照片哈希、身份一致。Android Keystore 中的云同步密码需用户重新填写；旧签名的其他设备也需要先备份迁移，不能承诺直接覆盖。
+- `versionName=4.3.1` / `versionCode=45`；普通 debug 打包增加 `verifyDebugUpgradeSigning`，固定证书为 `b57546d5a5d3b7e4f395bded269c37ecb34cd7bc22cd9676d573588446221547`。密钥在本机 `.signing/the-cutest-girl-debug.keystore`，也可用 `TCG_SIGNING_STORE_FILE` 或 `-PtcgSigningStoreFile=...` 指定，禁止提交 Git；独立包名验证构建跳过兼容性检查。
+- 验证：普通包构建 / AndroidTest 编译通过，JVM **12/12**，lint **0 错误 / 6 条既有警告**；签名校验可拦截不匹配证书。手机迁移验证及个人备份在被忽略的 `.verification/signing-v431/`，不上传 GitHub。
 
 ## 未发布 — 全局文案精简与原版底栏保留（2026-11-17）
 
