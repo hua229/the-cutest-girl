@@ -1,0 +1,53 @@
+{
+  "version_name": "5.0.0",
+  "version_code": 46,
+  "package": "com.thecutestgirl.app",
+  "apk": "deliverables/the_cutest_girl_v5.0.0.apk",
+  "bytes": 20954838,
+  "sha256": "b4d9e6ce46adbff0efa24152357679674ad59d275f37fedc740664a3ab01da9d",
+  "signature": {
+    "verified": true,
+    "scheme_v2": true,
+    "certificate_sha256": "b57546d5a5d3b7e4f395bded269c37ecb34cd7bc22cd9676d573588446221547"
+  },
+  "build": {
+    "normal_apk": "passed",
+    "kotlin_compile": "passed",
+    "android_test_compile": "passed",
+    "unit": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0
+    },
+    "lint": {
+      "Error": 0,
+      "Warning": 6,
+      "Information": 2
+    }
+  },
+  "device_regression": {
+    "package": "com.thecutestgirl.app.verification",
+    "serial": "emulator-5556",
+    "tests": 33,
+    "passed": 33,
+    "failures": 0,
+    "scope": "Local WebDAV fixture, Room, ownership, synchronization and backup restore; no real cloud requests."
+  },
+  "ui_validation": {
+    "path": "deliverables/ui-refinement/validation.json",
+    "tested_version_name": "4.3.1",
+    "tested_version_code": 45,
+    "checks_passed": 41,
+    "note": "UI implementation unchanged when raising release metadata to 5.0.0; full 41-case UI sweep was not rerun for the version-only change."
+  },
+  "git_artifacts": {
+    "apk_committed": false,
+    "signing_material_committed": false,
+    "personal_backups_committed": false
+  },
+  "evidence": {
+    "verification_build": ".verification/release-v5.0.0/build-verification.log",
+    "normal_build": ".verification/release-v5.0.0/build-installable.log",
+    "device_tests": ".verification/release-v5.0.0/device-regression.log"
+  }
+}

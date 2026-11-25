@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
+import java.io.File
 
 @Database(
     entities = [
@@ -164,14 +165,18 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
-                instance ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "the_cutest_girl.db"
-                )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                instance ?: builder(context, "the_cutest_girl.db")
                     .build()
                     .also { instance = it }
             }
+
+        internal fun openBackup(context: Context, file: File): AppDatabase =
+            builder(context, file.absolutePath)
+                .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+                .build()
+
+        private fun builder(context: Context, path: String) =
+            Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, path)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
     }
 }

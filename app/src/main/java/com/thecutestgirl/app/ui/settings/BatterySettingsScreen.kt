@@ -44,7 +44,7 @@ fun BatterySettingsScreen(onBack: () -> Unit) {
     ) {
         SettingsCard {
             SettingsActionRow(
-                text = if (isIgnoringBatteryOptimizations) "已允许后台运行" else "允许后台运行",
+                text = if (isIgnoringBatteryOptimizations) "已加入白名单" else "去设置",
                 icon = true,
                 iconVector = Icons.Outlined.BatterySaver,
                 enabled = !isIgnoringBatteryOptimizations,

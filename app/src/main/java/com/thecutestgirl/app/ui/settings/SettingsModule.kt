@@ -3,13 +3,13 @@ package com.thecutestgirl.app.ui.settings
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatterySaver
 import androidx.compose.material.icons.outlined.CloudSync
-import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.Contrast
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
- * 侧边菜单里的五个设置模块。
+ * 设置首页中的独立模块。
  *
  * 每个模块都有独立的导航路由和独立页面，不再共用一张设置页：
  * 菜单只负责「去哪」，页面只负责「这一个模块做什么」。
@@ -26,6 +26,11 @@ enum class SettingsModule(
         title = "我的信息",
         icon = Icons.Outlined.PersonOutline
     ),
+    Appearance(
+        key = "appearance",
+        title = "外观",
+        icon = Icons.Outlined.Contrast
+    ),
     Sync(
         key = "sync",
         title = "云同步",
@@ -40,13 +45,8 @@ enum class SettingsModule(
         key = "battery",
         title = "后台不被冻结",
         icon = Icons.Outlined.BatterySaver
-    ),
-    Appearance(
-        key = "appearance",
-        title = "外观",
-        icon = Icons.Outlined.DarkMode
     );
 
-    /** 独立页面路由：settings/profile、settings/sync…… */
+    /** 独立页面路由：settings/profile、settings/appearance、settings/sync…… */
     val route: String get() = "settings/$key"
 }

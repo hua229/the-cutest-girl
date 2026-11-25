@@ -65,6 +65,16 @@ internal fun savedInt(
     { it as? Int ?: default }
 )
 
+internal fun savedBoolean(
+    handle: SavedStateHandle,
+    key: String
+): ReadWriteProperty<Any?, Boolean> = SavedStateValue(
+    handle, key,
+    handle.get<Boolean>(key) ?: false,
+    { it },
+    { it as? Boolean ?: false }
+)
+
 internal fun savedDate(
     handle: SavedStateHandle,
     key: String,

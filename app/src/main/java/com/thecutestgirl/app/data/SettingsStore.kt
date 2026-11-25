@@ -181,6 +181,16 @@ object SettingsStore {
         identityPrefs(context).edit().putString("propagated_name", name).apply()
     }
 
+    internal fun backupIdentity(context: Context) =
+        BackupIdentity(deviceId(context), myName(context), propagatedName(context))
+
+    internal fun restoreBackupIdentity(context: Context, identity: BackupIdentity): Boolean =
+        identityPrefs(context).edit()
+            .putString("device_id", identity.deviceId)
+            .putString("my_name", identity.myName)
+            .putString("propagated_name", identity.propagatedName)
+            .commit()
+
     /** 首次全量拉取完成前不弹通知（避免配对时历史记录轰炸） */
     fun firstSyncDone(context: Context): Boolean =
         prefs(context).getBoolean("first_sync_done", false)
@@ -215,19 +225,10 @@ object SettingsStore {
             .putString("last_sync_result", result)
             .apply()
     }
-
-    /**
-     * 外观主题模式，存 `system` / `light` / `dark` 三种字符串（解析见
-     * [com.thecutestgirl.app.ui.theme.ThemeMode]）。
-     *
-     * 这是**本设备**的偏好：对方手机可能一个用深色一个用浅色，所以它不参与云同步，
-     * 也不写进备份 zip 的 `identity.json`。缺键时返回默认值，让老版本升级上来
-     * 自然落在「跟随系统」。
-     */
-    fun themeModeKey(context: Context): String =
-        prefs(context).getString("theme_mode", null) ?: "system"
-
-    fun saveThemeModeKey(context: Context, key: String) {
-        prefs(context).edit().putString("theme_mode", key).apply()
-    }
 }
+
+internal data class BackupIdentity(
+    val deviceId: String,
+    val myName: String,
+    val propagatedName: String
+)

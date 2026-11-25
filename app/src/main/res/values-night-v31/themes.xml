@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12+ 启动闪屏：深色底 + 浅色状态栏图标，避免先浅后深的跳变。色值同 values-night -->
+    <!-- Android 12+ 系统深色启动窗，与深色页面底一致。 -->
     <style name="Theme.TheCutestGirl" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowSplashScreenBackground">#171412</item>
+        <item name="android:windowSplashScreenBackground">#111114</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowBackground">#171412</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowBackground">#111114</item>
     </style>
 </resources>

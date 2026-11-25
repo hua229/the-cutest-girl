@@ -75,7 +75,10 @@ class SyncRegressionRunner : Instrumentation() {
             "partner cannot delete the uploader's record" to { partnerCannotDelete() },
             "old identity and password are migrated out of settings" to { legacyIdentityMigrates() },
             "restored identity still owns its uploads" to { restoredIdentityKeepsUploader() },
-            "missing cloud folder is reprepared on the next sync" to { missingCloudFolderIsReprepared() }
+            "missing cloud folder is reprepared on the next sync" to { missingCloudFolderIsReprepared() },
+            "backup restores records, photos, tombstones and owner identity into an empty install" to {
+                backupRestoreRoundTrip(targetContext)
+            }
         )
         val reports = mutableListOf<String>()
         var failures = 0

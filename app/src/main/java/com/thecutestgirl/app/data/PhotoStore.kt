@@ -49,8 +49,9 @@ object PhotoStore {
     fun file(context: Context, name: String): File = File(dir(context), name)
 
     /** 新建一个给系统相机写入的临时文件，返回可直接给 TakePicture 用的 Uri */
-    fun newCameraTarget(context: Context): Pair<File, Uri> {
-        val file = File(dir(context), "cam_${UUID.randomUUID()}.jpg")
+    fun newCameraTarget(context: Context, draft: Boolean = false): Pair<File, Uri> {
+        val name = "cam_${UUID.randomUUID()}.jpg"
+        val file = File(dir(context), if (draft) DRAFT_PREFIX + name else name)
         file.createNewFile()
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         return file to uri

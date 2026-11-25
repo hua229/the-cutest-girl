@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12+ 启动闪屏：浅色品牌底，避免先白后浅色的跳变 -->
+    <!-- Android 12+ 系统浅色启动窗，与浅色页面底一致。 -->
     <style name="Theme.TheCutestGirl" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowSplashScreenBackground">#F3EDE2</item>
+        <item name="android:windowSplashScreenBackground">#F5F5F7</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">#F3EDE2</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowBackground">#F5F5F7</item>
     </style>
 </resources>

@@ -16,7 +16,6 @@ import java.util.zip.ZipOutputStream
  * 导出备份（P2-10）：数据库 + 全部正式照片 + manifest，打包成一个 zip。
  *
  * 不包含：同步密码（在 SharedPreferences，且已加密）、同步账本、草稿照片。
- * 导入功能下一轮再做（需要二次确认 + 导入前自动备份）。
  */
 object BackupExporter {
 
@@ -71,11 +70,11 @@ object BackupExporter {
                 .put("note", "不含同步密码与同步账本；identity.json 是设备身份；photos/ 是全部正式照片")
 
             // FIX-02：身份单独导出，换机恢复备份后仍认得出自己上传的记录
-            // 键名与验收文档约定一致（camelCase），方便后续导入功能直接读取
+            val device = SettingsStore.backupIdentity(context)
             val identity = JSONObject()
-                .put("deviceId", SettingsStore.deviceId(context))
-                .put("myName", SettingsStore.myName(context))
-                .put("propagatedName", SettingsStore.propagatedName(context))
+                .put("deviceId", device.deviceId)
+                .put("myName", device.myName)
+                .put("propagatedName", device.propagatedName)
 
             val output = context.contentResolver.openOutputStream(uri)
                 ?: error("无法写入所选文件")

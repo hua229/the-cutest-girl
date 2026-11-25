@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 温柔手账浅色冷启动首帧：中性米纸 -->
+    <!-- 系统启动窗跟随机身主题；运行中的手动主题由 Compose 与 WindowChrome 管理。 -->
     <style name="Theme.TheCutestGirl" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">#F3EDE2</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">#F5F5F7</item>
     </style>
 </resources>

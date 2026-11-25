@@ -1,0 +1,8 @@
+// Separate UI verification install; normal app ID, version and signing stay in app/build.gradle.kts.
+allprojects {
+    plugins.withId('com.android.application') {
+        androidComponents.finalizeDsl { androidDsl ->
+            androidDsl.buildTypes.getByName('debug').applicationIdSuffix = '.verification.iosui'
+        }
+    }
+}

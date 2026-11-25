@@ -1,29 +1,26 @@
 ﻿package com.thecutestgirl.app
 
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.SideEffect
+import android.content.res.Configuration
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.sync.PartnerNotifier
 import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.ui.AppRoot
 import com.thecutestgirl.app.ui.NotificationTarget
-import com.thecutestgirl.app.ui.theme.ThemeStore
 import com.thecutestgirl.app.ui.theme.TheCutestGirlTheme
+import com.thecutestgirl.app.ui.theme.ThemeStore
+import com.thecutestgirl.app.ui.theme.applyWindowChrome
 import com.thecutestgirl.app.ui.theme.isSystemNight
-import com.thecutestgirl.app.ui.theme.windowBackgroundArgb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -39,12 +36,9 @@ class MainActivity : ComponentActivity() {
     private var notificationTarget by mutableStateOf<NotificationTarget?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 先灌已存的主题档位，再画第一帧：冷启动就要落在用户上次选的浅/深上
-        ThemeStore.init(this)
         super.onCreate(savedInstanceState)
-        applyWindowChrome(
-            ThemeStore.mode.value.resolve(resources.configuration.isSystemNight())
-        )
+        ThemeStore.initialize(this)
+        applyWindowChrome(ThemeStore.mode.value.isDark(resources.configuration.isSystemNight()))
         // 只有真正首次创建才触发同步排单；旋转屏幕等重建不重复入队
         if (savedInstanceState == null) {
             SyncManager.startAfterConfigured(this)
@@ -56,11 +50,12 @@ class MainActivity : ComponentActivity() {
         }
         notificationTarget = intent.toNotificationTarget()
         setContent {
-            val mode by ThemeStore.mode.collectAsStateWithLifecycle()
-            val darkTheme = mode.resolve(isSystemInDarkTheme())
-            // 换档位时重设系统栏图标与窗口底色。enableEdgeToEdge 可以重复调用，
-            // 所以手动切深色不需要重建 Activity（重建会丢掉正在填的表单和滚动位置）。
+            val themeMode by ThemeStore.mode.collectAsStateWithLifecycle()
+            // 不修改 Activity 的资源配置：从手动档位切回跟随系统时仍能读到真实系统主题。
+            val systemDark = LocalConfiguration.current.isSystemNight()
+            val darkTheme = themeMode.isDark(systemDark)
             SideEffect { applyWindowChrome(darkTheme) }
+            // 根导航始终处在相同的组合位置，换主题不会重建页面或清掉未保存内容。
             TheCutestGirlTheme(darkTheme = darkTheme) {
                 AppRoot(
                     notificationTarget = notificationTarget,
@@ -70,21 +65,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * 把解析后的深浅落到「Compose 之外」的两处：系统栏图标颜色、窗口底色。
-     *
-     * 这两处不跟 `MaterialTheme` 走：`SystemBarStyle.light` 是「深图标」（配浅底），
-     * 写死的话深色模式下状态栏变成深字深底；窗口底色则由 [windowBackgroundArgb] 给出，
-     * 顶在 Compose 第一帧之前。
-     */
-    private fun applyWindowChrome(darkTheme: Boolean) {
-        val barStyle = if (darkTheme) {
-            SystemBarStyle.dark(Color.TRANSPARENT)
-        } else {
-            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-        }
-        enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
-        window.setBackgroundDrawable(ColorDrawable(windowBackgroundArgb(darkTheme)))
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // uiMode 由本 Activity 处理，Compose 的 LocalConfiguration 会同步更新。
+        applyWindowChrome(ThemeStore.mode.value.isDark(newConfig.isSystemNight()))
     }
 
     override fun onNewIntent(intent: Intent) {

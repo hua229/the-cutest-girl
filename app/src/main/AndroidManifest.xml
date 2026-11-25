@@ -50,6 +50,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="uiMode"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.TheCutestGirl">
             <intent-filter>

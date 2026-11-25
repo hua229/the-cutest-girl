@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.thecutestgirl.app.ui.savedBoolean
 import com.thecutestgirl.app.ui.savedDate
 import com.thecutestgirl.app.ui.savedNullableString
 import com.thecutestgirl.app.ui.savedString
@@ -307,6 +308,8 @@ class OutfitUploadViewModel(app: Application, private val state: SavedStateHandl
     /** 本次待保存的新照片文件名（草稿照片，保存时晋级为正式文件） */
     var newPhotos by savedStringList(state, "newPhotos")
     var note by savedString(state, "note")
+    var addSheetOpen by savedBoolean(state, "addSheetOpen")
+    var savingAddSheet by mutableStateOf(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val existing = _date

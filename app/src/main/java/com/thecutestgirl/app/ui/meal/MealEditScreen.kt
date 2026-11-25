@@ -1,5 +1,8 @@
 ﻿package com.thecutestgirl.app.ui.meal
 
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -14,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.thecutestgirl.app.ui.components.ArtworkIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -50,6 +53,27 @@ fun MealEditScreen(
     }
     LaunchedEffect(recordId) { recordId?.let(vm::load) }
 
+    var hasChanges by rememberSaveable(recordId) { mutableStateOf(false) }
+    var showDiscard by rememberSaveable { mutableStateOf(false) }
+    val requestBack: () -> Unit = {
+        if (hasChanges) showDiscard = true else onDone()
+    }
+    BackHandler(onBack = requestBack)
+    if (showDiscard) {
+        AlertDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text("放弃修改？") },
+            text = { Text("未保存的内容将被丢弃。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onDone()
+                }) { Text("放弃修改", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text("继续编辑") } }
+        )
+    }
+
     var showDelete by remember { mutableStateOf(false) }
     ConfirmDeleteDialog(
         visible = showDelete,
@@ -58,13 +82,13 @@ fun MealEditScreen(
     )
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
                 title = "记录${MEAL_NAMES[mealType]}",
                 icon = mealIcon(mealType),
-                onBack = onDone
+                onBack = requestBack
             ) {
                 TextButton(
                     onClick = { vm.save(day, mealType, onDone) },
@@ -82,23 +106,23 @@ fun MealEditScreen(
                 .verticalScroll(rememberScrollState())
                 .imePadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 照片 + 备注（上传人写）+ 评论（对方写）合并成一张连贯卡片
             PhotoNoteCard(
                 photos = listOfNotNull(vm.photoPath),
-                onPhotosChanged = { vm.photoPath = it.firstOrNull() },
+                onPhotosChanged = { vm.photoPath = it.firstOrNull(); hasChanges = true },
                 note = vm.note,
-                onNoteChange = { vm.note = it },
-                notePlaceholder = "吃了什么（可选）",
+                onNoteChange = { vm.note = it; hasChanges = true },
+                noteLabel = "内容",
                 noteEditable = vm.amUploader,
                 noteAuthorName = vm.noteAuthorName,
                 replyAuthorName = vm.replyAuthorName,
                 reply = vm.reply,
-                onReplyChange = { vm.reply = it },
+                onReplyChange = { vm.reply = it; hasChanges = true },
                 replyEditable = !vm.amUploader,
-                replyPlaceholder = "写评论…",
+                replyLabel = "评论",
                 photoEditable = vm.amUploader,
                 // 与饮食列表卡一致：3:2，避免列表/编辑页裁切跳变
                 photoRatio = 3f / 2f

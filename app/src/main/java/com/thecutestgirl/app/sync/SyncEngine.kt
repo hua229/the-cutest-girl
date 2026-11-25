@@ -1,4 +1,4 @@
-﻿package com.thecutestgirl.app.sync
+package com.thecutestgirl.app.sync
 
 import android.content.Context
 import androidx.room.withTransaction
@@ -150,36 +150,43 @@ class SyncEngine(private val context: Context) {
             user: String,
             pass: String
         ): DavTestResult = withContext(Dispatchers.IO) {
-            val changed = SettingsStore.davConfigChanged(context, url, user, pass)
-            val candidate = WebDavClient(
-                url.trim().ifBlank { SettingsStore.DEFAULT_DAV_URL },
-                user.trim(),
-                pass
-            )
-            when (val test = candidate.testConnection()) {
-                is DavResult.Err -> return@withContext DavTestResult.Failure(test.error.userMessage())
-                is DavResult.Ok -> Unit
-            }
-            if (changed) {
-                val dirsOk = candidate.mkcol("thecutestgirl") is DavResult.Ok &&
-                    candidate.mkcol("thecutestgirl/records") is DavResult.Ok &&
-                    candidate.mkcol("thecutestgirl/photos") is DavResult.Ok &&
-                    candidate.listDir("thecutestgirl/records") is DavResult.Ok &&
-                    candidate.listDir("thecutestgirl/photos") is DavResult.Ok
-                if (!dirsOk) {
-                    return@withContext DavTestResult.Failure(
-                        "云端目录建不出来：请检查账号、配额或网络"
-                    )
+            try {
+                val changed = SettingsStore.davConfigChanged(context, url, user, pass)
+                val candidate = WebDavClient(
+                    url.trim().ifBlank { SettingsStore.DEFAULT_DAV_URL },
+                    user.trim(),
+                    pass
+                )
+                when (val test = candidate.testConnection()) {
+                    is DavResult.Err -> return@withContext DavTestResult.Failure(test.error.userMessage())
+                    is DavResult.Ok -> Unit
                 }
+                if (changed) {
+                    val dirsOk = candidate.mkcol("thecutestgirl") is DavResult.Ok &&
+                        candidate.mkcol("thecutestgirl/records") is DavResult.Ok &&
+                        candidate.mkcol("thecutestgirl/photos") is DavResult.Ok &&
+                        candidate.listDir("thecutestgirl/records") is DavResult.Ok &&
+                        candidate.listDir("thecutestgirl/photos") is DavResult.Ok
+                    if (!dirsOk) {
+                        return@withContext DavTestResult.Failure(
+                            "云端目录建不出来：请检查账号、配额或网络"
+                        )
+                    }
+                }
+                SettingsStore.saveDavConfig(context, url, user, pass)
+                if (changed) {
+                    SyncStateStore.resetForNewEndpoint(context)
+                    SettingsStore.clearFirstSyncDone(context)
+                    SyncStateStore.setDirsReady(context, true)
+                }
+                DavTestResult.Ok(changed)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                DavTestResult.Failure(
+                    e.message?.takeIf { it.isNotBlank() } ?: "连接失败，请稍后重试"
+                )
             }
-            // 到这里才算验证通过：保存配置 + 换端点时重置账本
-            SettingsStore.saveDavConfig(context, url, user, pass)
-            if (changed) {
-                SyncStateStore.resetForNewEndpoint(context)
-                SettingsStore.clearFirstSyncDone(context)
-                SyncStateStore.setDirsReady(context, true)
-            }
-            DavTestResult.Ok(changed)
         }
     }
 

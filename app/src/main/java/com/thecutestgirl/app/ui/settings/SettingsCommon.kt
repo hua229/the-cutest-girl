@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,43 +26,40 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudSync
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.thecutestgirl.app.ui.components.AppTopBar
-import com.thecutestgirl.app.ui.components.focusRing
-import com.thecutestgirl.app.ui.components.pressTint
+import com.thecutestgirl.app.ui.components.ArtworkIcon
 import com.thecutestgirl.app.ui.components.solidCard
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
+import com.thecutestgirl.app.ui.theme.appPalette
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * 四个独立设置页共用的页面骨架。
+ * 独立设置页共用的页面骨架。
  *
  * 顶栏标题就是模块名，页面内只放这一个模块的内容；
  * 内容随键盘避让、到底部时给导航栏留白。
@@ -76,7 +72,7 @@ internal fun SettingsPage(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(title = title, icon = icon, onBack = onBack)
@@ -89,8 +85,8 @@ internal fun SettingsPage(
                 .verticalScroll(rememberScrollState())
                 .imePadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(Modifier.height(8.dp))
             content()
@@ -105,7 +101,7 @@ internal fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
+            .solidCard(cornerRadius = 16.dp, drawHairline = false)
             .padding(vertical = 4.dp),
         content = content
     )
@@ -114,31 +110,20 @@ internal fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 /** 组内发丝线：左缩进与输入文字对齐，右不缩进（裁到卡片圆角内）。 */
 @Composable
 internal fun SettingsDivider() {
-    val dashedStroke = LocalAppPalette.current.dashedStroke
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp)
-            .height(1.dp)
-            .drawBehind {
-                drawLine(
-                    color = dashedStroke,
-                    start = Offset(0f, 0.5f),
-                    end = Offset(size.width, 0.5f),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(
-                        floatArrayOf(6.dp.toPx(), 4.dp.toPx()), 0f
-                    )
-                )
-            }
+            .height(0.5.dp)
+            .background(appPalette.hairline)
     )
 }
 
 /**
- * 无框输入行：字段标签 + 正文值。
+ * 无框输入行：辅助标签 + 17sp 正文值。
  *
  * 用 [BasicTextField] 而不是 TextField：要的就是「没有框」——
- * 光标用主色 1dp，占位符用 40% 的辅助色，焦点态靠标签变色提示，不引入任何描边。
+ * 光标与焦点标签用主色，输入热区至少 48dp，不引入额外描边。
  */
 @Composable
 internal fun SettingsField(
@@ -146,38 +131,21 @@ internal fun SettingsField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailing: (@Composable () -> Unit)? = null
 ) {
     val scheme = MaterialTheme.colorScheme
-    val palette = LocalAppPalette.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .focusRing(focused, 10.dp)
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-    ) {
+    var focused by remember { mutableStateOf(false) }
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
-            color = scheme.onSurfaceVariant
+            color = if (focused) scheme.primary else scheme.onSurfaceVariant
         )
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
-                if (value.isEmpty() && placeholder != null) {
-                    Text(
-                        placeholder,
-                        style = MaterialTheme.typography.bodyLarge,
-                        // 占位符也是文字，4.5:1 的线一样要过：alpha 压过的 onSurfaceVariant 只有 ≈2.6:1
-                        color = palette.mutedText
-                    )
-                }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -186,8 +154,19 @@ internal fun SettingsField(
                     cursorBrush = SolidColor(scheme.primary),
                     visualTransformation = visualTransformation,
                     keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                    interactionSource = interactionSource,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .onFocusChanged { focused = it.isFocused }
+                        .semantics { contentDescription = label },
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            innerTextField()
+                        }
+                    }
                 )
             }
             if (trailing != null) trailing()
@@ -206,23 +185,14 @@ internal fun SettingsActionRow(
     onClick: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    val palette = LocalAppPalette.current
-    val tint = if (enabled) scheme.onSurfaceVariant else scheme.onSurfaceVariant
-    // 全站统一不用系统 ripple；禁用态用实色底 + 实色文字，不再压透明度
+    val tint = if (enabled) scheme.primary else scheme.onSurfaceVariant.copy(alpha = 0.38f)
+    // 全站统一不用系统 ripple 方框，反馈由卡片本身的投影与按压色承担
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .then(if (container) Modifier.solidCard(cornerRadius = 12.dp) else Modifier)
-            .then(
-                if (!enabled && container) {
-                    Modifier.background(palette.disabledContainer)
-                } else {
-                    Modifier
-                }
-            )
-            .pressTint(interactionSource, cornerRadius = if (container) 12.dp else 0.dp, enabled = enabled)
+            .heightIn(min = 56.dp)
+            .then(if (container) Modifier.solidCard(cornerRadius = 16.dp, drawHairline = false) else Modifier)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -230,11 +200,11 @@ internal fun SettingsActionRow(
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (icon) {
-            Icon(
+            ArtworkIcon(
                 imageVector = iconVector,
                 contentDescription = null,
                 tint = tint,
@@ -242,7 +212,7 @@ internal fun SettingsActionRow(
             )
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, style = MaterialTheme.typography.labelLarge, color = tint)
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = tint)
     }
 }
 

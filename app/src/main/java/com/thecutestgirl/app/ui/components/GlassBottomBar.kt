@@ -1,10 +1,14 @@
-package com.thecutestgirl.app.ui.components
+﻿package com.thecutestgirl.app.ui.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +20,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,11 +54,11 @@ import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.thecutestgirl.app.ui.theme.appPalette
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
 
 /** 玻璃栏每个 tab 的数据 */
 data class GlassTab(
@@ -66,17 +73,8 @@ data class GlassTab(
  * 滑块回到「只包住图标」的尺寸 84×48dp，栏高 56dp——
  * 两者只差 8dp，视觉上是同一体量的两块玻璃，而不是「一块大板 + 一个小块」。
  */
-private val SliderWidth = 84.dp
-private val SliderHeight = 48.dp
-
-/** 单格宽度：栏宽 = 单格宽 × tab 数，两个半圆端头正好落在首尾按钮外沿上 */
-private val TabSlotWidth = 100.dp
-
-/** 玻璃本体高度（视觉） */
-private val BarGlassHeight = 56.dp
-
-/** 可点区域高度：玻璃 56dp 不变，命中区上下各放 4dp（64dp）只放大热区 */
-private val BarTouchHeight = 64.dp
+/** 玻璃本体基准高度；大字体时适当增长。 */
+private val BarGlassHeight = 72.dp
 
 /** 滑块最大拉伸比例（液态形变上限） */
 private const val MAX_STRETCH = 0.30f
@@ -108,14 +106,14 @@ fun GlassBottomBar(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
-    val palette = LocalAppPalette.current
     val scope = rememberCoroutineScope()
     val view = LocalView.current
 
-    // 选中块：品牌粉 18% 的玻璃糖浆 + 白色顶部高光
-    val pillBody = scheme.primary.copy(alpha = 0.18f)
-    val pillHighlight = palette.pillHighlight.copy(alpha = 0.55f)
-    val pillEdge = palette.pillHighlight.copy(alpha = 0.65f)
+    // 选中块及玻璃边缘随浅深主题变化，图标材质保持一致。
+    val palette = appPalette
+    val pillBody = palette.pillBody
+    val pillHighlight = palette.pillHighlight
+    val pillEdge = palette.pillEdge
 
     val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
     val lastIndex = (tabs.size - 1).coerceAtLeast(0)
@@ -143,18 +141,22 @@ fun GlassBottomBar(
         }
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(bottom = 8.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
+        val fontScale = LocalDensity.current.fontScale
+        val barHeight = BarGlassHeight + (12.dp * (fontScale - 1f).coerceIn(0f, 1f))
+        val touchHeight = barHeight + 8.dp
+        val barWidth = minOf(maxWidth, 360.dp)
         Box(
             // 可点区：宽 = 单格宽 × tab 数、高 = 64dp（比玻璃高 8dp）
             modifier = Modifier
-                .width(TabSlotWidth * currentTabs.size)
-                .height(BarTouchHeight)
+                .width(barWidth)
+                .height(touchHeight)
                 .pointerInput(tabs.size, currentTabs.size) {
                     detectLongPressDrag(
                         onLongPress = {
@@ -209,13 +211,12 @@ fun GlassBottomBar(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .height(BarGlassHeight)
+                    .height(barHeight)
                     .glassMaterial(
                         hazeState = hazeState,
-                        cornerRadius = 28.dp,
+                        cornerRadius = barHeight / 2,
                         blurRadius = GlassBlurRadius,
-                        noise = GlassNoise,
-                        tints = lightGlassTints(scheme.surface)
+                        noise = GlassNoise
                     )
                     .drawBehind {
                         drawLiquidSlider(
@@ -236,7 +237,7 @@ fun GlassBottomBar(
                     val interactionSource = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
-                            .width(TabSlotWidth)
+                            .weight(1f)
                             .fillMaxHeight()
                             .selectable(
                                 selected = selected,
@@ -247,16 +248,17 @@ fun GlassBottomBar(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = if (selected) tab.iconSelected else tab.icon,
-                            contentDescription = tab.label,
-                            // 选中用主色、未选中用中性灰：粉色只在选中的那一格出现
-                            tint = if (selected) scheme.primary
-                            else scheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .scale(target)
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            ArtworkIcon(
+                                imageVector = tab.icon,
+                                contentDescription = null,
+                                tint = if (selected) scheme.primary else scheme.onSurfaceVariant,
+                                modifier = Modifier.size(28.dp).scale(target)
+                            )
+                            Text(tab.label, style = MaterialTheme.typography.labelSmall,
+                                color = if (selected) scheme.primary else scheme.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
             }
@@ -328,8 +330,8 @@ private fun DrawScope.drawLiquidSlider(
     val itemWidth = size.width / tabCount
     val centerX = itemWidth * (sliderPos + 0.5f)
 
-    val baseW = SliderWidth.toPx()
-    val baseH = SliderHeight.toPx()
+    val baseW = itemWidth - 12.dp.toPx()
+    val baseH = size.height - 8.dp.toPx()
     // 拉长变薄：横向 +30%，纵向 -20%（squish = 1 时到上限）
     val w = baseW * (1f + MAX_STRETCH * squish)
     val h = baseH * (1f - MAX_SQUASH * squish)

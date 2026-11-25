@@ -1,0 +1,72 @@
+{
+  "requested_model": "gpt-image-2",
+  "backend": "native image_gen",
+  "model_metadata": "Native tool does not expose a model identifier; relay model discovery failed because no API credential was configured.",
+  "icons": [
+    {
+      "name": "outfit",
+      "source": "originals/outfit.png",
+      "prompt": "Create ONE production Android app UI icon for a private couple's lifestyle journal. Subject: a single elegantly simplified clothes hanger, clearly recognizable at 24dp. Art direction: premium restrained iOS-inspired micro-3D frosted ceramic, pearl ivory and muted dusty rose, cool graphite accents for a crisp readable silhouette, soft studio light from upper left, nearly front view with very subtle depth, no strong cast shadow. Not cute cartoon, not glossy plastic, not ornate. Centered object fills 80% of square with balanced padding. Truly transparent background, no tile, no base, no text, no watermark. This is the reference icon for a cohesive collection including meals, heart, sunrise, sun, moon, settings, profile, cloud sync, backup, battery and appearance. Only the hanger in this output. Generate with Image2 as requested."
+    },
+    {
+      "name": "meal",
+      "source": "originals/meal.png",
+      "prompt": "Create ONE production app UI icon. Subject: one clean circular dinner plate with a fork and spoon, all three objects tightly composed as one simple meal symbol. Match the supplied hanger reference's premium restrained micro-3D frosted ceramic material, pearl ivory with a tiny muted dusty rose accent, crisp graphite edge detail, consistent soft upper-left studio light and near-frontal perspective. Simplify silhouette and remove microtexture so this remains instantly readable at 24dp. Square composition, object occupies 80% of the square. TRUE TRANSPARENT ALPHA BACKGROUND; no background glow or fog, no tile, no floor, no cast shadow, no letters, no text, no watermark, no surrounding objects. Generate only this one icon."
+    },
+    {
+      "name": "event",
+      "source": "originals/event.png",
+      "prompt": "Create ONE production app UI icon. Subject: one softly rounded heart, pearl ivory body with a subtle dusty rose edge. Match the supplied hanger reference's premium restrained micro-3D frosted ceramic material, pearl ivory with a tiny muted dusty rose accent, crisp graphite edge detail, consistent soft upper-left studio light and near-frontal perspective. Simplify silhouette and remove microtexture so this remains instantly readable at 24dp. Square composition, object occupies 80% of the square. TRUE TRANSPARENT ALPHA BACKGROUND; no background glow or fog, no tile, no floor, no cast shadow, no letters, no text, no watermark, no surrounding objects. Generate only this one icon."
+    },
+    {
+      "name": "breakfast",
+      "source": "originals/breakfast.png",
+      "prompt": "ONE isolated UI icon of a rising half sun above one simple horizon line, minimal breakfast sunrise symbol. Match reference: premium minimal frosted ceramic, pearl ivory and dusty rose, subtle graphite details, soft upper-left studio light, near-frontal view. Bold clean silhouette readable at 24dp, centered, filling 80% of square. Transparent alpha background. No glow, fog, floor, shadow, text, watermark, tile, or extra objects."
+    },
+    {
+      "name": "lunch",
+      "source": "originals/lunch.png",
+      "prompt": "Create ONE production app UI icon. Subject: one round sun with six short thick rays, simple lunch midday symbol. Match the supplied hanger reference's premium restrained micro-3D frosted ceramic material, pearl ivory with a tiny muted dusty rose accent, crisp graphite edge detail, consistent soft upper-left studio light and near-frontal perspective. Simplify silhouette and remove microtexture so this remains instantly readable at 24dp. Square composition, object occupies 80% of the square. TRUE TRANSPARENT ALPHA BACKGROUND; no background glow or fog, no tile, no floor, no cast shadow, no letters, no text, no watermark, no surrounding objects. Generate only this one icon."
+    },
+    {
+      "name": "dinner",
+      "source": "originals/dinner.png",
+      "prompt": "Create ONE production app UI icon. Subject: one elegant crescent moon, simple evening dinner symbol. Match the supplied hanger reference's premium restrained micro-3D frosted ceramic material, pearl ivory with a tiny muted dusty rose accent, crisp graphite edge detail, consistent soft upper-left studio light and near-frontal perspective. Simplify silhouette and remove microtexture so this remains instantly readable at 24dp. Square composition, object occupies 80% of the square. TRUE TRANSPARENT ALPHA BACKGROUND; no background glow or fog, no tile, no floor, no cast shadow, no letters, no text, no watermark, no surrounding objects. Generate only this one icon."
+    },
+    {
+      "name": "settings",
+      "source": "originals/settings.png",
+      "prompt": "Create ONE production app UI icon. Subject: one simple rounded six-tooth gear with a visible central hole. Match the supplied hanger reference's premium restrained micro-3D frosted ceramic material, pearl ivory with a tiny muted dusty rose accent, crisp graphite edge detail, consistent soft upper-left studio light and near-frontal perspective. Simplify silhouette and remove microtexture so this remains instantly readable at 24dp. Square composition, object occupies 80% of the square. TRUE TRANSPARENT ALPHA BACKGROUND; no background glow or fog, no tile, no floor, no cast shadow, no letters, no text, no watermark, no surrounding objects. Generate only this one icon."
+    },
+    {
+      "name": "profile",
+      "source": "originals/profile.png",
+      "prompt": "ONE isolated UI icon of one simplified person's head and shoulders, no face details, a personal profile silhouette. Match reference: premium minimal frosted ceramic, pearl ivory and dusty rose, subtle graphite details, soft upper-left studio light, near-frontal view. Bold clean silhouette readable at 24dp, centered, filling 80% of square. Transparent alpha background. No glow, fog, floor, shadow, text, watermark, tile, or extra objects."
+    },
+    {
+      "name": "sync",
+      "source": "originals/sync.png",
+      "prompt": "ONE isolated UI icon of one rounded cloud with two clear curved arrows forming a synchronization cycle. Match reference: premium minimal frosted ceramic, pearl ivory and dusty rose, subtle graphite details, soft upper-left studio light, near-frontal view. Bold clean silhouette readable at 24dp, centered, filling 80% of square. Transparent alpha background. No glow, fog, floor, shadow, text, watermark, tile, or extra objects."
+    },
+    {
+      "name": "backup",
+      "source": "originals/backup.png",
+      "prompt": "ONE isolated UI icon of one minimal archive box with a small downward arrow, data backup symbol. Match reference: premium minimal frosted ceramic, pearl ivory and dusty rose, subtle graphite details, soft upper-left studio light, near-frontal view. Bold clean silhouette readable at 24dp, centered, filling 80% of square. Transparent alpha background. No glow, fog, floor, shadow, text, watermark, tile, or extra objects."
+    },
+    {
+      "name": "battery",
+      "source": "originals/battery.png",
+      "prompt": "ONE isolated UI icon of one simple upright battery with a small clean lightning bolt. Match reference: premium minimal frosted ceramic, pearl ivory and dusty rose, subtle graphite details, soft upper-left studio light, near-frontal view. Bold clean silhouette readable at 24dp, centered, filling 80% of square. Transparent alpha background. No glow, fog, floor, shadow, text, watermark, tile, or extra objects."
+    },
+    {
+      "name": "appearance",
+      "source": "originals/appearance.png",
+      "prompt": "ONE isolated UI icon of one circular disc vertically divided into pearl ivory and soft graphite halves, appearance light dark mode symbol. Match reference: premium minimal frosted ceramic, pearl ivory and dusty rose, subtle graphite details, soft upper-left studio light, near-frontal view. Bold clean silhouette readable at 24dp, centered, filling 80% of square. Transparent alpha background. No glow, fog, floor, shadow, text, watermark, tile, or extra objects."
+    },
+    {
+      "name": "add",
+      "source": "originals/add.png",
+      "prompt": "Create ONE production mobile UI add-action icon: a perfectly recognizable PLUS SIGN (+), four equal arms, thick clean strokes, gently rounded ends, strictly upright and front-facing, centered square composition. Restrained premium micro-3D frosted ceramic material matching a private lifestyle journal: muted dusty rose body (#AF4F70), very subtle pearl ivory bevel, crisp dark rose contour so it stays visible on both white and near-black. Soft upper-left studio light, shallow depth, no tilted perspective. The plus itself fills 82% of the square and must read clearly at 24dp. TRUE TRANSPARENT alpha background, no circle, no tile, no button surround, no floor or cast shadow, no haze, no lettering, no watermark, no extra symbols. Just one elegant functional plus.\n"
+    }
+  ]
+}

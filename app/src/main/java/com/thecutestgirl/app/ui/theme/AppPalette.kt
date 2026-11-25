@@ -1,103 +1,55 @@
 package com.thecutestgirl.app.ui.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-/** M3 没有槽位、但必须随主题一起切换的纸张材质与中性表面。 */
+/** Material 语义色之外的浮层材质；内容表面仍使用 colorScheme.surface。 */
 @Immutable
 data class AppPalette(
     val hairline: Color,
-    val cardGlow: Color,
-    val dashedFill: Color,
-    val dashedStroke: Color,
-    val buttonFill: Color,
-    val chromeTop: Color,
+    val glassSurface: Color,
+    val glassHighlight: Color,
+    val glassEdge: Color,
+    val glassShadow: Color,
+    val pillBody: Color,
     val pillHighlight: Color,
     val pillEdge: Color,
-    val hazeTint: Color,
-    val hazeGloss: Color,
-    val mutedText: Color,
-    val accentText: Color,
-    val success: Color,
-    val successBackground: Color,
     val scrim: Color,
-    val shadowAmbientAlpha: Float,
-    val shadowSpotAlpha: Float,
-    val elevatedSurface: Color,
-    val paperInk: Color,
-    val paperShadow: Color,
-    val disabledContainer: Color,
-    val segmentSlot: Color,
-    val photoPlaceholder: Color,
-    val tape: Color,
-    val paperDotAlpha: Float,
-    val paperLineAlpha: Float
+    val isDark: Boolean
 )
 
-internal val LightAppPalette = AppPalette(
+val LightAppPalette = AppPalette(
     hairline = BorderHairline,
-    cardGlow = ElevatedLight,
-    dashedFill = CardWhite,
-    dashedStroke = DividerSoft.copy(alpha = 0.70f),
-    buttonFill = PinkSoft,
-    chromeTop = ElevatedLight,
-    pillHighlight = ElevatedLight,
-    pillEdge = BorderHairline,
-    hazeTint = BarPaperLight,
-    hazeGloss = ElevatedLight,
-    mutedText = TextMuted,
-    accentText = Pink,
-    success = SuccessGreen,
-    successBackground = SuccessDeep,
-    scrim = ScrimLight,
-    shadowAmbientAlpha = 0.08f,
-    shadowSpotAlpha = 0.08f,
-    elevatedSurface = ElevatedLight,
-    paperInk = PaperInkLight,
-    paperShadow = PaperShadowLight,
-    disabledContainer = BorderHairline,
-    segmentSlot = SegmentSlotLight,
-    photoPlaceholder = PhotoPaperLight,
-    tape = TapeLight,
-    paperDotAlpha = 0.025f,
-    paperLineAlpha = 0.018f
+    glassSurface = Color(0xDDFFFFFF),
+    glassHighlight = Color(0x66FFFFFF),
+    glassEdge = Color(0x1A555561),
+    glassShadow = Color(0x14202027),
+    pillBody = Color(0x21AF4F70),
+    pillHighlight = Color(0x66FFFFFF),
+    pillEdge = Color(0x26FFFFFF),
+    scrim = Color(0x66000000),
+    isDark = false
 )
 
-internal val DarkAppPalette = AppPalette(
-    hairline = DividerDark,
-    cardGlow = Color(0xFF4A4038).copy(alpha = 0.45f),
-    dashedFill = CardDark,
-    dashedStroke = DashedDark,
-    buttonFill = PinkContainerDark,
-    chromeTop = ElevatedDark,
-    pillHighlight = ElevatedDark,
-    pillEdge = DividerDark,
-    hazeTint = BarPaperDark,
-    hazeGloss = ElevatedDark,
-    mutedText = TextMutedDark,
-    accentText = PinkDark,
-    success = SuccessDark,
-    successBackground = SuccessDeepDark,
-    scrim = ScrimDark,
-    shadowAmbientAlpha = 0f,
-    shadowSpotAlpha = 0f,
-    elevatedSurface = ElevatedDark,
-    paperInk = PaperInkDark,
-    paperShadow = Color.Transparent,
-    disabledContainer = DividerDark,
-    segmentSlot = PanelRaisedDark,
-    photoPlaceholder = PhotoPaperDark,
-    tape = TapeDark,
-    paperDotAlpha = 0.03f,
-    paperLineAlpha = 0.02f
+val DarkAppPalette = AppPalette(
+    hairline = Color(0x24FFFFFF),
+    glassSurface = Color(0xE025252D),
+    glassHighlight = Color(0x0FFFFFFF),
+    glassEdge = Color(0x28FFFFFF),
+    glassShadow = Color.Transparent,
+    pillBody = Color(0x33E7A8BF),
+    pillHighlight = Color(0x15FFFFFF),
+    pillEdge = Color(0x26FFFFFF),
+    scrim = Color(0x99000000),
+    isDark = true
 )
 
-val LocalAppPalette = compositionLocalOf { LightAppPalette }
+val LocalAppPalette = staticCompositionLocalOf { LightAppPalette }
 
-/** 单一降级出口；数值越大，关闭的装饰越多，功能与可用性永不降级。 */
-enum class DegradationLevel(val level: Int) {
-    L0(0), L1(1), L2(2), L3(3), L4(4), L5(5), L6(6), L7(7), L8(8)
-}
-
-val LocalDegradationLevel = compositionLocalOf { DegradationLevel.L0 }
+val appPalette: AppPalette
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppPalette.current

@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.thecutestgirl.app.ui.savedDate
+import com.thecutestgirl.app.ui.savedInt
 import com.thecutestgirl.app.ui.savedNullableString
 import com.thecutestgirl.app.ui.savedString
 import java.time.LocalDate
@@ -63,6 +65,9 @@ class MealEditViewModel(app: Application, state: SavedStateHandle) : AndroidView
 
     var note by savedString(state, "note")
     var photoPath by savedNullableString(state, "photoPath")
+    var addSheetMealType by savedInt(state, "addSheetMealType", -1)
+    var addSheetDate by savedDate(state, "addSheetDate")
+    var savingAddSheet by mutableStateOf(false)
     /** 对方写的评论：上传人只读 */
     var reply by savedString(state, "reply")
 

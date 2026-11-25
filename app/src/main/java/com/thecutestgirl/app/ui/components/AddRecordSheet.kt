@@ -1,15 +1,26 @@
 ﻿package com.thecutestgirl.app.ui.components
 
+import android.os.Build
+import android.view.View
+import android.view.ViewParent
+import android.view.Window
+import androidx.core.view.WindowCompat
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
+import com.thecutestgirl.app.ui.theme.appPalette
+import com.thecutestgirl.app.ui.theme.windowBackgroundArgb
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material3.SheetValue
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,13 +28,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,23 +51,24 @@ import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -67,18 +76,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thecutestgirl.app.data.PhotoStore
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import com.thecutestgirl.app.ui.theme.TheCutestGirlTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.File
 
 /**
  * 统一的新增记录抽屉（v4.0）。
  *
  * 规范：
- * - 半屏（约 0.55 屏高），顶部圆角 20，玻璃面板
+ * - 半屏（约 0.55 屏高），顶部圆角 24，玻璃面板
  * - 40% 黑色遮罩，点击遮罩 / 下滑关闭
  * - 进出一个 spring（约 300ms），遮罩同步淡入淡出（Material3 Sheet 默认行为）
  * - 内容 8dp 网格；主操作 PrimaryButton 全宽 48dp
@@ -93,45 +102,114 @@ fun AddRecordSheet(
     onPrimary: () -> Unit,
     primaryLabel: String = "保存",
     hasUnsavedChanges: Boolean = false,
+    saving: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var showDiscardConfirm by remember { mutableStateOf(false) }
+    var showDiscardConfirm by rememberSaveable { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val currentSaving by rememberUpdatedState(saving)
+    val currentUnsaved by rememberUpdatedState(hasUnsavedChanges)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { target ->
+            if (target == SheetValue.Hidden && (currentSaving || currentUnsaved)) {
+                if (!currentSaving) showDiscardConfirm = true
+                false
+            } else true
+        }
+    )
+    val resumeEditing: () -> Unit = {
+        showDiscardConfirm = false
+        // Material3's Android back callback can reach onDismissRequest after the
+        // sheet has hidden. Reuse the same composition and state so that fields,
+        // scroll position and pending photo results remain intact.
+        scope.launch { sheetState.show() }
+    }
     ModalBottomSheet(
         onDismissRequest = {
-            if (hasUnsavedChanges) showDiscardConfirm = true else onDismiss()
+            when {
+                saving -> scope.launch { sheetState.show() }
+                hasUnsavedChanges -> {
+                    showDiscardConfirm = true
+                    // The parent keeps this sheet until explicit discard.
+                    scope.launch { sheetState.show() }
+                }
+                else -> onDismiss()
+            }
         },
         sheetState = sheetState,
-        // 遮罩统一取 palette（两套主题都是 40% 黑），和设置抽屉同一个来源
-        scrimColor = LocalAppPalette.current.scrim,
-        containerColor = Color.Transparent,
+        scrimColor = appPalette.scrim,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = null
     ) {
+        MatchDialogSystemBars()
         AddRecordSheetContent(
             title = title,
-            primaryEnabled = primaryEnabled,
+            primaryEnabled = primaryEnabled && !saving,
             onPrimary = onPrimary,
-            primaryLabel = primaryLabel,
-            onCancel = onDismiss,
+            primaryLabel = if (saving) "正在保存…" else primaryLabel,
             content = content
         )
     }
     if (showDiscardConfirm) {
         AlertDialog(
-            onDismissRequest = { showDiscardConfirm = false },
-            title = { Text("放弃这次编辑？") },
+            onDismissRequest = resumeEditing,
+            title = {
+                MatchDialogSystemBars()
+                Text("放弃这次编辑？")
+            },
             text = { Text("已填写的内容和已选的照片不会保存。") },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardConfirm = false
                     onDismiss()
-                }) { Text("放弃") }
+                }) { Text("放弃", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardConfirm = false }) { Text("继续编辑") }
+                TextButton(onClick = resumeEditing) { Text("继续编辑") }
             }
         )
     }
+}
+
+/** Dialog windows do not inherit the Activity's manually selected bar mode. */
+@Composable
+internal fun MatchDialogSystemBars() {
+    val view = LocalView.current
+    val dark = appPalette.isDark
+    DisposableEffect(view, dark) {
+        val applyBars = Runnable {
+            findDialogWindow(view)?.let { window ->
+                val controller = WindowCompat.getInsetsController(window, window.decorView)
+                controller.isAppearanceLightStatusBars = !dark
+                controller.isAppearanceLightNavigationBars = !dark
+                @Suppress("DEPRECATION")
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                @Suppress("DEPRECATION")
+                window.navigationBarColor = windowBackgroundArgb(dark)
+                if (Build.VERSION.SDK_INT >= 29) {
+                    window.isStatusBarContrastEnforced = false
+                    window.isNavigationBarContrastEnforced = false
+                }
+            }
+        }
+        applyBars.run()
+        // Apply after Material3's Dialog parameter update too; remove stale posts
+        // when the window leaves composition or its appearance mode changes.
+        view.post(applyBars)
+        onDispose { view.removeCallbacks(applyBars) }
+    }
+}
+
+private fun findDialogWindow(view: View): Window? {
+    if (view is DialogWindowProvider) return view.window
+    var parent: ViewParent? = view.parent
+    while (parent != null) {
+        if (parent is DialogWindowProvider) return parent.window
+        parent = parent.parent
+    }
+    return null
 }
 
 /** 抽屉内容（与 ModalBottomSheet 解耦，方便 @Preview 预览开 / 合两种状态）。 */
@@ -141,152 +219,50 @@ fun AddRecordSheetContent(
     primaryEnabled: Boolean,
     onPrimary: () -> Unit,
     primaryLabel: String = "保存",
-    onCancel: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val topOnly = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-    val density = LocalDensity.current
+    // 在 IME 已占用的可用区域内计算高度，不用最小高度反向撑出屏幕。
     BoxWithConstraints(modifier = Modifier.fillMaxWidth().imePadding()) {
-        // 键盘弹起时按 IME 之上的可用高度重算：无键盘约 82% 且 ≥360dp；
-        // IME 态 360dp 下限失效、兜底 240dp；可用高不足 240dp 时切同一 Sheet 的全屏表单态。
-        val imeBottom = WindowInsets.ime.getBottom(density)
-        val imeHeight = with(density) { imeBottom.toDp() }
-        val keyboardVisible = imeHeight > 0.dp
-        val availableHeight = maxHeight - imeHeight
-        val fullForm = keyboardVisible && availableHeight < 240.dp
-        val desiredHeight = if (keyboardVisible) {
-            minOf(maxHeight * 0.82f, availableHeight)
-        } else {
-            maxHeight * 0.82f
-        }
-        val sheetHeight = if (fullForm) {
-            maxHeight
-        } else {
-            desiredHeight.coerceAtLeast(if (keyboardVisible) 240.dp else 360.dp)
-                .coerceAtMost(maxHeight)
-        }
-        val sheetShape = if (fullForm) RoundedCornerShape(0.dp) else topOnly
+        val sheetHeight = (maxHeight * 0.86f).coerceAtMost(720.dp)
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(sheetHeight)
-                // 抽屉必须完全不透明：半透明会让底层文字/图标透上来，读不清
-                .glassPanel(shape = sheetShape, elevated = true)
-                .padding(24.dp)
+            modifier = Modifier.fillMaxWidth().height(sheetHeight)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 12.dp)
         ) {
-        if (fullForm) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = { onCancel?.invoke() }) {
-                    Text("取消", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onPrimary, enabled = primaryEnabled) {
-                    Text("保存")
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-        } else {
-            // 拖动指示条（装饰，本身不占点击）
             Box(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .width(32.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f))
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+                    .width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f))
             )
-            Spacer(Modifier.height(24.dp))
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(24.dp))
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            content()
-        }
-        Spacer(Modifier.height(16.dp))
-        if (!fullForm) {
-            PrimaryButton(
-                text = primaryLabel,
-                onClick = onPrimary,
-                enabled = primaryEnabled
-            )
+            Spacer(Modifier.height(16.dp))
+            // 标题也参与滚动，为小屏、横屏与大字体保留表单和固定保存区。
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(title, style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface)
+                content()
+                Spacer(Modifier.height(4.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            PrimaryButton(text = primaryLabel, onClick = onPrimary, enabled = primaryEnabled)
             Spacer(Modifier.height(8.dp))
-        }
         }
     }
 }
 
-/** 抽屉里的字段标题（14sp 辅助色）。 */
-@Composable
-fun SheetLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-}
-
-/** 抽屉文本输入：深色输入底 + 8dp 圆角 + 无边框输入。 */
+/** 新增与全屏编辑共享字段结构及可访问名称。 */
 @Composable
 fun SheetTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String,
+    label: String,
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     minLines: Int = 1,
     keyboardType: KeyboardType = KeyboardType.Text
-) {
-    val scheme = MaterialTheme.colorScheme
-    val palette = LocalAppPalette.current
-    val hairline = palette.hairline
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(10.dp)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(shape)
-            .background(scheme.surfaceVariant)
-            .border(
-                width = if (focused) 2.dp else 1.dp,
-                color = if (focused) scheme.primary else hairline,
-                shape = shape
-            )
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        if (value.isEmpty()) {
-            Text(
-                placeholder,
-                style = MaterialTheme.typography.bodyLarge,
-                color = palette.mutedText
-            )
-        }
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = singleLine,
-            minLines = minLines,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
-            cursorBrush = SolidColor(scheme.primary),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            interactionSource = interactionSource,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
+) = RecordTextField(label, value, onValueChange, modifier, singleLine, minLines, keyboardType)
 
 /** 抽屉日期行：只读展示；[onClick] 为 null 时是不可点的信息行。 */
 @Composable
@@ -295,104 +271,61 @@ fun SheetDateRow(
     value: String,
     onClick: (() -> Unit)? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(10.dp)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, LocalAppPalette.current.hairline, shape)
-            .then(
-                if (onClick != null) {
-                    Modifier
-                        .pressTint(interactionSource, cornerRadius = 10.dp)
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = onClick
-                        )
-                } else {
-                    Modifier
-                }
-            )
-            .padding(horizontal = 12.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label, style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface)
+        }
+        if (onClick != null) {
+            Spacer(Modifier.width(8.dp))
+            ArtworkIcon(Icons.Outlined.ChevronRight, contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        }
     }
 }
 
-/**
- * 全 app 唯一的分段选择控件（v4.3.0 从 `SheetSegmented` 改名：它早就不只属于抽屉，
- * 饮食 / 点滴 / 外观页都在用）。选中项中性实色底 + 主色实色描边，未选中 surfaceVariant；
- * 按压反馈走 [pressTint]，和行类一致。
- */
+/** 抽屉分段选择（日常点滴 / 纪念日）。 */
 @Composable
-fun SegmentedChoices(
+fun SheetSegmented(
     options: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit
 ) {
-    val hairline = LocalAppPalette.current.hairline
-    val slot = LocalAppPalette.current.segmentSlot
-    val selectedSurface = LocalAppPalette.current.elevatedSurface
+    val scheme = MaterialTheme.colorScheme
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(slot)
-            .border(1.dp, hairline, RoundedCornerShape(10.dp))
-            .padding(3.dp)
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
+            .clip(RoundedCornerShape(12.dp)).background(scheme.surfaceVariant).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
-            val interactionSource = remember { MutableInteractionSource() }
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 40.dp)
+                modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (selected) selectedSurface else Color.Transparent)
-                    .border(
-                        1.dp,
-                        if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        RoundedCornerShape(10.dp)
-                    )
-                    .pressTint(interactionSource, cornerRadius = 10.dp)
-                    .selectable(
-                        selected = selected,
-                        interactionSource = interactionSource,
-                        indication = null,
-                        role = Role.Tab,
-                        onClick = { onSelect(index) }
-                    ),
+                    .background(if (selected) scheme.surface else Color.Transparent)
+                    .selectable(selected = selected,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null, role = Role.Tab, onClick = { onSelect(index) })
+                    .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+                Text(label, style = MaterialTheme.typography.bodyLarge,
+                    color = if (selected) scheme.onSurface else scheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center)
             }
         }
     }
 }
+
+private val sheetCameraCompression = Mutex()
 
 /** 抽屉照片选择：缩略图 + 相册 / 拍照。 */
 @Composable
@@ -405,32 +338,42 @@ fun SheetPhotoPicker(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
-    var cameraTarget by remember { mutableStateOf<File?>(null) }
+    var cameraTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    var capturedPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    val currentPhotos by rememberUpdatedState(photos)
+    val addPhotos by rememberUpdatedState(onAdd)
 
     // 统一收口：抽屉里的照片都是未保存草稿，替换/超额的旧文件当场删掉，避免孤儿
     fun deliver(names: List<String>) {
-        val remaining = (maxPhotos - photos.size).coerceAtLeast(1)
+        val remaining = (maxPhotos - currentPhotos.size).coerceAtLeast(0)
         val accepted = if (maxPhotos == 1) names.takeLast(1) else names.take(remaining)
-        if (accepted.isEmpty()) {
-            names.forEach { PhotoStore.delete(context, it) }
-            return
-        }
+        names.filter { it !in accepted }.forEach { PhotoStore.delete(context, it) }
+        if (accepted.isEmpty()) return
         if (maxPhotos == 1) {
-            photos.filter { it !in accepted }.forEach { PhotoStore.delete(context, it) }
+            currentPhotos.filter { it !in accepted }.forEach { PhotoStore.delete(context, it) }
         }
-        onAdd(accepted)
+        addPhotos(accepted)
     }
 
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val file = cameraTarget
-        if (ok && file != null && file.exists() && file.length() > 0) {
-            scope.launch {
-                withContext(Dispatchers.IO) { PhotoStore.compressInPlace(file) }
-                deliver(listOf(PhotoStore.makeDraft(context, file)))
-            }
-        } else {
-            file?.delete()
+        cameraTarget?.let { name ->
+            if (ok) capturedPhoto = name else PhotoStore.delete(context, name)
         }
+        cameraTarget = null
+    }
+    // 保留相机回传的草稿名，压缩期间发生重建也能继续处理同一个文件。
+    LaunchedEffect(capturedPhoto) {
+        val name = capturedPhoto ?: return@LaunchedEffect
+        val file = PhotoStore.file(context, name)
+        if (file.isFile && file.length() > 0) {
+            withContext(Dispatchers.IO) {
+                sheetCameraCompression.withLock { PhotoStore.compressInPlace(file) }
+            }
+            if (name !in currentPhotos) deliver(listOf(name))
+        } else {
+            PhotoStore.delete(context, name)
+        }
+        capturedPhoto = null
     }
     val pickSingle = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -443,7 +386,7 @@ fun SheetPhotoPicker(
         if (uris.isNotEmpty()) {
             scope.launch {
                 // 先按剩余名额截断再复制，避免多余文件落盘
-                val remaining = (maxPhotos - photos.size).coerceAtLeast(1)
+                val remaining = (maxPhotos - currentPhotos.size).coerceAtLeast(0)
                 val saved = uris.take(remaining).mapNotNull { PhotoStore.saveFromUri(context, it, draft = true) }
                 deliver(saved)
             }
@@ -459,8 +402,8 @@ fun SheetPhotoPicker(
         }
     }
     val launchCamera: () -> Unit = {
-        val (file, uri) = PhotoStore.newCameraTarget(context)
-        cameraTarget = file
+        val (file, uri) = PhotoStore.newCameraTarget(context, draft = true)
+        cameraTarget = file.name
         takePicture.launch(uri)
     }
 
@@ -471,7 +414,7 @@ fun SheetPhotoPicker(
                     Box(
                         modifier = Modifier
                             .size(72.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(12.dp))
                     ) {
                         PhotoImage(
                             file = PhotoStore.file(context, name),
@@ -482,31 +425,23 @@ fun SheetPhotoPicker(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(0.dp)
+                                .padding(2.dp)
                                 .size(48.dp)
                                 .clickable { onRemove(name) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    // 压在照片上的移除键：恒定深底白图标，不跟主题翻，
-                                    // 否则深色主题下「深圆 + 浅图标」会在浅照片上消失
-                                    .background(Color.Black.copy(alpha = 0.55f))
-                            )
-                            Icon(
-                                Icons.Outlined.Close,
-                                contentDescription = "移除照片",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Box(Modifier.size(28.dp).clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.55f)),
+                                contentAlignment = Alignment.Center) {
+                                ArtworkIcon(Icons.Outlined.Close, contentDescription = "移除照片",
+                                    tint = Color.White, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
             }
         }
-        val canAdd = photos.size < maxPhotos
+        val canAdd = photos.size < maxPhotos && cameraTarget == null && capturedPhoto == null
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SoftCapsuleButton(
                 onClick = launchGallery,
@@ -514,7 +449,7 @@ fun SheetPhotoPicker(
                 enabled = canAdd,
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
             ) {
-                Icon(
+                ArtworkIcon(
                     Icons.Outlined.PhotoLibrary,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
@@ -533,7 +468,7 @@ fun SheetPhotoPicker(
                 enabled = canAdd,
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
             ) {
-                Icon(
+                ArtworkIcon(
                     Icons.Outlined.PhotoCamera,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
@@ -546,13 +481,6 @@ fun SheetPhotoPicker(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-        }
-        if (photos.size >= maxPhotos) {
-            Text(
-                "最多 $maxPhotos 张",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -577,7 +505,7 @@ private fun AddRecordSheetContentPreview() {
                 SheetTextField(
                     value = "",
                     onValueChange = {},
-                    placeholder = "吃了什么（可选）",
+                    label = "内容",
                     minLines = 3,
                     singleLine = false
                 )
@@ -596,7 +524,7 @@ private fun AddRecordSheetFilledPreview() {
             onPrimary = {},
             primaryLabel = "保存",
             content = {
-                SegmentedChoices(
+                SheetSegmented(
                     options = listOf("日常点滴", "纪念日"),
                     selectedIndex = 0,
                     onSelect = {}
@@ -604,7 +532,7 @@ private fun AddRecordSheetFilledPreview() {
                 SheetTextField(
                     value = "一起去看了日落",
                     onValueChange = {},
-                    placeholder = "标题"
+                    label = "标题"
                 )
                 SheetDateRow(label = "发生日期", value = "2026年8月24日", onClick = {})
             }

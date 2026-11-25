@@ -4,11 +4,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
-/** 控件 10 / 卡片 12 / 容器与弹层 20；胶囊和贴边形状由共享组件显式提供。 */
+/** 控件 12dp、内容卡片 20dp、浮层 24/32dp；胶囊使用自身尺寸决定圆角。 */
 val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(20.dp)
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp)
 )

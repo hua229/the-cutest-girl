@@ -1,5 +1,11 @@
-﻿package com.thecutestgirl.app.ui.components
+package com.thecutestgirl.app.ui.components
 
+import com.thecutestgirl.app.ui.theme.appPalette
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.layout.Layout
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -10,7 +16,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -34,12 +39,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.CheckCircleOutline
@@ -50,7 +59,6 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Warning
@@ -59,21 +67,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -86,9 +88,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -98,7 +97,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextStyle as ComposeTextStyle
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -111,7 +112,8 @@ import coil.request.ImageRequest
 import com.thecutestgirl.app.data.PhotoStore
 import com.thecutestgirl.app.ui.theme.DateNumberStyle
 import com.thecutestgirl.app.ui.theme.EmptyTitleStyle
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
+import com.thecutestgirl.app.ui.theme.SuccessGreen
+import com.thecutestgirl.app.ui.theme.WarningAmber
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -128,9 +130,6 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import com.thecutestgirl.app.R
 
 // ---------- 日期格式化 ----------
 private val CN_FULL = DateTimeFormatter.ofPattern("yyyy年M月d日")
@@ -164,7 +163,7 @@ internal fun nextPhotoList(
     }
 }
 
-/** 统一顶栏：quietTopAppBar + IconTitle；windowInsets=0（根 Scaffold 已处理状态栏）。 */
+/** 二级页面顶栏：返回与操作分居两侧，标题保持视觉居中。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
@@ -173,32 +172,34 @@ fun AppTopBar(
     onBack: () -> Unit,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
-    TopAppBar(
-        modifier = Modifier.quietTopAppBar(),
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
-            scrolledContainerColor = Color.Transparent
-        ),
-        windowInsets = WindowInsets(0, 0, 0, 0),
-        title = {
-            IconTitle(
-                icon = icon,
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                iconSize = BarIconSize
-            )
-        },
-        navigationIcon = {
-            PaperIconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
-                    modifier = Modifier.size(24.dp)
-                )
+    // 先测量两侧操作区，再对称为标题留宽，保存按钮变宽时标题仍居中。
+    Layout(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        content = {
+            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                ArtworkIcon(Icons.Outlined.ChevronLeft, contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             }
-        },
-        actions = actions
-    )
+            Text(title, style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, content = actions)
+        }
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val navigation = measurables[0].measure(loose)
+        val actionArea = measurables[2].measure(loose)
+        val sideWidth = maxOf(navigation.width, actionArea.width)
+        val heading = measurables[1].measure(loose.copy(
+            maxWidth = (constraints.maxWidth - sideWidth * 2).coerceAtLeast(0)))
+        val barHeight = maxOf(56.dp.roundToPx(), navigation.height, actionArea.height, heading.height)
+            .coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(constraints.maxWidth, barHeight) {
+            navigation.placeRelative(0, (barHeight - navigation.height) / 2)
+            heading.placeRelative((constraints.maxWidth - heading.width) / 2, (barHeight - heading.height) / 2)
+            actionArea.placeRelative(constraints.maxWidth - actionArea.width, (barHeight - actionArea.height) / 2)
+        }
+    }
 }
 
 /** 破坏性操作行：48dp、错误色文字、无系统 ripple（只在允许删除时显示）。 */
@@ -209,29 +210,24 @@ fun DestructiveAction(
     modifier: Modifier = Modifier
 ) {
     val color = MaterialTheme.colorScheme.error
-    val background = MaterialTheme.colorScheme.errorContainer
     val interactionSource = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(10.dp)
+    val shape = RoundedCornerShape(12.dp)
     Row(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(shape)
-            .background(background)
-            .border(1.dp, color.copy(alpha = 0.45f), shape)
-            .pressTint(interactionSource, color = color, cornerRadius = 10.dp)
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                enabled = true,
                 role = Role.Button,
                 onClick = onClick
-            )
-            .padding(horizontal = 16.dp),
+            ).padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, style = MaterialTheme.typography.labelLarge, color = color)
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = color)
     }
 }
 
@@ -260,78 +256,33 @@ fun rememberToday(): LocalDate {
     return today
 }
 
-// ---------- 空状态提示 ----------
-/**
- * 空状态（v2.5.3 重做）：默认用「模块色柔光 + 毛毡玩偶」当插画，而不是一枚线性图标。
- *
- * 为什么用启动图标那张图：APP 的图标本身就是毛毡玩偶合照（tools/make_launcher_icon.py 产出），
- * 空态是用户停留最久、屏幕最空的一屏，正好把它放大复用——既统一了视觉资产，又不必额外画插画。
- * 圆角方形 + 一圈柔光，看起来像「一张贴纸」，比纯线性图标有温度。
- *
- * @param accent 模块强调色，用于柔光与图标 tint；默认取主色
- * @param showFeltIllustration 传 false 时退回「圆底线性图标」的轻量形态
- */
+// ---------- 空状态：模块图标和实际记录状态 ----------
 @Composable
 fun EmptyHint(
-    title: String,
+    text: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Outlined.FavoriteBorder,
-    action: (@Composable () -> Unit)? = null,
-    accent: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    showFeltIllustration: Boolean = true
+    icon: ImageVector = Icons.Outlined.FavoriteBorder
 ) {
     val scheme = MaterialTheme.colorScheme
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 48.dp),
+            .padding(horizontal = 20.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (showFeltIllustration) {
-            // 毛毡玩偶贴纸：外圈柔光光环 + 圆角方形裁切（尺寸保持 8dp 网格）
-            Box(
-                modifier = Modifier
-                    .size(112.dp)
-                    .clip(CircleShape)
-                    .background(LocalAppPalette.current.buttonFill),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(R.mipmap.ic_launcher_foreground),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                )
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(LocalAppPalette.current.buttonFill),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+        ArtworkIcon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = scheme.onSurfaceVariant,
+            modifier = Modifier.size(72.dp)
+        )
         Spacer(Modifier.height(16.dp))
         Text(
-            title,
+            text,
             color = scheme.onBackground,
             style = EmptyTitleStyle,
             textAlign = TextAlign.Center
         )
-        if (action != null) {
-            Spacer(Modifier.height(24.dp))
-            action()
-        }
     }
 }
 
@@ -339,138 +290,55 @@ fun EmptyHint(
 @Composable
 fun PartnerMark(name: String, modifier: Modifier = Modifier) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = Icons.Outlined.FavoriteBorder,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = name.ifBlank { "来自对方" },
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(name.ifBlank { "来自对方" }, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 144.dp))
     }
 }
 
-// ---------- 标题图标：全 APP 统一的尺寸与间距 ----------
-/** 主标题（headlineMedium 30sp）前的图标 24dp */
-val PageIconSize: Dp = 24.dp
-/** TopAppBar 标题（titleMedium 16sp）前的图标 20dp */
-val BarIconSize: Dp = 20.dp
-/** 图标与标题文字的固定间距（8dp 网格） */
-val PageIconGap: Dp = 8.dp
-
-/**
- * 标题行：线图标 + 标题文字（v3.0 由 EmojiTitle 更换而来）。
- * 三个模块的标题图标与底部导航栏同一套（Checkroom / Restaurant / FavoriteBorder），
- * 全 APP 只有一套图标语言。
- */
-@Composable
-fun IconTitle(
-    icon: ImageVector,
-    text: String,
-    modifier: Modifier = Modifier,
-    style: ComposeTextStyle = MaterialTheme.typography.headlineMedium,
-    iconSize: Dp = PageIconSize,
-    iconGap: Dp = PageIconGap,
-    iconTint: Color = MaterialTheme.colorScheme.onSurface,
-    maxLines: Int = 1,
-    // 收起态传 false：不参与断行计算，宽度不够直接裁切
-    softWrap: Boolean = true
-) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(iconSize)
-        )
-        Spacer(Modifier.width(iconGap))
-        Text(
-            text,
-            style = style,
-            color = Color.Unspecified,
-            maxLines = maxLines,
-            softWrap = softWrap,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-/**
- * 页面头部：只显示标题与可选菜单；滚动动画由外层顶栏和日期区承载。
- *
- * v3.0：自身不画背景（由外层 [FloatingTopBar] 的实色卡面承载），避免两层底色叠加；
- * 标题图标由 emoji 换成与底部导航同套的线性图标。
- * v4.2.2：设置入口统一收进侧边菜单，标题行不再承担「长按进设置」的隐藏手势。
- */
+/** 大标题与右侧设置、新增操作；滚动时只压缩标题字号。 */
 @Composable
 fun PageHeader(
     title: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
     collapsed: Boolean = false,
     onClick: (() -> Unit)? = null,
-    onOpenMenu: (() -> Unit)? = null
+    onOpenSettings: (() -> Unit)? = null,
+    onAdd: (() -> Unit)? = null
 ) {
-    val headerPress = remember { MutableInteractionSource() }
-    val titleStyle = if (
-        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 360
-    ) {
-        MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp)
-    } else {
-        MaterialTheme.typography.headlineMedium
-    }
+    val titleSize by animateFloatAsState(if (collapsed) 20f else 32f, label = "pageTitleSize")
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                start = if (onOpenMenu != null) 8.dp else 16.dp,
-                // 收起成胶囊时右侧留白与左侧对齐，标题不会挤在圆角上
-                end = if (collapsed) 16.dp else 8.dp,
-                top = 8.dp,
-                bottom = 8.dp
-            ),
+        modifier = modifier.fillMaxWidth().heightIn(min = 64.dp)
+            .padding(top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (onOpenMenu != null) {
-            PaperIconButton(onClick = onOpenMenu) {
-                Icon(
-                    imageVector = Icons.Outlined.Menu,
-                    contentDescription = "打开设置菜单",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-        }
-        // 菜单独立响应点击，收起态仅点标题回到列表顶部。
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .then(
-                    if (onClick != null) {
-                        Modifier
-                            .pressTint(headerPress, cornerRadius = 12.dp)
-                            .clickable(
-                                interactionSource = headerPress,
-                                indication = null,
-                                onClick = onClick
-                            )
-                    } else Modifier
-                )
+        Box(
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                .then(if (onClick != null) Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null, role = Role.Button, onClick = onClick) else Modifier),
+            contentAlignment = Alignment.CenterStart
         ) {
-            if (icon == null) {
-                Text(title, style = titleStyle)
-            } else {
-                IconTitle(
-                    icon = icon,
-                    text = title,
-                    style = titleStyle,
-                    softWrap = !collapsed
-                )
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = titleSize.sp, lineHeight = (titleSize * 1.2f).sp,
+                    fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
+        if (onOpenSettings != null) {
+            IconButton(onClick = onOpenSettings, modifier = Modifier.size(48.dp)) {
+                ArtworkIcon(Icons.Outlined.Settings, contentDescription = "设置",
+                    tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+            }
+        }
+        if (onAdd != null) {
+            IconButton(onClick = onAdd, modifier = Modifier.size(48.dp)) {
+                ArtworkIcon(Icons.Outlined.Add, contentDescription = "新增记录",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             }
         }
     }
@@ -503,27 +371,21 @@ fun DateNavRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // v4.0：可点区 40→48dp（8dp 网格）
-        PaperIconButton(onClick = onPrev) {
-            Icon(Icons.Outlined.ChevronLeft, contentDescription = prevContentDescription, modifier = Modifier.size(20.dp))
+        IconButton(onClick = onPrev, modifier = Modifier.size(48.dp)) {
+            ArtworkIcon(Icons.Outlined.ChevronLeft, contentDescription = prevContentDescription, modifier = Modifier.size(20.dp))
         }
-        val labelPress = remember { MutableInteractionSource() }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .clip(RoundedCornerShape(10.dp))
-                .pressTint(labelPress, cornerRadius = 10.dp)
-                .clickable(
-                    interactionSource = labelPress,
-                    indication = null,
-                    onClick = onLabelClick
-                )
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .heightIn(min = 48.dp)
+                .clickable(onClick = onLabelClick),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 label,
                 style = DateNumberStyle,
-                maxLines = 1,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
                 overflow = TextOverflow.Ellipsis
             )
             if (!subLabel.isNullOrBlank()) {
@@ -536,7 +398,7 @@ fun DateNavRow(
                         Text(
                             subLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = LocalAppPalette.current.accentText,
+                            color = scheme.primary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -547,15 +409,15 @@ fun DateNavRow(
                     Text(
                         subLabel,
                         style = MaterialTheme.typography.labelSmall,
-                        color = scheme.onSurfaceVariant,
+                        color = scheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         }
-        PaperIconButton(onClick = onNext) {
-            Icon(Icons.Outlined.ChevronRight, contentDescription = nextContentDescription, modifier = Modifier.size(20.dp))
+        IconButton(onClick = onNext, modifier = Modifier.size(48.dp)) {
+            ArtworkIcon(Icons.Outlined.ChevronRight, contentDescription = nextContentDescription, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -588,15 +450,13 @@ fun DayStrip(
     LazyRow(
         state = listState,
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 24.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(items = days, key = { it.toString() }) { day ->
             val isSelected = day == selected
             val isToday = day == today
             val hasPhoto = day in daysWithPhotos
-            val dayPress = remember { MutableInteractionSource() }
-            val dayShape = RoundedCornerShape(10.dp)
             val textColor = when {
                 isSelected -> scheme.primary
                 isToday -> scheme.primary
@@ -605,23 +465,33 @@ fun DayStrip(
             Column(
                 modifier = Modifier
                     .width(48.dp)
-                    .clip(dayShape)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(
-                        if (isSelected) LocalAppPalette.current.elevatedSurface else Color.Transparent
+                        if (isSelected) scheme.primaryContainer else Color.Transparent
                     )
-                    .border(
-                        width = 1.dp,
-                        color = if (isSelected || isToday) scheme.primary else Color.Transparent,
-                        shape = dayShape
+                    .then(
+                        if (isToday && !isSelected) {
+                            Modifier.border(
+                                width = 1.dp,
+                                color = scheme.primary.copy(alpha = 0.40f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        } else Modifier
                     )
-                    .pressTint(dayPress, cornerRadius = 10.dp)
                     .selectable(
                         selected = isSelected,
-                        interactionSource = dayPress,
+                        interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = { onSelect(day) },
                         role = Role.Tab
                     )
+                    .semantics {
+                        contentDescription = day.toCnFull()
+                        stateDescription = buildList {
+                            if (isToday) add("今天")
+                            if (hasPhoto) add("有记录")
+                        }.joinToString("，")
+                    }
                     .padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -641,11 +511,7 @@ fun DayStrip(
                         .size(4.dp)
                         .clip(CircleShape)
                         .background(
-                            if (hasPhoto) {
-                                if (isSelected) scheme.primary else LocalAppPalette.current.mutedText
-                            } else {
-                                Color.Transparent
-                            }
+                            if (hasPhoto) scheme.primary.copy(alpha = 0.7f) else Color.Transparent
                         )
                 )
             }
@@ -672,11 +538,11 @@ fun AppMonthPickerDialog(
         text = {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    PaperIconButton(
+                    IconButton(
                         onClick = { if (year > minYear) year-- },
                         enabled = year > minYear
                     ) {
-                        Icon(Icons.Outlined.ChevronLeft, contentDescription = "上一年")
+                        ArtworkIcon(Icons.Outlined.ChevronLeft, contentDescription = "上一年")
                     }
                     Text(
                         "${year}年",
@@ -684,11 +550,11 @@ fun AppMonthPickerDialog(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
                     )
-                    PaperIconButton(
+                    IconButton(
                         onClick = { if (year < maxYear) year++ },
                         enabled = year < maxYear
                     ) {
-                        Icon(Icons.Outlined.ChevronRight, contentDescription = "下一年")
+                        ArtworkIcon(Icons.Outlined.ChevronRight, contentDescription = "下一年")
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -698,27 +564,17 @@ fun AppMonthPickerDialog(
                             for (col in 0..2) {
                                 val m = row * 3 + col + 1
                                 val selected = m == month
-                                val monthPress = remember { MutableInteractionSource() }
-                                val monthShape = RoundedCornerShape(10.dp)
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .heightIn(min = 48.dp)
-                                        .clip(monthShape)
-                                        .background(
-                                            if (selected) LocalAppPalette.current.elevatedSurface
-                                            else Color.Transparent
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .then(
+                                            if (selected) {
+                                                Modifier.background(scheme.primary.copy(alpha = 0.18f))
+                                            } else Modifier
                                         )
-                                        .border(
-                                            1.dp,
-                                            if (selected) scheme.primary else Color.Transparent,
-                                            monthShape
-                                        )
-                                        .pressTint(monthPress, cornerRadius = 10.dp)
-                                        .clickable(
-                                            interactionSource = monthPress,
-                                            indication = null
-                                        ) { month = m }
+                                        .clickable { month = m }
                                         .padding(vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -786,16 +642,16 @@ fun ConfirmDeleteDialog(visible: Boolean, onConfirm: () -> Unit, onDismiss: () -
 }
 
 /**
- * 同步状态：空闲 / 同步中 / 成功 / 失败。
- * 冲突态暂无引擎信号，P2-6 已移除死分支；将来引擎能报冲突时再加。
+ * 同步状态：空闲 / 同步中 / 成功 / 部分同步 / 失败。
  */
-enum class SyncStatusKind { Idle, Syncing, Success, Failure }
+enum class SyncStatusKind { Idle, Syncing, Success, Partial, Failure }
 
 /**
  * 同步状态条：图标 + 场景化文案 + 可选原因 + 失败重试。
  * - 空闲：灰色小图标「还没同步」
  * - 同步中：环形进度 +「同步中…」（调用方同时禁用触发按钮）
- * - 成功：一行显示最近同步时间，不重复堆叠状态文案
+ * - 成功：绿色对勾 +「刚刚同步」+ 上次时间
+ * - 部分同步：显示待重传记录或本轮跳过的数据
  * - 失败：红色 +「同步失败」+ 简短原因 + 重试按钮
  */
 @Composable
@@ -807,62 +663,63 @@ fun SyncStatusBar(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
-    val palette = LocalAppPalette.current
     val title = when (kind) {
         SyncStatusKind.Idle -> "还没同步"
         SyncStatusKind.Syncing -> "同步中…"
-        SyncStatusKind.Success -> when {
-            subText.isBlank() -> "同步成功"
-            subText == "刚刚同步" -> subText
-            else -> "已同步 · $subText"
-        }
+        SyncStatusKind.Success -> "刚刚同步"
+        SyncStatusKind.Partial -> "部分同步"
         SyncStatusKind.Failure -> "同步失败"
     }
-    val statusColor = when (kind) {
-        SyncStatusKind.Success -> palette.success
+    val iconTint = when (kind) {
+        SyncStatusKind.Success -> if (appPalette.isDark) Color(0xFF83CAA5) else SuccessGreen
+        SyncStatusKind.Partial -> MaterialTheme.colorScheme.tertiary
         SyncStatusKind.Failure -> scheme.error
-        SyncStatusKind.Idle -> palette.mutedText
-        SyncStatusKind.Syncing -> palette.mutedText
+        SyncStatusKind.Idle -> scheme.onSurfaceVariant
+        SyncStatusKind.Syncing -> scheme.secondary
     }
-    val titleColor = if (kind == SyncStatusKind.Failure) scheme.error else scheme.onSurface
-    val backgroundColor = when (kind) {
-        SyncStatusKind.Success -> palette.successBackground
-        SyncStatusKind.Failure -> scheme.errorContainer
-        else -> scheme.surface
+    val titleColor = when (kind) {
+        SyncStatusKind.Failure -> scheme.error
+        else -> scheme.onSurface
     }
-    val shape = RoundedCornerShape(10.dp)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(shape)
-            .background(backgroundColor)
-            .border(
-                1.dp,
-                if (kind == SyncStatusKind.Failure) scheme.error.copy(alpha = 0.45f) else palette.hairline,
-                shape
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .solidCard(cornerRadius = 16.dp)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(statusColor)
-        )
-        Spacer(Modifier.width(10.dp))
+        if (kind == SyncStatusKind.Syncing) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = scheme.secondary
+            )
+        } else {
+            ArtworkIcon(
+                imageVector = when (kind) {
+                    SyncStatusKind.Success -> Icons.Outlined.CheckCircleOutline
+                    SyncStatusKind.Partial -> Icons.Outlined.Warning
+                    SyncStatusKind.Failure -> Icons.Outlined.CloudOff
+                    else -> Icons.Outlined.CloudQueue
+                },
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            val detail = reason?.takeIf { kind == SyncStatusKind.Failure && it.isNotBlank() }
+            val detail = reason?.takeIf { it.isNotBlank() } ?: subText.takeIf { it.isNotBlank() }
             if (detail != null) {
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     detail,
                     style = MaterialTheme.typography.labelSmall,
@@ -872,13 +729,13 @@ fun SyncStatusBar(
                 )
             }
         }
-        if (kind == SyncStatusKind.Failure && onRetry != null) {
+        if (onRetry != null) {
             Spacer(Modifier.width(8.dp))
             SoftCapsuleButton(onClick = onRetry) {
                 Text(
                     "重试",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = scheme.error
+                    style = MaterialTheme.typography.labelLarge,
+                    color = iconTint
                 )
             }
         }
@@ -886,42 +743,41 @@ fun SyncStatusBar(
 }
 
 /**
- * 照片占位：照片文件还没同步到本地时显示，只有「还在路上」和「同步不了」两态。
- * 高度/比例由调用方通过 [modifier] 决定（穿搭 4:5、饮食 90dp、事件 110dp），组件内部不写死。
- * 整块可点击 → 触发 [onRetry]（调用方自己去 enqueueNow + Toast）。
+ * 照片占位只展示真实状态，有同步回调时整张照片提供重试操作及其语义名称。
+ * 高度/比例由调用方通过 [modifier] 决定，组件内部不写死。
  */
 @Composable
 fun PhotoSyncPlaceholder(
     failed: Boolean,
-    onRetry: () -> Unit,
+    onRetry: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
-    val interactionSource = remember { MutableInteractionSource() }
+    val status = if (failed) "照片同步失败" else "照片未同步"
     Box(
         modifier = modifier
-            .background(LocalAppPalette.current.photoPlaceholder)
-            .pressTint(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onRetry
-            ),
+            .background(scheme.surfaceVariant)
+            .then(if (onRetry != null) Modifier.clickable(
+                role = Role.Button, onClickLabel = "重新同步", onClick = onRetry
+            ) else Modifier)
+            .semantics { stateDescription = status },
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = if (failed) Icons.Outlined.CloudOff else Icons.Outlined.CloudSync,
-                contentDescription = null,
-                tint = scheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.height(8.dp))
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
-                text = if (failed) "同步失败，点击重试" else "照片同步中…",
+                text = status,
                 style = MaterialTheme.typography.bodyMedium,
-                color = scheme.onSurface
+                color = scheme.onSurface,
+                textAlign = TextAlign.Center
             )
+            if (onRetry != null) {
+                Text("重试", style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary, textAlign = TextAlign.Center)
+            }
         }
     }
 }
@@ -971,8 +827,6 @@ fun PhotoViewerDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                // 看大图是全幅照片，底与控件恒定：深色 96% 黑 + 白字白图标。
-                // 这里**不跟主题翻**——翻成浅底会把照片边缘洗白，白底上的白图标也会糊掉。
                 .background(Color.Black.copy(alpha = 0.96f))
         ) {
             HorizontalPager(
@@ -1001,7 +855,7 @@ fun PhotoViewerDialog(
                     .padding(8.dp)
                     .size(48.dp)
             ) {
-                Icon(
+                ArtworkIcon(
                     Icons.Outlined.Close,
                     contentDescription = "关闭",
                     tint = Color.White,
@@ -1065,6 +919,7 @@ private fun ZoomablePhoto(file: File, onTap: () -> Unit) {
 /** 照片右上角的小圆底删除键：视觉 32dp，热区 48dp（Android 最小触摸目标）。 */
 @Composable
 private fun PhotoRemoveButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .size(48.dp)
@@ -1075,15 +930,13 @@ private fun PhotoRemoveButton(modifier: Modifier = Modifier, onClick: () -> Unit
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                // 压在缩略图上的移除键：恒定深底白图标，属于规范允许的两处白字/白图标例外
-                .background(Color.Black.copy(alpha = 0.58f))
-                .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape),
+                .background(scheme.surface.copy(alpha = 0.96f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            ArtworkIcon(
                 imageVector = Icons.Outlined.Close,
                 contentDescription = "移除照片",
-                tint = Color.White,
+                tint = scheme.onSurface,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -1120,12 +973,12 @@ fun PhotoNoteCard(
     onPhotosChanged: (List<String>) -> Unit,
     note: String,
     onNoteChange: (String) -> Unit,
-    notePlaceholder: String,
+    noteLabel: String,
     modifier: Modifier = Modifier,
     allowRemove: Boolean = true,
     maxPhotos: Int = 1,
     photoRatio: Float = 4f / 5f,
-    cardCorner: Dp = 12.dp,
+    cardCorner: Dp = 20.dp,
     /** 我是不是上传人；false 时备注只读 */
     noteEditable: Boolean = true,
     /** 备注区标签；空 = 我就是上传人，不贴标签 */
@@ -1138,7 +991,7 @@ fun PhotoNoteCard(
     replyEditable: Boolean = false,
     /** 评论作者昵称；空表示还没有评论 */
     replyAuthorName: String = "",
-    replyPlaceholder: String = "回复一句…",
+    replyLabel: String = "评论",
     /** false 时照片区只保留查看 */
     photoEditable: Boolean = true
 ) {
@@ -1248,10 +1101,10 @@ fun PhotoNoteCard(
                     SoftCapsuleButton(
                         onClick = launchGallery,
                         modifier = Modifier.weight(1f),
-                        cornerRadius = 10.dp,
+                        cornerRadius = 12.dp,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
-                        Icon(
+                        ArtworkIcon(
                             Icons.Outlined.PhotoLibrary, contentDescription = null,
                             tint = scheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -1260,18 +1113,18 @@ fun PhotoNoteCard(
                         Text(
                             if (maxPhotos > 1) "选照片" else "从相册选择",
                             style = MaterialTheme.typography.labelLarge,
-                            color = LocalContentColor.current,
-                            maxLines = 1,
+                            color = scheme.onSurface,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                     SoftCapsuleButton(
                         onClick = launchCamera,
                         modifier = Modifier.weight(1f),
-                        cornerRadius = 10.dp,
+                        cornerRadius = 12.dp,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
-                        Icon(
+                        ArtworkIcon(
                             Icons.Outlined.PhotoCamera, contentDescription = null,
                             tint = scheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -1280,8 +1133,8 @@ fun PhotoNoteCard(
                         Text(
                             "拍一张",
                             style = MaterialTheme.typography.labelLarge,
-                            color = LocalContentColor.current,
-                            maxLines = 1,
+                            color = scheme.onSurface,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -1295,7 +1148,7 @@ fun PhotoNoteCard(
                         .fillMaxWidth()
                         .padding(16.dp)
                         .aspectRatio(photoRatio)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable { viewerPhoto = photos.first() }
                 ) {
                     PhotoImage(
@@ -1328,7 +1181,7 @@ fun PhotoNoteCard(
                                     modifier = Modifier
                                         .weight(1f)
                                         .aspectRatio(photoRatio)
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .clickable { viewerPhoto = name }
                                 ) {
                                     PhotoImage(
@@ -1363,10 +1216,10 @@ fun PhotoNoteCard(
                 SoftCapsuleButton(
                     onClick = launchGallery,
                     modifier = Modifier.weight(1f),
-                    cornerRadius = 10.dp,
+                    cornerRadius = 12.dp,
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    Icon(
+                    ArtworkIcon(
                         Icons.Outlined.PhotoLibrary, contentDescription = null,
                         tint = scheme.primary,
                         modifier = Modifier.size(16.dp)
@@ -1375,18 +1228,18 @@ fun PhotoNoteCard(
                     Text(
                         if (maxPhotos > 1) "再加" else "换一张",
                         style = MaterialTheme.typography.labelLarge,
-                        color = LocalContentColor.current,
-                        maxLines = 1,
+                        color = scheme.onSurface,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
                 SoftCapsuleButton(
                     onClick = launchCamera,
                     modifier = Modifier.weight(1f),
-                    cornerRadius = 10.dp,
+                    cornerRadius = 12.dp,
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    Icon(
+                    ArtworkIcon(
                         Icons.Outlined.PhotoCamera, contentDescription = null,
                         tint = scheme.primary,
                         modifier = Modifier.size(16.dp)
@@ -1395,8 +1248,8 @@ fun PhotoNoteCard(
                     Text(
                         "拍一张",
                         style = MaterialTheme.typography.labelLarge,
-                        color = LocalContentColor.current,
-                        maxLines = 1,
+                        color = scheme.onSurface,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -1404,14 +1257,14 @@ fun PhotoNoteCard(
                     SoftCapsuleButton(
                         onClick = { onPhotosChanged(emptyList()) },
                         modifier = Modifier.weight(1f),
-                        cornerRadius = 10.dp,
+                        cornerRadius = 12.dp,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
                         Text(
                             "移除",
                             style = MaterialTheme.typography.labelLarge,
                             color = scheme.error,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -1430,26 +1283,22 @@ fun PhotoNoteCard(
                 Hairline(scheme)
             }
             TextNoteBlock(
-                label = noteAuthorName.takeIf { it.isNotBlank() }?.let { "$it 的备注" },
+                label = noteLabel,
+                authorName = noteAuthorName,
                 value = note,
                 onValueChange = onNoteChange,
-                placeholder = notePlaceholder,
                 editable = noteEditable,
-                accent = scheme.onSurfaceVariant
             )
         }
 
         if (hasReplyBlock) {
             Hairline(scheme)
             TextNoteBlock(
-                label = replyAuthorName.takeIf { it.isNotBlank() }?.let { "$it 的评论" }
-                    ?: if (replyEditable) "写点评论" else "ta 的评论",
+                label = replyLabel,
+                authorName = replyAuthorName,
                 value = reply,
                 onValueChange = { onReplyChange?.invoke(it) },
-                placeholder = replyPlaceholder,
                 editable = replyEditable,
-                accent = scheme.onSurfaceVariant,
-                leadingIcon = Icons.Outlined.ChatBubbleOutline
             )
         }
     }
@@ -1463,149 +1312,30 @@ private fun Hairline(scheme: ColorScheme) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .height(1.dp)
-            .background(LocalAppPalette.current.hairline)
+            .background(appPalette.hairline)
     )
 }
 
-/**
- * 单个文字区块：可编辑时是「折叠成一行 → 点开铺三行」的输入框，
- * 只读时是一段普通文字（带可选小标签）。
- *
- * 折叠逻辑的坑（v2.6.0 真实闪退，务必保留注释）：
- * 不能在收起态的点击回调里直接 `requestFocus()` —— 那一刻 TextField 还没上树，
- * FocusRequester 没有目标节点，会抛 IllegalStateException: FocusRequester is not initialized。
- * 必须「记下待聚焦意图 → 等 TextField 组合完成后再聚焦」。
- * 另外 `onFocusChanged` 在 TextField 首次上树时会先回调一次「未聚焦」，
- * 不加 wasFocused 守卫的话点一下会瞬间弹回去，看起来像没反应。
- */
+/** 编辑区一直可见，字段名称与语义稳定，避免折叠输入的焦点竞态。 */
 @Composable
 private fun TextNoteBlock(
-    label: String?,
+    label: String,
+    authorName: String,
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String,
-    editable: Boolean,
-    accent: Color,
-    leadingIcon: ImageVector? = null
+    editable: Boolean
 ) {
-    val scheme = MaterialTheme.colorScheme
-    val focusRequester = remember { FocusRequester() }
-    var expanded by remember { mutableStateOf(value.isNotEmpty()) }
-    var pendingFocus by remember { mutableStateOf(false) }
-    var wasFocused by remember { mutableStateOf(false) }
-
-    LaunchedEffect(value.isNotEmpty()) {
-        if (value.isNotEmpty()) expanded = true
-    }
-    // "写点备注（可选），比如：..." -> 收起态只显示逗号前半句，示例留给展开态
-    val shortHint = remember(placeholder) {
-        placeholder.substringBefore('，').substringBefore(',')
-    }
-
-    Column(modifier = Modifier.animateContentSize()) {
-        // ---------- 只读：一段文字，不上输入框 ----------
-        if (!editable) {
-            if (value.isNotEmpty()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    if (label != null) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = scheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    Text(
-                        value,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = scheme.onSurface
-                    )
-                }
-            }
-            return@Column
+    if (!editable && value.isBlank()) return
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (authorName.isNotBlank()) {
+            Text(authorName, style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        // ---------- 可编辑：折叠 / 展开 ----------
-        if (!expanded) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .clickable {
-                        expanded = true
-                        pendingFocus = true
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = leadingIcon ?: Icons.Outlined.Add,
-                    contentDescription = null,
-                    tint = scheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    shortHint,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+        if (editable) {
+            RecordTextField(label, value, onValueChange, singleLine = false, minLines = 3)
         } else {
-            LaunchedEffect(pendingFocus) {
-                if (pendingFocus) {
-                    runCatching { focusRequester.requestFocus() }
-                    pendingFocus = false
-                }
-            }
-            Column {
-                if (label != null) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = scheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
-                    )
-                }
-                TextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    placeholder = {
-                        Text(
-                            placeholder,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = scheme.onSurfaceVariant
-                        )
-                    },
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { state ->
-                            // 失焦且没写东西就收回去，回到 41dp 的紧凑态
-                            if (state.isFocused) {
-                                wasFocused = true
-                            } else if (wasFocused && value.isEmpty()) {
-                                expanded = false
-                                wasFocused = false
-                            }
-                        },
-                    minLines = 3,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        errorContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = Color.Transparent,
-                        cursorColor = scheme.primary
-                    )
-                )
-            }
+            Text(value, style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -1624,7 +1354,7 @@ fun ReadOnlyNote(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
+            .solidCard(cornerRadius = 16.dp)
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         if (label != null) {
@@ -1643,126 +1373,63 @@ fun ReadOnlyNote(
     }
 }
 
-/**
- * 评论区（v2.8.0）：一条记录下「对方」写的话。
- *
- * 与上传人的备注区是**两个不同的字段**（[com.thecutestgirl.app.data.MealRecord.reply]），
- * 各自带时间戳，同步时按字段合并，两人同时写字不会互相覆盖。
- *
- * @param editable 我是不是「对方」。上传人视角传 false，只看不写。
- */
+/** 评论只有对方可编辑；只读空评论不占页面。 */
 @Composable
 fun CommentField(
     value: String,
     onValueChange: (String) -> Unit,
     editable: Boolean,
     modifier: Modifier = Modifier,
-    placeholder: String = "说点什么…"
+    authorName: String = ""
 ) {
-    val scheme = MaterialTheme.colorScheme
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
-            .focusRing(focused, 12.dp)
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-    ) {
-        Text(
-            if (editable) "写点评论" else "ta 的评论",
-            style = MaterialTheme.typography.labelMedium,
-            color = scheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(4.dp))
+    if (!editable && value.isBlank()) return
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (editable) {
-            Box {
-                if (value.isEmpty()) {
-                    Text(
-                        placeholder,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = LocalAppPalette.current.mutedText
-                    )
-                }
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    minLines = 2,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
-                    cursorBrush = SolidColor(scheme.primary),
-                    interactionSource = interactionSource,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            if (authorName.isNotBlank()) Text(authorName,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            RecordTextField("评论", value, onValueChange, singleLine = false, minLines = 2)
         } else {
-            Text(
-                value.ifBlank { "还没有评论" },
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (value.isBlank()) LocalAppPalette.current.mutedText
-                else scheme.onSurface
-            )
+            ReadOnlyNote(authorName.takeIf { it.isNotBlank() }, value)
         }
     }
 }
 
-/**
- * 无框输入卡（v2.5.2 新增）：一个实体卡片 + 可选 12sp 灰标签 + 无描边输入。
- *
- * 存在的理由：编辑页原来用 Material3 的 [OutlinedTextField]，自带一圈方框 + 浮动 label，
- * 和全站「实体卡 + 发丝线 + 无框输入」的语言对不上，一进编辑页就像换了个 App。
- * 这里把「框」交给卡片本身，输入区不再画任何描边，只保留 1dp 主色光标。
- *
- * @param label 卡片内的小标签（如「标题」），null 表示不要标签
- * @param minLines 最小行数，>1 时自动多行（备注类）
- */
+/** 新增与编辑共用同一字段：名称常驻，空值和输入后都可被读屏与自动化识别。 */
 @Composable
-fun PlainField(
+internal fun RecordTextField(
+    label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String,
     modifier: Modifier = Modifier,
-    label: String? = null,
     singleLine: Boolean = true,
     minLines: Int = 1,
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     val scheme = MaterialTheme.colorScheme
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
-            .focusRing(focused, 12.dp)
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-    ) {
-        if (label != null) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelMedium,
-                color = scheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-        }
-        Box {
-            if (value.isEmpty()) {
-                Text(
-                    placeholder,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = LocalAppPalette.current.mutedText
-                )
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = singleLine,
-                minLines = minLines,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
-                cursorBrush = SolidColor(scheme.primary),
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                interactionSource = interactionSource,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+        .background(scheme.surfaceVariant).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant)
+        BasicTextField(
+            value = value, onValueChange = onValueChange, singleLine = singleLine,
+            minLines = if (singleLine) 1 else minLines,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
+            cursorBrush = SolidColor(scheme.primary),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                .semantics { contentDescription = label }
+        )
     }
 }
+
+@Composable
+fun PlainField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    keyboardType: KeyboardType = KeyboardType.Text
+) = RecordTextField(label, value, onValueChange, modifier, singleLine, minLines, keyboardType)

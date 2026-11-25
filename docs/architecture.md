@@ -1,6 +1,6 @@
 # 架构说明（the cutest girl）
 
-> 当前版本 4.3.1（versionCode 45）｜最后更新 2026-11-17
+> 当前版本 5.0.0（versionCode 46）｜最后更新 2026-11-25；本版构建、签名核验与测试结果见第 6 节。
 
 ## 1. 总览
 
@@ -13,12 +13,14 @@
 - Coil 2.7（照片）
 - Haze 1.1.1（仅原版悬浮玻璃底部导航栏使用）
 
+5.0.0 将全界面升级与其依赖的 ZIP 备份恢复、`Partial` 同步状态和相关回归支持一并交付。这些配套数据/同步实现此前已存在于工作区，本次提交包含完整功能代码。
+
 包结构：
 
 ```
 com.thecutestgirl.app/
 ├── MainActivity.kt        主题、通知落点、启动维护（草稿清理、同步排单）
-├── data/                  Room 实体/DAO/迁移、照片、设置、备份导出
+├── data/                  Room 实体/DAO/迁移、照片、设置、备份导出与恢复
 ├── sync/                  WebDAV、同步引擎、状态/错误模型、WorkManager
 └── ui/                    AppRoot + 页面 + 通用组件 + 主题
 ```
@@ -44,10 +46,12 @@ SharedPreferences 按「能不能进备份」拆文件：
 | --- | --- | --- |
 | `identity.xml` | `device_id`、`my_name`、`propagated_name` | 包含 |
 | `dav_secret.xml` | `webdav_pass`（Keystore AES-GCM 密文） | 排除 |
-| `settings.xml` | `webdav_url`、`webdav_user`、同步状态/时间 | 包含 |
+| `settings.xml` | `webdav_url`、`webdav_user`、同步状态/时间、本机 `theme_mode` | 包含 |
 | `sync_state.xml` | 文件指纹、确认集、通知去重、dirsReady、维护时间 | 排除 |
 
 旧版本的 `device_id/my_name/propagated_name/webdav_pass` 在读取时自动迁移到新文件，并从 `settings.xml` 删除。
+
+`theme_mode` 由 `ThemeStore` 管理，仅为本机偏好，不进入记录同步或 ZIP 的 `identity.json`。
 
 ### 照片
 
@@ -61,6 +65,8 @@ SharedPreferences 按「能不能进备份」拆文件：
 ### 备份
 
 `BackupExporter.export()`：`wal_checkpoint(TRUNCATE)` 后打包 DB（含 wal/shm 兜底）+ 非草稿照片 + `manifest.json`（含 `davUrl/davUser`）+ `identity.json`（`deviceId/myName/propagatedName`）。不包含密码与同步账本。
+
+`BackupImporter.prepare()` 在临时目录检查 ZIP 清单、数据库完整性、记录/照片数量和原身份，返回供界面确认的预览；`restore()` 恢复记录、墓碑、照片和原设备身份。只允许在未配置云同步且没有本机记录/墓碑的安装中恢复；界面确认数量和缺图信息后执行，恢复完成后重新配置同步。失败清理暂存照片并恢复原身份，不把界面预览当成已恢复。
 
 ## 3. 同步
 
@@ -106,6 +112,7 @@ SharedPreferences 按「能不能进备份」拆文件：
 
 ### 错误与重试
 
+- `SyncPhase` 包含 `Idle / Running / Success / Partial / Failure`；`SyncStatus` 通过 `pending` 与 `skipped` 区分待重传和异常跳过。单轮虽成功但仍有待处理项时标为 `Partial`，不显示为完整成功；重启时从持久摘要恢复这部分状态。
 - 401/403 → Auth；404 → NotFound；507 → Quota；解析失败 → Parse；其余 → Network
 - Auth/Quota/Parse：不重试（状态条显示原因）；Network：指数退避
 - 目录 404（records/photos listDir）：清 `dirsReady`，下一轮重建；单条记录 404：跳过，不重置
@@ -113,23 +120,23 @@ SharedPreferences 按「能不能进备份」拆文件：
 
 ## 4. UI 层
 
-- `AppRoot`：原版悬浮玻璃导航 + NavHost；根层 `paperBackground()` 统一铺页面纸纹，并保留底栏 Haze 采样源；通知落点 `pendingTarget`（route/date/recordId），页面消费后清空
-- 全局设置抽屉：`AppRoot` 用 `ModalNavigationDrawer` 包住 Scaffold，抽屉内容为 `SettingsMenuDrawer`；`gesturesEnabled = currentRoute == "outfit"`（只有穿搭页可边缘滑开）；返回键的 `BackHandler` 注册在 `drawerContent` 内、NavHost 之后，保证先关抽屉；内容按 `targetValue` 做 240ms 淡入 + 18dp 位移
-- 设置路由：五个独立页面 `settings/profile`、`settings/sync`、`settings/backup`、`settings/battery`、`settings/appearance`；`SettingsModule` 枚举提供标题/图标/路由，每个页面只呈现本模块内容并有独立顶栏与返回栈
-- 菜单：只放五个设置模块，不混入「穿搭 / 饮食 / 点滴」；菜单行显示昵称与同步状态，打开抽屉时重读；外观行尾直接显示当前档位（反应式收集 `ThemeStore.mode`，不靠 `refreshKey`）
-- 主题：`MainActivity` 收集 `ThemeStore.mode` + `isSystemInDarkTheme()` → `ThemeMode.resolve()` → `TheCutestGirlTheme(darkTheme)`；材质色经 `LocalAppPalette` 下发，Activity 侧的系统栏图标与窗口底色由 `applyWindowChrome` 同步。档位存 `settings.xml`，本机偏好，不进同步与备份
-- 列表页：`FloatingTopBar` + LazyColumn + 页面专属内容；穿搭页分别记录展开 / 收起高度，菜单移入 `PageHeader`，与日期区共用外框；饮食 / 点滴没有菜单入口。页头只保留标题，收起态点标题回到顶部
-- 新增记录：统一 `AddRecordSheet`（约 82% 屏高、不透明抬升面、32% / 48% 遮罩、放弃确认，IME 按可用高度重算）；编辑已有记录仍走全屏页
-- 对方编辑页：标题/日期只读，不显示「修改」；保存只写 `reply`
-- 表单：`SavedStateHandle` + Compose 状态双写（`ui/SavedStateValues.kt`）
-- 同步状态：设置页/三个列表页收集 `SyncStatusStore.status`
+- `AppRoot`：Scaffold + NavHost +「穿搭 / 饮食 / 点滴」悬浮胶囊导航；内容使用实色主题表面，根层提供底栏 Haze 采样源。通知落点 `pendingTarget`（route/date/recordId）交给目标页消费后清空。
+- 统一设置首页：三个主页右上角设置按钮均进入 `settings`，取代旧侧边抽屉；设置首页分组显示昵称、外观和有效同步/权限状态，返回后恢复原主栏。
+- 五个设置模块：`settings/profile`、`settings/appearance`、`settings/sync`、`settings/backup`、`settings/battery`，各有独立页面和返回栈；`SettingsModule` 只提供 `key/title/icon` 与派生路由。
+- 主题：`ThemeStore.mode` 暴露 SYSTEM/LIGHT/DARK 三档 `StateFlow`，默认跟随系统；Material `ColorScheme` 管理业务色与表面，`AppPalette` 管理发丝线、玻璃和滑块材质。`MainActivity` 稳定保留根导航、处理 `uiMode` 并更新系统栏及窗口底色。手动主题与系统相反时，OS 启动首帧仍可能使用系统色。
+- 主页：`FloatingTopBar` + `PageHeader` + LazyColumn；共用大标题、右上设置/新增与收起态点击回顶部。穿搭保留月份/日期条，饮食保留日期与三餐，点滴展示纪念日与日常。展开页头高度用 `rememberSaveable` 与列表位置一起恢复，避免设置返回折叠列表时顶部留白归零。
+- 底栏：保留滑块、点按切换、长按拖动、触觉与弹簧形变；图标下显示中文标签，按可用宽度与字体大小调整。真实模糊只用于导航，内容卡默认实色无投影。
+- 图标与字体：`ArtworkIcon` 统一映射 13 套磨砂素材（包括 `Add`），未覆盖符号回退原生图标；原图与来源清单见 `output/imagegen/ios-icons/`，实际模型 ID 未暴露。全部文字使用 `FontFamily.Default` 跟随系统。
+- 新增记录：统一 `AddRecordSheet`（按 IME 后可用区域计算约 86%、最大 720dp，内容可滚动、保存区固定、离开放弃确认）；编辑已有记录走全屏页。`SheetTextField` 与 `PlainField` 复用 `RecordTextField`，常驻字段名与 `BasicTextField.contentDescription` 保持一致；设置字段同样保留命名和至少 48dp 热区。
+- 文案与权限：删除标语、示例和重复说明，保留真实作者、字段名、日期、数量、错误和必要确认；对方记录的标题/日期只读，保存只写 `reply`。表单继续用 `SavedStateHandle` 与 Compose 状态双写（`ui/SavedStateValues.kt`），云同步配置草稿放在页面 ViewModel 内存中。
+- 同步状态：设置首页和云同步页面收集 `SyncStatusStore.status`，列表页据此显示照片同步失败与重试；`Partial`、失败和保存/恢复忙碌态不因精简文案而合并。
 
 ## 5. 约束
 
 - 不引入 Hilt/Koin、Retrofit、新 UI 库；新增依赖需用户同意
 - 不改同步协议/字段语义/墓碑规则，除非有迁移与回归
 - 所有文案中文、无 emoji 当功能图标；品牌方向见 `docs/design-system.md`
-- 改动同步/删除/解析后必须跑设备回归 32 项
+- 改动同步/删除/解析后必须跑当前 33 项设备回归（含备份恢复）
 
 ## 6. 验证命令
 
@@ -139,9 +146,13 @@ SharedPreferences 按「能不能进备份」拆文件：
 
 python tools/sync_test_server.py --port 18765 --root .verification/dav
 ./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest -PverificationApp --offline
-adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v4.3.1_debug.apk
+adb install -r -t app/build/outputs/apk/debug/the_cutest_girl_v5.0.0_debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -r com.thecutestgirl.app.verification.test/com.thecutestgirl.app.sync.SyncRegressionRunner
 ```
 
 跑完回归后必须用不带 `-PverificationApp` 的命令重新出正式包。
+
+普通 debug 文件名随 `versionName` 和变体生成；5.0.0（46）沿用 4.3.1 固定签名，证书 SHA-256 为 `b57546d5a5d3b7e4f395bded269c37ecb34cd7bc22cd9676d573588446221547`。5.0.0 已完成 Kotlin / AndroidTest 编译、19 项 JVM 单测、lint（0 错误 / 6 警告 / 2 信息）与独立 `.verification` 模拟器完整设备同步/备份回归 33 / 33，测试后重建正常包并通过 apksigner v2 及固定证书校验。交付产物为 `deliverables/the_cutest_girl_v5.0.0.apk`，证据见 `deliverables/release-v5.0.0.json`。
+
+41 项 UI 场景与原始截图是在升级版本号前、同一功能代码的 4.3.1（45）构建上完成，详见 `deliverables/ui-refinement/validation.md`。这批 UI 场景没有全部在最终 5.0.0 APK 上重跑，不能与本版 33 项设备同步/备份回归混为同一套检查。

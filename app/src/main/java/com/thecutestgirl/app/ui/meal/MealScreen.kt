@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,13 +33,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.WbTwilight
-import androidx.compose.material3.Icon
+import com.thecutestgirl.app.ui.components.ArtworkIcon
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +52,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -77,8 +80,8 @@ import com.thecutestgirl.app.ui.components.SheetTextField
 import com.thecutestgirl.app.ui.components.photoFrame
 import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import com.thecutestgirl.app.ui.components.PageHeader
+import com.thecutestgirl.app.ui.components.MatchDialogSystemBars
 import com.thecutestgirl.app.ui.components.PartnerMark
 import com.thecutestgirl.app.ui.components.PhotoImage
 import com.thecutestgirl.app.ui.components.rememberToday
@@ -87,17 +90,12 @@ import com.thecutestgirl.app.ui.components.UiSpringStiffness
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.PhotoViewerDialog
-import com.thecutestgirl.app.ui.components.pressTint
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
 import java.time.LocalDate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.draw.drawBehind
-import com.thecutestgirl.app.ui.components.dashedCard
 
 /** 餐次图标：日出 / 太阳 / 月牙（与整体线性图标体系统一） */
 fun mealIcon(mealType: Int): ImageVector = when (mealType) {
@@ -107,8 +105,7 @@ fun mealIcon(mealType: Int): ImageVector = when (mealType) {
 }
 
 /**
- * 双色餐次图标：线性描边 + 主色（粉色）柔底。
- * v4.1 浅色品牌起全站强调色统一为主粉，不再按模块分色。
+ * 餐次图标采用统一的中性底，粉色留给操作与选中态。
  */
 @Composable
 fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifier) {
@@ -117,9 +114,9 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
             Modifier
                 .size(size * 1.6f)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         )
-        Icon(
+        ArtworkIcon(
             imageVector = mealIcon(mealType),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface,
@@ -130,7 +127,7 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
 
 /**
  * v2.5.3：顶栏高度改实测（原因同穿搭页）。原来按字号手算的 140dp，只要动一次
- * PageHeader 的内边距或标题字号就会失效，表现为「早餐」被顶栏卡片压住。
+ * PageHeader 的内边距或副标题字号就会失效，表现为「早餐」被玻璃卡压住。
  */
 
 /**
@@ -142,10 +139,12 @@ fun MealDuotoneIcon(mealType: Int, size: Dp = 20.dp, modifier: Modifier = Modifi
 /**
  * @param initialDate 从通知点进来时要落到的日期；null = 用默认（今天）
  */
+@OptIn(ExperimentalMaterial3Api::class)
 fun MealScreen(
     onOpenMeal: (LocalDate, Int, String?) -> Unit,
     initialDate: LocalDate? = null,
-    onInitialTargetConsumed: () -> Unit = {}
+    onInitialTargetConsumed: () -> Unit = {},
+    onOpenSettings: () -> Unit = {}
 ) {
     val vm: MealViewModel = viewModel()
     // 只在**首次**组合时按通知日期定位一次。
@@ -204,10 +203,17 @@ fun MealScreen(
 
     // 新增记录抽屉：统一走 AddRecordSheet，写入复用现有 MealEditViewModel
     val addVm: MealEditViewModel = viewModel()
-    var addMealType by remember { mutableStateOf<Int?>(null) }
+    var showMealTypePicker by rememberSaveable { mutableStateOf(false) }
+    fun openAddSheet(mealType: Int) {
+        addVm.note = ""
+        addVm.photoPath = null
+        addVm.reply = ""
+        addVm.addSheetDate = date
+        addVm.addSheetMealType = mealType
+    }
 
     // 只记录展开态高度：折叠动画期间不再改 contentPadding
-    var expandedHeaderHeightPx by remember { mutableIntStateOf(0) }
+    var expandedHeaderHeightPx by rememberSaveable { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val topArea = with(density) { expandedHeaderHeightPx.toDp() } + 10.dp
 
@@ -220,14 +226,14 @@ fun MealScreen(
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(
-                    start = 24.dp,
-                    end = 24.dp,
+                    start = 20.dp,
+                    end = 20.dp,
                     // 顶部让出实测顶栏高度，首餐卡片不会藏在顶栏底下
                     top = topArea,
                     // 底部留出玻璃导航栏的高度，内容能滚到玻璃底下而不被永久遮住
                     bottom = LocalAppBottomInset.current + 16.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(3) { mealType ->
@@ -240,7 +246,7 @@ fun MealScreen(
                         syncFailed = syncFailed,
                         onRetry = retrySync,
                         onEditMine = { onOpenMeal(date, mealType, mine?.id) },
-                        onAddMine = { addMealType = mealType },
+                        onAddMine = { openAddSheet(mealType) },
                         onOpenTheirs = { record -> onOpenMeal(date, mealType, record.id) },
                         onViewPhoto = { name -> viewerPhoto = name }
                     )
@@ -257,9 +263,10 @@ fun MealScreen(
         ) {
             PageHeader(
                 title = "饮食",
-                icon = Icons.Outlined.Restaurant,
                 collapsed = scrolled,
-                // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
+                onOpenSettings = onOpenSettings,
+                onAdd = { showMealTypePicker = true },
+                // 收起态点标题回到顶部，右侧保留设置与新增。
                 onClick = if (scrolled) ({
                     topBarScope.launch { listState.animateScrollToItem(0) }
                 }) else null
@@ -275,7 +282,7 @@ fun MealScreen(
                 val isToday = date == today
                 DateNavRow(
                     label = "${date.toCnShort()} ${date.toWeekday()}",
-                    // 非当天保留快捷返回按钮；当天不再重复显示一行状态小字。
+                    // 今天时是静态胶囊徽标；不是今天时变成可点的「回到今天」胶囊按钮
                     subLabel = if (isToday) null else "回到今天",
                     subLabelClickable = !isToday,
                     onSubLabelClick = { vm.setDate(LocalDate.now()) },
@@ -289,30 +296,72 @@ fun MealScreen(
         }
     }
 
-    // ---------- 新增记录抽屉（半屏） ----------
-    addMealType?.let { mealType ->
-        LaunchedEffect(mealType) {
-            // 打开时复位表单（同一个 ViewModel 复用，不新增数据逻辑）
-            addVm.note = ""
-            addVm.photoPath = null
-            addVm.reply = ""
+    if (showMealTypePicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showMealTypePicker = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            MatchDialogSystemBars()
+            Column(
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                    .padding(horizontal = 20.dp).padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("记录饮食", style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 8.dp))
+                MEAL_NAMES.forEachIndexed { type, name ->
+                    val mine = meals.firstOrNull { it.mealType == type && it.origin == myDeviceId }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().solidCard(cornerRadius = 16.dp)
+                            .clickable(role = Role.Button) {
+                                showMealTypePicker = false
+                                if (mine != null) onOpenMeal(date, type, mine.id)
+                                else openAddSheet(type)
+                            }
+                            .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MealDuotoneIcon(type)
+                        Spacer(Modifier.width(16.dp))
+                        Text(name, style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f))
+                    }
+                }
+            }
         }
+    }
+
+    // ---------- 新增记录抽屉（半屏） ----------
+    val mealType = addVm.addSheetMealType
+    if (mealType in MEAL_NAMES.indices) {
+        val sheetDate = addVm.addSheetDate
         val dismissSheet = {
             addVm.photoPath?.let { PhotoStore.delete(context, it) }
             addVm.note = ""
             addVm.photoPath = null
-            addMealType = null
+            addVm.addSheetMealType = -1
         }
         AddRecordSheet(
             title = "记录${MEAL_NAMES[mealType]}",
+
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
+            saving = addVm.savingAddSheet,
             hasUnsavedChanges = addVm.photoPath != null || addVm.note.isNotBlank(),
-            onPrimary = { addVm.save(date, mealType) { addMealType = null } }
+            onPrimary = {
+                if (!addVm.savingAddSheet && addVm.canSave) {
+                    addVm.savingAddSheet = true
+                    addVm.save(sheetDate, mealType) {
+                        addVm.addSheetMealType = -1
+                        addVm.savingAddSheet = false
+                    }
+                }
+            }
         ) {
             SheetDateRow(
                 label = "日期",
-                value = "${date.toCnShort()} ${date.toWeekday()}"
+                value = "${sheetDate.toCnShort()} ${sheetDate.toWeekday()}"
             )
             SheetPhotoPicker(
                 photos = listOfNotNull(addVm.photoPath),
@@ -326,7 +375,7 @@ fun MealScreen(
             SheetTextField(
                 value = addVm.note,
                 onValueChange = { addVm.note = it },
-                placeholder = "吃了什么（可选）",
+                label = "内容",
                 singleLine = false,
                 minLines = 3
             )
@@ -347,7 +396,6 @@ private fun MealSection(
     onOpenTheirs: (MealRecord) -> Unit,
     onViewPhoto: (String) -> Unit
 ) {
-    val emptyPress = remember { MutableInteractionSource() }
     Column {
         // 餐次标题
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -360,7 +408,6 @@ private fun MealSection(
         // ---- 我的 ----
         if (mine != null) {
             MealContentCard(
-                ownerLabel = "我的",
                 record = mine,
                 clickable = true,
                 syncFailed = syncFailed,
@@ -369,34 +416,26 @@ private fun MealSection(
                 onViewPhoto = onViewPhoto
             )
         } else {
-            // 未记录：虚线轻量卡（v2.5.3）。三态用三种重量级区分：
-            //   未记录 = 虚线空槽（最轻，暗示「这里可以填」）
-            //   已记录 = 实体白卡 + 照片（最重）
-            //   对方   = 白卡但左侧一条强调色竖条（同重量级，但归属一眼可辨）
+            // 未记录的餐次保留直接添加入口。
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .dashedCard(cornerRadius = 12.dp)
-                    .pressTint(emptyPress, cornerRadius = 12.dp)
-                    .clickable(
-                        interactionSource = emptyPress,
-                        indication = null,
-                        onClick = onAddMine
-                    )
+                    .solidCard(cornerRadius = 20.dp)
+                    .clickable(role = Role.Button, onClick = onAddMine)
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
+                ArtworkIcon(
                     Icons.Outlined.Add,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "记${MEAL_NAMES[mealType]}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -405,81 +444,52 @@ private fun MealSection(
         theirs.forEach { record ->
             Spacer(Modifier.height(8.dp))
             MealContentCard(
-                ownerLabel = null,
+                isPartner = true,
                 record = record,
-                partner = true,
                 clickable = true,
                 syncFailed = syncFailed,
                 onRetry = onRetry,
                 onClick = { onOpenTheirs(record) },
-                onViewPhoto = onViewPhoto,
-                partnerName = record.originName
+                onViewPhoto = onViewPhoto
             )
         }
     }
 }
 
 /**
- * 记录内容卡片：小标签（我的 / 对方昵称）+ 照片 + 文字。
+ * 记录内容卡片：真实作者 + 照片 + 文字，不重复标注“我的”。
  * 我的卡片整卡可点进编辑；对方的卡片点照片看大图。
  */
 @Composable
 private fun MealContentCard(
-    ownerLabel: String?,
     record: MealRecord,
+    isPartner: Boolean = false,
     clickable: Boolean,
-    partner: Boolean = false,
     syncFailed: Boolean,
     onRetry: () -> Unit,
     onClick: () -> Unit,
-    onViewPhoto: (String) -> Unit,
-    partnerName: String = ""
+    onViewPhoto: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val palette = LocalAppPalette.current
-    val cardPress = remember { MutableInteractionSource() }
+    val showAuthor = isPartner || record.originName.isNotBlank()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
-            // 对方的记录：卡片左缘压一条 3dp 中性纸墨竖条，不额外占布局宽度。
-            .drawBehind {
-                if (partner) {
-                    drawRect(
-                        color = palette.paperInk,
-                        topLeft = Offset(0f, 0f),
-                        size = Size(3.dp.toPx(), size.height)
-                    )
-                }
-            }
-            .pressTint(cardPress, cornerRadius = 12.dp)
-            .then(
-                if (clickable) {
-                    Modifier.clickable(
-                        interactionSource = cardPress,
-                        indication = null,
-                        onClick = onClick
-                    )
-                } else {
-                    Modifier
-                }
-            )
+            .solidCard(cornerRadius = 16.dp)
+            .then(if (clickable) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
     ) {
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (ownerLabel != null) {
-                    Text(
-                        ownerLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    PartnerMark(name = partnerName)
+            if (showAuthor) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isPartner) {
+                        PartnerMark(name = record.originName)
+                    } else {
+                        Text(record.originName, style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
             if (record.photoPath != null) {
@@ -489,7 +499,7 @@ private fun MealContentCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(top = if (showAuthor) 0.dp else 8.dp, bottom = 16.dp)
                 ) {
                     if (photoFile.exists()) {
                         PhotoImage(
@@ -499,7 +509,7 @@ private fun MealContentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoShape(10.dp)
+                                .photoShape(16.dp)
                                 .clickable { onViewPhoto(record.photoPath!!) }
                         )
                     } else {
@@ -509,7 +519,7 @@ private fun MealContentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoFrame(10.dp)
+                                .photoFrame(16.dp)
                         )
                     }
                 }
@@ -519,7 +529,8 @@ private fun MealContentCard(
                     record.note,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp,
+                        top = if (!showAuthor && record.photoPath == null) 16.dp else 0.dp, bottom = 16.dp),
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -538,7 +549,7 @@ private fun MealContentCard(
                             .width(2.dp)
                             .fillMaxHeight()
                             .background(
-                                LocalAppPalette.current.hairline,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
                                 RoundedCornerShape(1.dp)
                             )
                     )
@@ -547,9 +558,9 @@ private fun MealContentCard(
                         Text(
                             // 署名必须用 replyName：originName 是「上传人」，
                             // 拿它给评论署名，自己上传的记录收到评论就会显示成「我的评论」
-                            if (record.replyName.isNotBlank()) "${record.replyName} 的评论" else "ta 的评论",
+                            record.replyName.ifBlank { "评论" },
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(

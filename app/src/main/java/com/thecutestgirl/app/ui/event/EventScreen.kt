@@ -4,9 +4,7 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,9 +28,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.thecutestgirl.app.ui.components.ArtworkIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -46,9 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,13 +63,11 @@ import com.thecutestgirl.app.sync.SyncStatusStore
 import com.thecutestgirl.app.ui.components.AddRecordSheet
 import com.thecutestgirl.app.ui.components.AppDatePickerDialog
 import com.thecutestgirl.app.ui.components.EmptyHint
-import com.thecutestgirl.app.ui.components.FabNavSpacing
 import com.thecutestgirl.app.ui.components.FloatingTopBar
 import com.thecutestgirl.app.ui.components.SheetDateRow
 import com.thecutestgirl.app.ui.components.SheetPhotoPicker
-import com.thecutestgirl.app.ui.components.SegmentedChoices
+import com.thecutestgirl.app.ui.components.SheetSegmented
 import com.thecutestgirl.app.ui.components.SheetTextField
-import com.thecutestgirl.app.ui.components.SolidCircleButton
 import com.thecutestgirl.app.ui.components.photoFrame
 import com.thecutestgirl.app.ui.components.photoShape
 import com.thecutestgirl.app.ui.components.LocalAppBottomInset
@@ -88,20 +80,13 @@ import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
 import com.thecutestgirl.app.ui.components.toCnFull
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
-import com.thecutestgirl.app.ui.theme.responsiveBigNumeralStyle
+import com.thecutestgirl.app.ui.theme.BigNumeralStyle
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.rotate
-import com.thecutestgirl.app.ui.components.pressTint
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
-import com.thecutestgirl.app.ui.theme.LocalDegradationLevel
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 
 /** 展开态玻璃顶栏占的高度（面板竖向 6dp×2 + 标题行 56 + 副标题 16 ≈ 78，取 84 略留余量） */
@@ -118,7 +103,8 @@ fun EventScreen(
     onOpen: (String) -> Unit,
     initialDate: LocalDate? = null,
     initialRecordId: String? = null,
-    onInitialTargetConsumed: () -> Unit = {}
+    onInitialTargetConsumed: () -> Unit = {},
+    onOpenSettings: () -> Unit = {}
 ) {
     val vm: EventViewModel = viewModel()
     val events by vm.events.collectAsStateWithLifecycle()
@@ -160,8 +146,17 @@ fun EventScreen(
 
     // 新增记录抽屉：统一 AddRecordSheet，写入复用现有 EventEditViewModel
     val addVm: EventEditViewModel = viewModel()
-    var showAddSheet by remember { mutableStateOf(false) }
-    var showSheetDatePicker by remember { mutableStateOf(false) }
+    var showSheetDatePicker by rememberSaveable { mutableStateOf(false) }
+
+    fun openAddSheet() {
+        addVm.type = EVENT_TYPE_MOMENT
+        addVm.title = ""
+        addVm.description = ""
+        addVm.photoPath = null
+        addVm.date = LocalDate.now()
+        addVm.reply = ""
+        addVm.addSheetOpen = true
+    }
 
     if (showSheetDatePicker) {
         AppDatePickerDialog(
@@ -172,7 +167,7 @@ fun EventScreen(
     }
 
     // 只记录展开态高度：折叠动画期间不再改 contentPadding
-    var expandedHeaderHeightPx by remember { mutableIntStateOf(0) }
+    var expandedHeaderHeightPx by rememberSaveable { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val topArea = with(density) { expandedHeaderHeightPx.toDp() } + 10.dp
 
@@ -205,7 +200,7 @@ fun EventScreen(
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Box(
@@ -221,14 +216,14 @@ fun EventScreen(
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(
-                        start = 24.dp,
-                        end = 24.dp,
+                        start = 20.dp,
+                        end = 20.dp,
                         // 顶部让出实测顶栏高度，首张卡片不会被它挡住
                         top = topArea,
                         // 底部留出玻璃导航栏的高度，最后一张卡片能完整滚出玻璃区域
                         bottom = LocalAppBottomInset.current + 16.dp
                     ),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (anniversaries.isNotEmpty()) {
@@ -251,7 +246,7 @@ fun EventScreen(
                     if (moments.isEmpty()) {
                         item {
                             EmptyHint(
-                                title = "还没有点滴记录",
+                                text = "暂无点滴",
                                 icon = Icons.Outlined.FavoriteBorder
                             )
                         }
@@ -279,65 +274,48 @@ fun EventScreen(
             ) {
                 PageHeader(
                     title = "点滴",
-                    icon = Icons.Outlined.FavoriteBorder,
                     collapsed = scrolled,
-                    // 收起态点一下回列表顶部；设置入口统一在右侧菜单里
+                    onOpenSettings = onOpenSettings,
+                    onAdd = ::openAddSheet,
+                    // 收起态点标题回到顶部，右侧保留设置与新增。
                     onClick = if (scrolled) ({
                         topBarScope.launch { listState.animateScrollToItem(0) }
                     }) else null
                 )
             }
 
-            // 实心圆形 + 号按钮：与穿搭页完全一致（样式/尺寸/热区）；
-            // 底部在导航栏占位之上再抬 16dp，避免紧贴导航栏误触
-            SolidCircleButton(
-                onClick = { showAddSheet = true },
-                contentDescription = "记一笔",
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(
-                        end = 24.dp,
-                        bottom = LocalAppBottomInset.current + FabNavSpacing
-                    )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Add,
-                    contentDescription = "记一笔",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
         }
     }
 
     // ---------- 新增记录抽屉（半屏） ----------
-    if (showAddSheet) {
-        LaunchedEffect(Unit) {
-            // 打开时复位表单（复用 EventEditViewModel，不新增数据逻辑）
-            addVm.type = EVENT_TYPE_MOMENT
-            addVm.title = ""
-            addVm.description = ""
-            addVm.photoPath = null
-            addVm.date = LocalDate.now()
-            addVm.reply = ""
-        }
+    if (addVm.addSheetOpen) {
         val dismissSheet = {
             addVm.photoPath?.let { PhotoStore.delete(context, it) }
             addVm.photoPath = null
             addVm.title = ""
             addVm.description = ""
-            showAddSheet = false
+            addVm.addSheetOpen = false
         }
         val isMoment = addVm.type == EVENT_TYPE_MOMENT
         AddRecordSheet(
             title = if (isMoment) "记一条点滴" else "记一个纪念日",
+
             onDismiss = dismissSheet,
             primaryEnabled = addVm.canSave,
+            saving = addVm.savingAddSheet,
             hasUnsavedChanges = addVm.title.isNotBlank() ||
                 addVm.description.isNotBlank() || addVm.photoPath != null,
-            onPrimary = { addVm.save { showAddSheet = false } }
+            onPrimary = {
+                if (!addVm.savingAddSheet && addVm.canSave) {
+                    addVm.savingAddSheet = true
+                    addVm.save {
+                        addVm.addSheetOpen = false
+                        addVm.savingAddSheet = false
+                    }
+                }
+            }
         ) {
-            SegmentedChoices(
+            SheetSegmented(
                 options = listOf("日常点滴", "纪念日"),
                 selectedIndex = if (isMoment) 0 else 1,
                 onSelect = {
@@ -347,7 +325,7 @@ fun EventScreen(
             SheetTextField(
                 value = addVm.title,
                 onValueChange = { addVm.title = it },
-                placeholder = if (isMoment) "点滴标题" else "纪念日名称"
+                label = if (isMoment) "标题" else "名称"
             )
             SheetDateRow(
                 label = if (isMoment) "发生日期" else "开始日期",
@@ -368,7 +346,7 @@ fun EventScreen(
             SheetTextField(
                 value = addVm.description,
                 onValueChange = { addVm.description = it },
-                placeholder = "备注（可选）",
+                label = "内容",
                 singleLine = false,
                 minLines = 3
             )
@@ -379,161 +357,67 @@ fun EventScreen(
 /** 分组标题：左侧一条 4dp 余烬橙短竖条 + 小号文字，给分组一个视觉锚点 */
 @Composable
 private fun SectionLabel(text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .height(16.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(LocalAppPalette.current.paperInk)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+    )
 }
 
-/**
- * 纪念日卡片：左边一个大数字（唯一重字重），右边名称 + 起始日 + 描述。
- * v3.0：去掉左缘的强调色渐变 wash——数字本身就是这张卡的亮色焦点，
- * 卡面回归纯白，颜色只住在数字里。
- */
-@OptIn(ExperimentalMaterial3Api::class)
+/** 纪念日用独立的数字与文字区，长标题和大字体不会互相挤压。 */
 @Composable
 private fun AnniversaryCard(record: EventRecord, onClick: () -> Unit) {
     val today = rememberToday()
-    val start = remember(record.date) { parseRecordDate(record.date) ?: today }
+    val start = remember(record.date) { parseRecordDate(record.date) } ?: today
     val isFuture = start.isAfter(today)
-    val days = remember(record.date) {
-        if (isFuture) {
-            ChronoUnit.DAYS.between(today, start).toInt()
-        } else {
-            ChronoUnit.DAYS.between(start, today).toInt() + 1
-        }
+    val days = if (isFuture) {
+        ChronoUnit.DAYS.between(today, start).toInt()
+    } else {
+        ChronoUnit.DAYS.between(start, today).toInt() + 1
     }
-    val accent = MaterialTheme.colorScheme.primary
-    val palette = LocalAppPalette.current
-    val degradation = LocalDegradationLevel.current
-    val interactionSource = remember { MutableInteractionSource() }
-
+    val cardWidth = (LocalConfiguration.current.screenWidthDp.dp - 40.dp).coerceIn(240.dp, 340.dp)
+    val fontScale = LocalDensity.current.fontScale
+    // 仅展示性数字按可用宽度收敛；正文仍完整跟随系统字体，五位数在 200% 字体下也不截断。
+    val numeralSize = minOf(52f,
+        (cardWidth.value - 40f) / (maxOf(days.toString().length, 3) * 0.62f * fontScale)).sp
     Column(
-        modifier = Modifier
-            .width(288.dp)
-            .heightIn(min = 112.dp)
-            .solidCard(cornerRadius = 12.dp)
-            .pressTint(interactionSource, cornerRadius = 12.dp)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .drawBehind {
-                if (degradation.level < 2) {
-                    drawRect(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(accent.copy(alpha = 0.60f), Color.Transparent),
-                            endX = 3.dp.toPx()
-                        )
-                    )
-                }
-                if (degradation.level < 3) {
-                    rotate(degrees = -3f, pivot = Offset(size.width - 40.dp.toPx(), 8.dp.toPx())) {
-                        drawRoundRect(
-                            color = palette.tape,
-                            topLeft = Offset(size.width - 64.dp.toPx(), 0f),
-                            size = Size(48.dp.toPx(), 16.dp.toPx()),
-                            cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
-                        )
-                    }
-                }
-            }
+        modifier = Modifier.width(cardWidth).solidCard(cornerRadius = 24.dp)
+            .clickable(role = Role.Button, onClick = onClick).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 左：天数（全页唯一的等宽大数字，字重 300）
-            Column(horizontalAlignment = Alignment.Start) {
-                Text(
-                    if (isFuture) "还有" else "第",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                val bigNumeral = responsiveBigNumeralStyle()
-                val largeText = LocalDensity.current.fontScale >= 2f
-                if (largeText) {
-                    Text(
-                        "$days",
-                        style = bigNumeral,
-                        color = accent
-                    )
-                    Text(
-                        "天",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            "$days",
-                            style = bigNumeral,
-                            color = accent
-                        )
-                        Text(
-                            " 天",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            // 右：名称 + 起始日 + 描述
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    record.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    if (isFuture) "${start.toCnShort()} 见" else "从 ${start.toCnShort()} 开始",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (record.description.isNotBlank()) {
-                    Text(
-                        record.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                // 纪念日卡窄，评论使用辅助文字，不额外占用粉色配额
-                if (record.reply.isNotBlank()) {
-                    Text(
-                        record.reply,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
+        Text(
+            if (isFuture) "还有" else "第",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = days.toString(),
+            style = BigNumeralStyle.copy(fontSize = numeralSize, lineHeight = (numeralSize.value * 1.12f).sp),
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            softWrap = false
+        )
+        Text("天", style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Text(record.title, style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 3, overflow = TextOverflow.Ellipsis)
+        Text(
+            if (isFuture) "${start.toCnShort()} 见" else "从 ${start.toCnFull()} 开始",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (record.description.isNotBlank()) {
+            Text(record.description, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3, overflow = TextOverflow.Ellipsis)
+        }
+        if (record.reply.isNotBlank()) {
+            Text(record.reply, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -550,18 +434,12 @@ private fun MomentCard(
 ) {
     val context = LocalContext.current
     val day = remember(record.date) { parseRecordDate(record.date) ?: LocalDate.now() }
-    val cardPress = remember { MutableInteractionSource() }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
-            .pressTint(cardPress, cornerRadius = 12.dp)
-            .clickable(
-                interactionSource = cardPress,
-                indication = null,
-                onClick = onClick
-            )
+            .solidCard(cornerRadius = 20.dp)
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         Column {
             if (record.photoPath != null) {
@@ -581,7 +459,7 @@ private fun MomentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoShape(10.dp)
+                                .photoShape(16.dp)
                         )
                     } else {
                         PhotoSyncPlaceholder(
@@ -590,7 +468,7 @@ private fun MomentCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(3f / 2f)
-                                .photoFrame(10.dp)
+                                .photoFrame(16.dp)
                         )
                     }
                 }
@@ -642,18 +520,18 @@ private fun MomentCard(
                             modifier = Modifier
                                 .width(2.dp)
                                 .fillMaxHeight()
-                        .background(
-                            LocalAppPalette.current.hairline,
-                            RoundedCornerShape(1.dp)
-                        )
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                    RoundedCornerShape(1.dp)
+                                )
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
                             Text(
                                 // 署名用 replyName（见 MealScreen 里的说明）
-                                if (record.replyName.isNotBlank()) "${record.replyName} 的评论" else "ta 的评论",
+                                record.replyName.ifBlank { "评论" },
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(

@@ -1,11 +1,12 @@
 ﻿package com.thecutestgirl.app.ui.outfit
 
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +30,7 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.thecutestgirl.app.ui.components.ArtworkIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -42,6 +43,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -59,12 +61,10 @@ import com.thecutestgirl.app.ui.components.AppTopBar
 import com.thecutestgirl.app.ui.components.ConfirmDeleteDialog
 import com.thecutestgirl.app.ui.components.PhotoNoteCard
 import com.thecutestgirl.app.ui.components.PhotoSyncPlaceholder
-import com.thecutestgirl.app.ui.components.pressTint
 import com.thecutestgirl.app.ui.components.solidCard
 import com.thecutestgirl.app.ui.components.toCnFull
 import com.thecutestgirl.app.ui.components.toCnShort
 import com.thecutestgirl.app.ui.components.toWeekday
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
 import java.time.LocalDate
 
 /**
@@ -91,6 +91,26 @@ fun OutfitUploadScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<OutfitRecord?>(null) }
+    var showDiscard by rememberSaveable { mutableStateOf(false) }
+    val requestBack: () -> Unit = {
+        if (vm.newPhotos.isNotEmpty() || vm.note.isNotBlank()) showDiscard = true else onDone()
+    }
+    BackHandler(onBack = requestBack)
+    if (showDiscard) {
+        AlertDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text("放弃修改？") },
+            text = { Text("未保存的照片和备注将被丢弃。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onDone()
+                }) { Text("放弃修改", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text("继续编辑") } }
+        )
+    }
+
 
     if (showDatePicker) {
         AppDatePickerDialog(
@@ -108,13 +128,13 @@ fun OutfitUploadScreen(
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
-                title = "记 ${date.toCnShort()} 的穿搭",
+                title = "照片管理",
                 icon = Icons.Outlined.Checkroom,
-                onBack = onDone
+                onBack = requestBack
             ) {
                 TextButton(
                     onClick = { vm.save(onDone) },
@@ -132,8 +152,8 @@ fun OutfitUploadScreen(
                     .verticalScroll(rememberScrollState())
                     .imePadding()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ---------- 归属日期 ----------
                 DatePickerRow(date = date, onClick = { showDatePicker = true })
@@ -149,18 +169,12 @@ fun OutfitUploadScreen(
                 }
 
                 // ---------- 新增照片 + 备注（图文一体卡片，玻璃材质）----------
-                Text(
-                    if (existing.isEmpty()) "添加这一天的照片" else "再加几张",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
                 PhotoNoteCard(
                     photos = vm.newPhotos,
                     onPhotosChanged = { vm.newPhotos = it },
                     note = vm.note,
                     onNoteChange = { vm.note = it },
-                    notePlaceholder = "备注（可选）",
+                    noteLabel = "备注",
                     maxPhotos = 9
                 )
 
@@ -174,24 +188,18 @@ fun OutfitUploadScreen(
 @Composable
 private fun DatePickerRow(date: LocalDate, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .solidCard(cornerRadius = 12.dp)
-            .pressTint(interactionSource, cornerRadius = 12.dp)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
+            .solidCard(cornerRadius = 16.dp)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        ArtworkIcon(
             Icons.Filled.Event,
             contentDescription = null,
-            tint = scheme.onSurfaceVariant,
+            tint = scheme.primary,
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.width(8.dp))
@@ -203,7 +211,7 @@ private fun DatePickerRow(date: LocalDate, onClick: () -> Unit) {
         Text(
             "修改",
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = scheme.primary
         )
     }
 }
@@ -219,7 +227,7 @@ private fun ExistingPhotosBlock(
     val scheme = MaterialTheme.colorScheme
     Column {
         Text(
-            "这一天的照片 · ${records.size} 张",
+            "已记录 · ${records.size} 张",
             style = MaterialTheme.typography.labelLarge,
             color = scheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 8.dp)
@@ -256,19 +264,13 @@ private fun ExistingThumb(
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
-    val thumbPress = remember { MutableInteractionSource() }
     // v2.5.2：和列表页 OutfitThumb 对齐——先判文件存在，缺图时给占位而不是空白框
     val photoFile = PhotoStore.file(context, record.photoPath)
     Box(
         modifier = modifier
             .aspectRatio(4f / 5f)
-            .solidCard(cornerRadius = 12.dp)
-            .pressTint(thumbPress, cornerRadius = 12.dp)
-            .clickable(
-                interactionSource = thumbPress,
-                indication = null,
-                onClick = onClick
-            )
+            .solidCard(cornerRadius = 16.dp)
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         if (photoFile.exists()) {
             AsyncImage(
@@ -280,7 +282,7 @@ private fun ExistingThumb(
         } else {
             PhotoSyncPlaceholder(
                 failed = false,
-                onRetry = {},
+                onRetry = null,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -297,15 +299,13 @@ private fun ExistingThumb(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
-                        // 压在照片上的移除键：固定深底白图标，不跟随主题
-                        .background(Color.Black.copy(alpha = 0.58f))
-                        .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape),
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    ArtworkIcon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "删除这张照片",
-                        tint = Color.White,
+                        tint = scheme.error,
                         modifier = Modifier.size(16.dp)
                     )
                 }

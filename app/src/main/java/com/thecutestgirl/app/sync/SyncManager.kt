@@ -104,20 +104,30 @@ object SyncManager {
  * 抽出来是因为它有两个调用方——WorkManager 的 [SyncWorker]，和前台的 [SyncForegroundPoller]。
  * 两处必须走同一条路径，否则「前台看到有新内容但不通知」这类不一致会很难查。
  */
+internal fun unexpectedSyncFailure(cause: Throwable): SyncEngine.Result {
+    val message = cause.message?.takeIf { it.isNotBlank() } ?: "同步失败，请稍后重试"
+    return SyncEngine.Result(
+        ok = false,
+        error = message,
+        retryable = true,
+        errorKind = DavError.Network(message)
+    )
+}
+
 object SyncRunner {
 
     suspend fun runOnce(context: Context): SyncEngine.Result {
         // P2-2：结构化状态供 UI 收集；字符串版本仍写入 SettingsStore 兼容旧版本
         SyncStatusStore.markRunning()
-        val result = SyncEngine(context.applicationContext).syncOnce()
-        if (result.ok) {
-            SyncStatusStore.markSuccess()
-        } else {
-            SyncStatusStore.markFailure(
-                result.error ?: "同步失败",
-                retryable = result.retryable
-            )
+        val result = try {
+            SyncEngine(context.applicationContext).syncOnce()
+        } catch (e: CancellationException) {
+            SyncStatusStore.markFailure("同步已中断，请重试", retryable = true)
+            throw e
+        } catch (e: Exception) {
+            unexpectedSyncFailure(e)
         }
+        SyncStatusStore.markResult(result)
         if (result.partnerNew.isNotEmpty()) {
             PartnerNotifier.notify(context.applicationContext, result.partnerNew)
         }

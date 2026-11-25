@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.thecutestgirl.app.ui.savedBoolean
 import com.thecutestgirl.app.ui.savedDate
 import com.thecutestgirl.app.ui.savedInt
 import com.thecutestgirl.app.ui.savedNullableString
@@ -46,6 +47,8 @@ class EventEditViewModel(app: Application, state: SavedStateHandle) : AndroidVie
     var type by savedInt(state, "type", EVENT_TYPE_MOMENT)
     var title by savedString(state, "title")
     var description by savedString(state, "description")
+    var addSheetOpen by savedBoolean(state, "addSheetOpen")
+    var savingAddSheet by mutableStateOf(false)
     var photoPath by savedNullableString(state, "photoPath")
     var date by savedDate(state, "date")
     /** 对方写的评论：上传人只读 */

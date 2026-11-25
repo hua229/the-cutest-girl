@@ -1,5 +1,6 @@
 package com.thecutestgirl.app.ui.settings
 
+import android.app.Application
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -30,16 +31,26 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thecutestgirl.app.data.SettingsStore
 import com.thecutestgirl.app.sync.SyncEngine
 import com.thecutestgirl.app.sync.SyncManager
 import com.thecutestgirl.app.sync.SyncPhase
 import com.thecutestgirl.app.sync.SyncStatusStore
-import com.thecutestgirl.app.ui.components.PaperIconButton
 import com.thecutestgirl.app.ui.components.PrimaryButton
 import com.thecutestgirl.app.ui.components.SyncStatusBar
 import com.thecutestgirl.app.ui.components.SyncStatusKind
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+
+/** 配置草稿留在页面 ViewModel 中，主题/旋转不会丢失，也不写入 saved state。 */
+internal class SyncSettingsFormViewModel(app: Application) : AndroidViewModel(app) {
+    val url = mutableStateOf(SettingsStore.webdavUrl(app))
+    val user = mutableStateOf(SettingsStore.webdavUser(app))
+    val pass = mutableStateOf(SettingsStore.webdavPass(app))
+    val showPass = mutableStateOf(false)
+}
 
 /**
  * 云同步：服务器、账号、应用密码、测试连接与立即同步。
@@ -51,16 +62,18 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var url by remember { mutableStateOf(SettingsStore.webdavUrl(context)) }
-    var user by remember { mutableStateOf(SettingsStore.webdavUser(context)) }
-    var pass by remember { mutableStateOf(SettingsStore.webdavPass(context)) }
-    var showPass by remember { mutableStateOf(false) }
+    val form: SyncSettingsFormViewModel = viewModel()
+    var url by form.url
+    var user by form.user
+    var pass by form.pass
+    var showPass by form.showPass
     // 同步状态：结构化 StateFlow（P2-2），后台同步完成后本页自动刷新
     val syncStatus by SyncStatusStore.status.collectAsStateWithLifecycle()
     val statusKind = when (syncStatus.phase) {
         SyncPhase.Idle -> SyncStatusKind.Idle
         SyncPhase.Running -> SyncStatusKind.Syncing
         SyncPhase.Success -> SyncStatusKind.Success
+        SyncPhase.Partial -> SyncStatusKind.Partial
         SyncPhase.Failure -> SyncStatusKind.Failure
     }
     var busy by remember { mutableStateOf(false) }
@@ -84,18 +97,28 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
         busy = true
         SyncStatusStore.markRunning()
         scope.launch {
-            when (val result = SyncEngine.verifyAndApplyDavConfig(context, url, user, pass)) {
-                is SyncEngine.DavTestResult.Ok -> {
-                    busy = false
-                    SyncStatusStore.markSuccess("同步已开启")
-                    SyncManager.ensurePeriodic(context, force = true)
-                    SyncManager.enqueueNow(context)
-                    requestNotificationIfNeeded()
+            try {
+                when (val result = SyncEngine.verifyAndApplyDavConfig(context, url, user, pass)) {
+                    is SyncEngine.DavTestResult.Ok -> {
+                        SyncStatusStore.markSuccess("同步已开启")
+                        SyncManager.ensurePeriodic(context, force = true)
+                        SyncManager.enqueueNow(context)
+                        requestNotificationIfNeeded()
+                    }
+                    is SyncEngine.DavTestResult.Failure -> {
+                        SyncStatusStore.markFailure(result.message, retryable = false)
+                    }
                 }
-                is SyncEngine.DavTestResult.Failure -> {
-                    busy = false
-                    SyncStatusStore.markFailure(result.message, retryable = false)
-                }
+            } catch (e: CancellationException) {
+                SyncStatusStore.markFailure("连接已中断，请重试", retryable = true)
+                throw e
+            } catch (e: Exception) {
+                SyncStatusStore.markFailure(
+                    e.message?.takeIf { it.isNotBlank() } ?: "同步失败，请稍后重试",
+                    retryable = true
+                )
+            } finally {
+                busy = false
             }
         }
     }
@@ -117,7 +140,6 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
                 label = "账号",
                 value = user,
                 onValueChange = { user = it },
-                placeholder = "注册邮箱或手机号",
                 keyboardType = KeyboardType.Email
             )
             SettingsDivider()
@@ -125,14 +147,16 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
                 label = "应用密码",
                 value = pass,
                 onValueChange = { pass = it },
-                placeholder = "在坚果云生成的 16 位密码",
                 visualTransformation = if (showPass) {
                     VisualTransformation.None
                 } else {
                     PasswordVisualTransformation()
                 },
                 trailing = {
-                    PaperIconButton(onClick = { showPass = !showPass }) {
+                    IconButton(
+                        onClick = { showPass = !showPass },
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             imageVector = if (showPass) {
                                 Icons.Outlined.VisibilityOff
@@ -182,43 +206,50 @@ fun SyncSettingsScreen(onBack: () -> Unit) {
             )
         }
 
+        val syncConfigured = SettingsStore.isSyncConfigured(context)
         SettingsActionRow(
             text = "立即同步",
             icon = true,
             enabled = !busy && statusKind != SyncStatusKind.Syncing &&
-                SettingsStore.isSyncConfigured(context),
+                syncConfigured,
             onClick = {
                 SyncManager.enqueueNow(context)
-                SyncStatusStore.markRunning()
             }
         )
 
-        // 同步状态条：结构化状态 + 相对时间 + 失败原因 / 重试
+        val syncDetail = when (syncStatus.phase) {
+            SyncPhase.Partial -> buildString {
+                if (syncStatus.pending > 0) append("还有 ${syncStatus.pending} 条待重传")
+                if (syncStatus.skipped > 0) {
+                    if (isNotEmpty()) append("，")
+                    append("跳过 ${syncStatus.skipped} 条异常数据")
+                }
+            }
+            SyncPhase.Failure -> syncStatus.message
+            else -> null
+        }
+        val retrySync: (() -> Unit)? = when {
+            busy -> null
+            syncStatus.phase == SyncPhase.Partial && syncStatus.pending > 0 && syncConfigured ->
+                ({ SyncManager.enqueueNow(context) })
+            syncStatus.phase == SyncPhase.Failure -> ({ startTest() })
+            else -> null
+        }
         SyncStatusBar(
             kind = statusKind,
             subText = relativeSyncTime(syncStatus.at),
-            reason = if (syncStatus.phase == SyncPhase.Failure) syncStatus.message else null,
-            onRetry = { startTest() }
+            reason = syncDetail,
+            onRetry = retrySync
         )
 
-        TextButton(onClick = { showSyncHelp = true }) {
-            Text("同步帮助")
-        }
+        TextButton(onClick = { showSyncHelp = true }) { Text("同步帮助") }
     }
     if (showSyncHelp) {
         AlertDialog(
             onDismissRequest = { showSyncHelp = false },
             title = { Text("同步帮助") },
-            text = {
-                Text(
-                    "两台手机使用同一个坚果云账号。\n\n" +
-                        "应用密码：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码。\n\n" +
-                        "坚果云用户可保留默认服务器地址。后台通知延迟时，可在设置中允许后台运行。"
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showSyncHelp = false }) { Text("知道了") }
-            }
+            text = { Text("两台手机使用同一个坚果云账号。\n\n应用密码：坚果云网页版 → 账户信息 → 安全选项 → 添加应用密码。\n\n服务器地址可使用默认值。") },
+            confirmButton = { TextButton(onClick = { showSyncHelp = false }) { Text("知道了") } }
         )
     }
 }

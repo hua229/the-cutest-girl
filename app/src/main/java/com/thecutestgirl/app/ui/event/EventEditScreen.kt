@@ -1,7 +1,9 @@
 ﻿package com.thecutestgirl.app.ui.event
 
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.thecutestgirl.app.ui.components.ArtworkIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,12 +53,10 @@ import com.thecutestgirl.app.ui.components.PhotoNoteCard
 import com.thecutestgirl.app.ui.components.PlainField
 import com.thecutestgirl.app.ui.components.CommentField
 import com.thecutestgirl.app.ui.components.ReadOnlyNote
-import com.thecutestgirl.app.ui.components.SegmentedChoices
-import com.thecutestgirl.app.ui.components.pressTint
 import com.thecutestgirl.app.ui.components.solidCard
+import com.thecutestgirl.app.ui.components.SheetSegmented
 import com.thecutestgirl.app.ui.components.toCnFull
 import com.thecutestgirl.app.ui.components.toWeekday
-import com.thecutestgirl.app.ui.theme.LocalAppPalette
 
 /** 添加 / 编辑事件：日常点滴（可配图）或纪念日（自动算天数） */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,12 +66,33 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
     LaunchedEffect(id) { id?.let(vm::load) }
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var hasChanges by rememberSaveable(id) { mutableStateOf(false) }
+    var showDiscard by rememberSaveable { mutableStateOf(false) }
+    val requestBack: () -> Unit = {
+        if (hasChanges) showDiscard = true else onDone()
+    }
+    BackHandler(onBack = requestBack)
+    if (showDiscard) {
+        AlertDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text("放弃修改？") },
+            text = { Text("未保存的内容将被丢弃。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onDone()
+                }) { Text("放弃修改", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text("继续编辑") } }
+        )
+    }
+
     var showDelete by remember { mutableStateOf(false) }
 
     if (showDatePicker) {
         AppDatePickerDialog(
             initial = vm.date,
-            onPick = { vm.date = it; showDatePicker = false },
+            onPick = { vm.date = it; hasChanges = true; showDatePicker = false },
             onDismiss = { showDatePicker = false }
         )
     }
@@ -81,16 +103,15 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
     )
 
     val isMoment = vm.type == EVENT_TYPE_MOMENT
-    val datePress = remember { MutableInteractionSource() }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
                 title = if (id == null) "记一条点滴" else "编辑点滴",
                 icon = Icons.Outlined.FavoriteBorder,
-                onBack = onDone
+                onBack = requestBack
             ) {
                 TextButton(
                     onClick = { vm.save(onDone) },
@@ -108,16 +129,17 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                     .verticalScroll(rememberScrollState())
                     .imePadding()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 类型选择（编辑时不允许换类型，避免数据错乱）
                 if (id == null) {
-                    SegmentedChoices(
+                    SheetSegmented(
                         options = listOf("日常点滴", "纪念日"),
                         selectedIndex = if (isMoment) 0 else 1,
-                        onSelect = { index ->
-                            vm.type = if (index == 0) EVENT_TYPE_MOMENT else EVENT_TYPE_ANNIVERSARY
+                        onSelect = {
+                            vm.type = if (it == 0) EVENT_TYPE_MOMENT else EVENT_TYPE_ANNIVERSARY
+                            hasChanges = true
                         }
                     )
                 }
@@ -126,13 +148,12 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                 if (vm.amUploader || id == null) {
                     PlainField(
                         value = vm.title,
-                        onValueChange = { vm.title = it },
-                        label = if (isMoment) "标题" else "纪念日名称",
-                        placeholder = if (isMoment) "点滴标题" else "纪念日名称"
+                        onValueChange = { vm.title = it; hasChanges = true },
+                        label = if (isMoment) "标题" else "名称"
                     )
                 } else {
                     ReadOnlyNote(
-                        label = if (isMoment) "标题" else "纪念日名称",
+                        label = if (isMoment) "标题" else "名称",
                         value = vm.title
                     )
                 }
@@ -141,17 +162,17 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                 if (isMoment) {
                     PhotoNoteCard(
                         photos = listOfNotNull(vm.photoPath),
-                        onPhotosChanged = { vm.photoPath = it.firstOrNull() },
+                        onPhotosChanged = { vm.photoPath = it.firstOrNull(); hasChanges = true },
                         note = vm.description,
-                        onNoteChange = { vm.description = it },
-                        notePlaceholder = "备注（可选）",
+                        onNoteChange = { vm.description = it; hasChanges = true },
+                        noteLabel = "内容",
                         noteEditable = vm.amUploader,
                         noteAuthorName = vm.noteAuthorName,
                         replyAuthorName = vm.replyAuthorName,
                         reply = vm.reply,
-                        onReplyChange = { vm.reply = it },
+                        onReplyChange = { vm.reply = it; hasChanges = true },
                         replyEditable = !vm.amUploader,
-                        replyPlaceholder = "写评论…",
+                        replyLabel = "评论",
                         photoEditable = vm.amUploader,
                         // 与点滴列表卡一致：3:2
                         photoRatio = 3f / 2f
@@ -161,23 +182,22 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                     if (vm.amUploader) {
                         PlainField(
                             value = vm.description,
-                            onValueChange = { vm.description = it },
-                            label = "备注（可选）",
-                            placeholder = "写备注…",
+                            onValueChange = { vm.description = it; hasChanges = true },
+                            label = "备注",
                             singleLine = false,
                             minLines = 3
                         )
                     } else if (vm.description.isNotBlank()) {
                         ReadOnlyNote(
-                            label = vm.noteAuthorName.takeIf { it.isNotBlank() }?.let { "$it 的备注" },
+                            label = vm.noteAuthorName.takeIf { it.isNotBlank() },
                             value = vm.description
                         )
                     }
                     CommentField(
                         value = vm.reply,
-                        onValueChange = { vm.reply = it },
+                        onValueChange = { vm.reply = it; hasChanges = true },
                         editable = !vm.amUploader,
-                        placeholder = "写评论…"
+                        authorName = vm.replyAuthorName
                     )
                 }
 
@@ -185,22 +205,17 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .solidCard(cornerRadius = 12.dp)
-                        .pressTint(datePress, cornerRadius = 12.dp, enabled = vm.amUploader)
-                        .clickable(
-                            interactionSource = datePress,
-                            indication = null,
-                            enabled = vm.amUploader
-                        ) {
+                        .solidCard(cornerRadius = 16.dp)
+                        .clickable(enabled = vm.amUploader, role = Role.Button) {
                             if (vm.amUploader) showDatePicker = true
                         }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
+                    ArtworkIcon(
                         Icons.Filled.Event,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
@@ -214,7 +229,7 @@ fun EventEditScreen(id: String?, onDone: () -> Unit) {
                         Text(
                             "修改",
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

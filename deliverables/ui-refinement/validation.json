@@ -1,0 +1,2150 @@
+{
+  "date": "2026-11-25",
+  "passed": true,
+  "package": "com.thecutestgirl.app.verification.iosui",
+  "device": "emulator-5556",
+  "version_name": "4.3.1",
+  "version_code": 45,
+  "published": false,
+  "apk_sha256": "4aa31aff3386cb40bf564e7b9e2ab3546f5e5296b01f173ec7e129fef2a35bc9",
+  "build": {
+    "result": "BUILD SUCCESSFUL",
+    "log": ".verification/ui-refinement/build-final.log",
+    "tasks": [
+      "compileDebugKotlin",
+      "compileDebugAndroidTestKotlin",
+      "testDebugUnitTest",
+      "lintDebug",
+      "assembleDebug"
+    ],
+    "unit": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0
+    },
+    "lint": {
+      "Error": 0,
+      "Warning": 6,
+      "Information": 2
+    }
+  },
+  "crash_log": {
+    "path": ".verification/ui-refinement/crash-final.log",
+    "bytes": 0,
+    "app_crash_found": false
+  },
+  "ui": {
+    "unique_checks": 41,
+    "passed_checks": 41,
+    "checks": [
+      {
+        "name": "entrypoints-outfit",
+        "status": "passed",
+        "details": {
+          "home": "穿搭",
+          "stable_actions": [
+            "设置",
+            "新增记录"
+          ]
+        },
+        "duration_seconds": 67.61,
+        "screens": [
+          {
+            "name": "entrypoints-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\001-entrypoints-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\001-entrypoints-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-001-entrypoints-outfit.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "entrypoints-meal",
+        "status": "passed",
+        "details": {
+          "home": "饮食",
+          "stable_actions": [
+            "设置",
+            "新增记录"
+          ]
+        },
+        "duration_seconds": 57.74,
+        "screens": [
+          {
+            "name": "entrypoints-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\002-entrypoints-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\002-entrypoints-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-002-entrypoints-meal.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "entrypoints-event",
+        "status": "passed",
+        "details": {
+          "home": "点滴",
+          "stable_actions": [
+            "设置",
+            "新增记录"
+          ]
+        },
+        "duration_seconds": 52.61,
+        "screens": [
+          {
+            "name": "entrypoints-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\003-entrypoints-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\003-entrypoints-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-003-entrypoints-event.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "field-labels-outfit",
+        "status": "passed",
+        "details": {
+          "visible_labels_and_editable_names": [
+            "备注"
+          ],
+          "typed_field": "备注",
+          "accessible_name_preserved_after_input": true,
+          "record_saved": false
+        },
+        "duration_seconds": 92.92,
+        "screens": [
+          {
+            "name": "filled-field-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\001-filled-field-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\001-filled-field-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-001-filled-field-outfit.png"
+          },
+          {
+            "name": "field-labels-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\002-field-labels-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\002-field-labels-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-002-field-labels-outfit.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-recheck/report.json"
+      },
+      {
+        "name": "field-labels-meal",
+        "status": "passed",
+        "details": {
+          "visible_labels_and_editable_names": [
+            "内容"
+          ],
+          "typed_field": "内容",
+          "accessible_name_preserved_after_input": true,
+          "record_saved": false
+        },
+        "duration_seconds": 110.53,
+        "screens": [
+          {
+            "name": "filled-field-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\003-filled-field-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\003-filled-field-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-003-filled-field-meal.png"
+          },
+          {
+            "name": "field-labels-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\004-field-labels-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\004-field-labels-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-004-field-labels-meal.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-recheck/report.json"
+      },
+      {
+        "name": "field-labels-moment",
+        "status": "passed",
+        "details": {
+          "visible_labels_and_editable_names": [
+            "内容",
+            "标题"
+          ],
+          "typed_field": "标题",
+          "accessible_name_preserved_after_input": true,
+          "record_saved": false
+        },
+        "duration_seconds": 94.62,
+        "screens": [
+          {
+            "name": "filled-field-moment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\005-filled-field-moment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\005-filled-field-moment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-005-filled-field-moment.png"
+          },
+          {
+            "name": "field-labels-moment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\006-field-labels-moment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\006-field-labels-moment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-006-field-labels-moment.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-recheck/report.json"
+      },
+      {
+        "name": "field-labels-anniversary",
+        "status": "passed",
+        "details": {
+          "visible_labels_and_editable_names": [
+            "内容",
+            "名称"
+          ],
+          "typed_field": "名称",
+          "accessible_name_preserved_after_input": true,
+          "record_saved": false
+        },
+        "duration_seconds": 104.52,
+        "screens": [
+          {
+            "name": "filled-field-anniversary",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\007-filled-field-anniversary.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\007-filled-field-anniversary.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-007-filled-field-anniversary.png"
+          },
+          {
+            "name": "field-labels-anniversary",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\008-field-labels-anniversary.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\008-field-labels-anniversary.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-008-field-labels-anniversary.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-recheck/report.json"
+      },
+      {
+        "name": "dark-narrow-keyboard-continue-discard",
+        "status": "passed",
+        "details": {
+          "save_bounds": [
+            53,
+            903,
+            787,
+            1040
+          ],
+          "keyboard_top": 1093,
+          "record_saved": false,
+          "theme": "dark"
+        },
+        "duration_seconds": 95.31,
+        "screens": [
+          {
+            "name": "narrow-keyboard-save-visible",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\008-narrow-keyboard-save-visible.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\008-narrow-keyboard-save-visible.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-008-narrow-keyboard-save-visible.png"
+          },
+          {
+            "name": "narrow-unsaved-confirm",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\009-narrow-unsaved-confirm.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\009-narrow-unsaved-confirm.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-009-narrow-unsaved-confirm.png"
+          },
+          {
+            "name": "narrow-continue-editing-preserved",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\010-narrow-continue-editing-preserved.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\010-narrow-continue-editing-preserved.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-010-narrow-continue-editing-preserved.png"
+          },
+          {
+            "name": "dark-narrow-keyboard-continue-discard",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\011-dark-narrow-keyboard-continue-discard.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\011-dark-narrow-keyboard-continue-discard.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-011-dark-narrow-keyboard-continue-discard.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "meal-chooser-breakfast",
+        "status": "passed",
+        "details": {
+          "meal": "早餐",
+          "existing_own_meal_opened": true,
+          "record_saved": false
+        },
+        "duration_seconds": 74.39,
+        "screens": [
+          {
+            "name": "meal-chooser-0",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\012-meal-chooser-0.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\012-meal-chooser-0.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-012-meal-chooser-0.png"
+          },
+          {
+            "name": "meal-chooser-breakfast",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\013-meal-chooser-breakfast.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\013-meal-chooser-breakfast.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-013-meal-chooser-breakfast.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "meal-chooser-lunch",
+        "status": "passed",
+        "details": {
+          "meal": "午餐",
+          "existing_own_meal_opened": true,
+          "record_saved": false
+        },
+        "duration_seconds": 54.18,
+        "screens": [
+          {
+            "name": "meal-chooser-1",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\014-meal-chooser-1.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\014-meal-chooser-1.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-014-meal-chooser-1.png"
+          },
+          {
+            "name": "meal-chooser-lunch",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\015-meal-chooser-lunch.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\015-meal-chooser-lunch.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-015-meal-chooser-lunch.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "meal-chooser-dinner",
+        "status": "passed",
+        "details": {
+          "meal": "晚餐",
+          "existing_own_meal_opened": true,
+          "record_saved": false
+        },
+        "duration_seconds": 54.29,
+        "screens": [
+          {
+            "name": "meal-chooser-2",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\016-meal-chooser-2.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\016-meal-chooser-2.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-016-meal-chooser-2.png"
+          },
+          {
+            "name": "meal-chooser-dinner",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\017-meal-chooser-dinner.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\017-meal-chooser-dinner.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-017-meal-chooser-dinner.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "rich-content-light",
+        "status": "passed",
+        "details": {
+          "outfit": {
+            "gutter_luminance": 245.14
+          },
+          "meal": {
+            "gutter_luminance": 245.14
+          },
+          "event": {
+            "gutter_luminance": 245.14
+          },
+          "long_author_visible": true,
+          "comment_content_visible": true
+        },
+        "duration_seconds": 139.26,
+        "screens": [
+          {
+            "name": "rich-light-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\001-rich-light-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\001-rich-light-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-001-rich-light-outfit.png"
+          },
+          {
+            "name": "rich-light-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\002-rich-light-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\002-rich-light-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-002-rich-light-meal.png"
+          },
+          {
+            "name": "rich-light-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\003-rich-light-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\003-rich-light-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-003-rich-light-event.png"
+          },
+          {
+            "name": "rich-light-long-author-and-comment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\004-rich-light-long-author-and-comment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\004-rich-light-long-author-and-comment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-004-rich-light-long-author-and-comment.png"
+          },
+          {
+            "name": "rich-light-long-comment-content",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\005-rich-light-long-comment-content.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\005-rich-light-long-comment-content.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-005-rich-light-long-comment-content.png"
+          },
+          {
+            "name": "rich-content-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\006-rich-content-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\006-rich-content-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-006-rich-content-light.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-photo-final/report.json"
+      },
+      {
+        "name": "rich-content-dark",
+        "status": "passed",
+        "details": {
+          "outfit": {
+            "gutter_luminance": 17.22
+          },
+          "meal": {
+            "gutter_luminance": 17.22
+          },
+          "event": {
+            "gutter_luminance": 17.22
+          },
+          "long_author_visible": true,
+          "comment_content_visible": true
+        },
+        "duration_seconds": 139.28,
+        "screens": [
+          {
+            "name": "rich-dark-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\007-rich-dark-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\007-rich-dark-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-007-rich-dark-outfit.png"
+          },
+          {
+            "name": "rich-dark-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\008-rich-dark-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\008-rich-dark-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-008-rich-dark-meal.png"
+          },
+          {
+            "name": "rich-dark-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\009-rich-dark-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\009-rich-dark-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-009-rich-dark-event.png"
+          },
+          {
+            "name": "rich-dark-long-author-and-comment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\010-rich-dark-long-author-and-comment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\010-rich-dark-long-author-and-comment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-010-rich-dark-long-author-and-comment.png"
+          },
+          {
+            "name": "rich-dark-long-comment-content",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\011-rich-dark-long-comment-content.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\011-rich-dark-long-comment-content.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-011-rich-dark-long-comment-content.png"
+          },
+          {
+            "name": "rich-content-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\012-rich-content-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\012-rich-content-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-012-rich-content-dark.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-photo-final/report.json"
+      },
+      {
+        "name": "missing-photo-placeholder",
+        "status": "passed",
+        "details": {
+          "missing_photo_placeholder_visible": true,
+          "retry_invoked": false
+        },
+        "duration_seconds": 63.91,
+        "screens": [
+          {
+            "name": "missing-photo-placeholder",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\013-missing-photo-placeholder.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-photo-final\\screens\\013-missing-photo-placeholder.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-photo-final-013-missing-photo-placeholder.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-photo-final/report.json"
+      },
+      {
+        "name": "dark-320dp-200-five-digit-anniversary",
+        "status": "passed",
+        "details": {
+          "text": "46349",
+          "numeral_bounds": [
+            106,
+            708,
+            426,
+            848
+          ],
+          "card_bounds": [
+            53,
+            535,
+            788,
+            1866
+          ],
+          "width_dp": 320,
+          "font_scale": 2.0,
+          "theme": "dark",
+          "visual_review": "PNG evidence should also be reviewed for complete glyph rendering."
+        },
+        "duration_seconds": 52.02,
+        "screens": [
+          {
+            "name": "dark-320dp-200-five-digit-anniversary",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\031-dark-320dp-200-five-digit-anniversary.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa\\screens\\031-dark-320dp-200-five-digit-anniversary.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-031-dark-320dp-200-five-digit-anniversary.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa/report.json"
+      },
+      {
+        "name": "own-record-edit-and-delete-availability",
+        "status": "passed",
+        "details": {
+          "view": "own",
+          "editable_fields": [
+            "内容"
+          ],
+          "delete_action_present": true,
+          "saved_or_deleted": false
+        },
+        "duration_seconds": 53.28,
+        "screens": [
+          {
+            "name": "own-content-editor",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\009-own-content-editor.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\009-own-content-editor.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-009-own-content-editor.png"
+          },
+          {
+            "name": "own-record-edit-and-delete-availability",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\010-own-record-edit-and-delete-availability.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\010-own-record-edit-and-delete-availability.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-010-own-record-edit-and-delete-availability.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-recheck/report.json"
+      },
+      {
+        "name": "partner-comment-only-no-delete",
+        "status": "passed",
+        "details": {
+          "view": "partner",
+          "editable_fields": [
+            "评论"
+          ],
+          "delete_action_present": false,
+          "saved_or_deleted": false
+        },
+        "duration_seconds": 53.91,
+        "screens": [
+          {
+            "name": "partner-comment-only",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\011-partner-comment-only.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\011-partner-comment-only.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-011-partner-comment-only.png"
+          },
+          {
+            "name": "partner-comment-only-no-delete",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\012-partner-comment-only-no-delete.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-recheck\\screens\\012-partner-comment-only-no-delete.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-recheck-012-partner-comment-only-no-delete.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-recheck/report.json"
+      },
+      {
+        "name": "outfit-collapse-and-return-to-top",
+        "status": "passed",
+        "details": {
+          "collapsed_actions_preserved": true,
+          "title_returned_to_top": true
+        },
+        "duration_seconds": 58.67,
+        "screens": [
+          {
+            "name": "outfit-collapsed-header",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\001-outfit-collapsed-header.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\001-outfit-collapsed-header.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-nav-final-001-outfit-collapsed-header.png"
+          },
+          {
+            "name": "outfit-collapse-and-return-to-top",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\002-outfit-collapse-and-return-to-top.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\002-outfit-collapse-and-return-to-top.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-nav-final-002-outfit-collapse-and-return-to-top.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-nav-final/report.json"
+      },
+      {
+        "name": "notification-date-and-record-targets",
+        "status": "passed",
+        "details": {
+          "outfit_month": "2026-10",
+          "event_target": "iosqa-moment-text",
+          "delivery": "Activity intent extras; no network notification requested"
+        },
+        "duration_seconds": 49.56,
+        "screens": [
+          {
+            "name": "notification-cross-month-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\003-notification-cross-month-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\003-notification-cross-month-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-nav-final-003-notification-cross-month-outfit.png"
+          },
+          {
+            "name": "notification-target-moment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\004-notification-target-moment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\004-notification-target-moment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-nav-final-004-notification-target-moment.png"
+          },
+          {
+            "name": "notification-date-and-record-targets",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\005-notification-date-and-record-targets.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-nav-final\\screens\\005-notification-date-and-record-targets.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-nav-final-005-notification-date-and-record-targets.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-nav-final/report.json"
+      },
+      {
+        "name": "settings-module-1",
+        "status": "passed",
+        "duration_seconds": 27.39,
+        "screens": [
+          {
+            "name": "module-0",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\001-module-0.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\001-module-0.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-001-module-0.png"
+          },
+          {
+            "name": "settings-module-1",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\002-settings-module-1.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\002-settings-module-1.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-002-settings-module-1.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "settings-module-2",
+        "status": "passed",
+        "duration_seconds": 27.78,
+        "screens": [
+          {
+            "name": "module-1",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\003-module-1.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\003-module-1.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-003-module-1.png"
+          },
+          {
+            "name": "settings-module-2",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\004-settings-module-2.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\004-settings-module-2.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-004-settings-module-2.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "settings-module-3",
+        "status": "passed",
+        "duration_seconds": 40.56,
+        "screens": [
+          {
+            "name": "module-2",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\005-module-2.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\005-module-2.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-005-module-2.png"
+          },
+          {
+            "name": "sync-help",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\006-sync-help.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\006-sync-help.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-006-sync-help.png"
+          },
+          {
+            "name": "settings-module-3",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\007-settings-module-3.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\007-settings-module-3.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-007-settings-module-3.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "settings-module-4",
+        "status": "passed",
+        "duration_seconds": 27.8,
+        "screens": [
+          {
+            "name": "module-3",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\008-module-3.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\008-module-3.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-008-module-3.png"
+          },
+          {
+            "name": "settings-module-4",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\009-settings-module-4.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\009-settings-module-4.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-009-settings-module-4.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "settings-module-5",
+        "status": "passed",
+        "duration_seconds": 27.75,
+        "screens": [
+          {
+            "name": "module-4",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\010-module-4.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\010-module-4.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-010-module-4.png"
+          },
+          {
+            "name": "settings-module-5",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\011-settings-module-5.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\011-settings-module-5.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-011-settings-module-5.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "theme-light",
+        "status": "passed",
+        "details": {
+          "gutter_luminance": 245.14,
+          "stored_theme": "light"
+        },
+        "duration_seconds": 34.3,
+        "screens": [
+          {
+            "name": "theme-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\012-theme-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\012-theme-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-012-theme-light.png"
+          },
+          {
+            "name": "theme-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\013-theme-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\013-theme-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-013-theme-light.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "theme-dark",
+        "status": "passed",
+        "details": {
+          "gutter_luminance": 17.22,
+          "stored_theme": "dark"
+        },
+        "duration_seconds": 34.38,
+        "screens": [
+          {
+            "name": "theme-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\014-theme-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\014-theme-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-014-theme-dark.png"
+          },
+          {
+            "name": "theme-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\015-theme-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\015-theme-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-015-theme-dark.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "theme-dark-cold-launch-persistence",
+        "status": "passed",
+        "duration_seconds": 50.01,
+        "screens": [
+          {
+            "name": "dark-after-cold-launch",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\016-dark-after-cold-launch.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\016-dark-after-cold-launch.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-016-dark-after-cold-launch.png"
+          },
+          {
+            "name": "theme-dark-cold-launch-persistence",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\017-theme-dark-cold-launch-persistence.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\017-theme-dark-cold-launch-persistence.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-017-theme-dark-cold-launch-persistence.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "theme-follows-system",
+        "status": "passed",
+        "details": {
+          "yes": 17.22,
+          "no": 245.14
+        },
+        "duration_seconds": 46.57,
+        "screens": [
+          {
+            "name": "system-night-yes",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\018-system-night-yes.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\018-system-night-yes.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-018-system-night-yes.png"
+          },
+          {
+            "name": "system-night-no",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\019-system-night-no.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\019-system-night-no.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-019-system-night-no.png"
+          },
+          {
+            "name": "theme-follows-system",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\020-theme-follows-system.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\020-theme-follows-system.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-020-theme-follows-system.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "theme-manual-overrides-system",
+        "status": "passed",
+        "details": {
+          "light": 245.14,
+          "dark": 17.22
+        },
+        "duration_seconds": 82.57,
+        "screens": [
+          {
+            "name": "light-system-night-yes",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\021-light-system-night-yes.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\021-light-system-night-yes.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-021-light-system-night-yes.png"
+          },
+          {
+            "name": "dark-system-night-no",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\022-dark-system-night-no.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\022-dark-system-night-no.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-022-dark-system-night-no.png"
+          },
+          {
+            "name": "theme-manual-overrides-system",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\023-theme-manual-overrides-system.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\023-theme-manual-overrides-system.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-023-theme-manual-overrides-system.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "bottom-tab-taps",
+        "status": "passed",
+        "duration_seconds": 49.22,
+        "screens": [
+          {
+            "name": "bottom-tap-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\024-bottom-tap-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\024-bottom-tap-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-024-bottom-tap-meal.png"
+          },
+          {
+            "name": "bottom-tap-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\025-bottom-tap-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\025-bottom-tap-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-025-bottom-tap-event.png"
+          },
+          {
+            "name": "bottom-tap-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\026-bottom-tap-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\026-bottom-tap-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-026-bottom-tap-outfit.png"
+          },
+          {
+            "name": "bottom-tab-taps",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\027-bottom-tab-taps.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\027-bottom-tab-taps.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-027-bottom-tab-taps.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "bottom-long-press-drag",
+        "status": "passed",
+        "duration_seconds": 21.46,
+        "screens": [
+          {
+            "name": "bottom-long-press-drag",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\028-bottom-long-press-drag.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-system\\screens\\028-bottom-long-press-drag.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-system-028-bottom-long-press-drag.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-system/report.json"
+      },
+      {
+        "name": "narrow-320dp-font-200-homes-settings",
+        "status": "passed",
+        "details": {
+          "width_dp": 320,
+          "pixels": [
+            840,
+            1866
+          ],
+          "font_scale": 2.0
+        },
+        "duration_seconds": 90.77,
+        "screens": [
+          {
+            "name": "narrow-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\001-narrow-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\001-narrow-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-001-narrow-outfit.png"
+          },
+          {
+            "name": "narrow-settings-from-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\002-narrow-settings-from-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\002-narrow-settings-from-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-002-narrow-settings-from-outfit.png"
+          },
+          {
+            "name": "narrow-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\003-narrow-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\003-narrow-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-003-narrow-meal.png"
+          },
+          {
+            "name": "narrow-settings-from-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\004-narrow-settings-from-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\004-narrow-settings-from-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-004-narrow-settings-from-meal.png"
+          },
+          {
+            "name": "narrow-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\005-narrow-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\005-narrow-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-005-narrow-event.png"
+          },
+          {
+            "name": "narrow-settings-from-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\006-narrow-settings-from-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\006-narrow-settings-from-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-006-narrow-settings-from-event.png"
+          },
+          {
+            "name": "narrow-320dp-font-200-homes-settings",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\007-narrow-320dp-font-200-homes-settings.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\007-narrow-320dp-font-200-homes-settings.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-007-narrow-320dp-font-200-homes-settings.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-responsive-final/report.json"
+      },
+      {
+        "name": "narrow-keyboard-save-and-continue-editing",
+        "status": "passed",
+        "details": {
+          "save_bounds": [
+            53,
+            903,
+            787,
+            1040
+          ],
+          "keyboard_top": 1093,
+          "record_saved": false
+        },
+        "duration_seconds": 69.15,
+        "screens": [
+          {
+            "name": "narrow-keyboard-save-visible",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\008-narrow-keyboard-save-visible.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\008-narrow-keyboard-save-visible.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-008-narrow-keyboard-save-visible.png"
+          },
+          {
+            "name": "narrow-unsaved-confirm",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\009-narrow-unsaved-confirm.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\009-narrow-unsaved-confirm.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-009-narrow-unsaved-confirm.png"
+          },
+          {
+            "name": "narrow-continue-editing-preserved",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\010-narrow-continue-editing-preserved.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\010-narrow-continue-editing-preserved.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-010-narrow-continue-editing-preserved.png"
+          },
+          {
+            "name": "narrow-keyboard-save-and-continue-editing",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\011-narrow-keyboard-save-and-continue-editing.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-responsive-final\\screens\\011-narrow-keyboard-save-and-continue-editing.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-responsive-final-011-narrow-keyboard-save-and-continue-editing.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-responsive-final/report.json"
+      },
+      {
+        "name": "synthetic-sync-failure-light-and-dark",
+        "status": "passed",
+        "details": {
+          "themes": [
+            "light",
+            "dark"
+          ],
+          "status_source": "isolated synthetic persisted state",
+          "cloud_request_invoked": false,
+          "retry_invoked": false
+        },
+        "duration_seconds": 196.34,
+        "screens": [
+          {
+            "name": "sync-failure-photo-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\001-sync-failure-photo-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\001-sync-failure-photo-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-sync-recheck-001-sync-failure-photo-light.png"
+          },
+          {
+            "name": "sync-failure-settings-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\002-sync-failure-settings-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\002-sync-failure-settings-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-sync-recheck-002-sync-failure-settings-light.png"
+          },
+          {
+            "name": "sync-failure-photo-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\003-sync-failure-photo-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\003-sync-failure-photo-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-sync-recheck-003-sync-failure-photo-dark.png"
+          },
+          {
+            "name": "sync-failure-settings-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\004-sync-failure-settings-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\004-sync-failure-settings-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-sync-recheck-004-sync-failure-settings-dark.png"
+          },
+          {
+            "name": "synthetic-sync-failure-light-and-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\005-synthetic-sync-failure-light-and-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-sync-recheck\\screens\\005-synthetic-sync-failure-light-and-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-sync-recheck-005-synthetic-sync-failure-light-and-dark.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-sync-recheck/report.json"
+      },
+      {
+        "name": "system-theme-preserves-open-draft",
+        "status": "passed",
+        "details": {
+          "transitions": [
+            {
+              "night": "yes",
+              "fields": {
+                "标题": "STATE_QA_TITLE",
+                "内容": "STATE_QA_BODY"
+              },
+              "save_enabled": true,
+              "sheet_gutter_luminance": 29.36
+            },
+            {
+              "night": "no",
+              "fields": {
+                "标题": "STATE_QA_TITLE",
+                "内容": "STATE_QA_BODY"
+              },
+              "save_enabled": true,
+              "sheet_gutter_luminance": 255.0
+            }
+          ],
+          "continued_values_preserved": true,
+          "record_saved": false,
+          "qa_forced_restart_during_retention": false
+        },
+        "duration_seconds": 121.65,
+        "screens": [
+          {
+            "name": "system-draft-night-yes",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\001-system-draft-night-yes.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\001-system-draft-night-yes.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-recheck-001-system-draft-night-yes.png"
+          },
+          {
+            "name": "system-draft-night-no",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\002-system-draft-night-no.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\002-system-draft-night-no.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-recheck-002-system-draft-night-no.png"
+          },
+          {
+            "name": "system-draft-continue-retains-values",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\003-system-draft-continue-retains-values.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\003-system-draft-continue-retains-values.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-recheck-003-system-draft-continue-retains-values.png"
+          },
+          {
+            "name": "system-theme-preserves-open-draft",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\004-system-theme-preserves-open-draft.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state-recheck\\screens\\004-system-theme-preserves-open-draft.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-recheck-004-system-theme-preserves-open-draft.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-state-recheck/report.json"
+      },
+      {
+        "name": "system-theme-preserves-tab-and-scroll",
+        "status": "passed",
+        "details": {
+          "transitions": [
+            {
+              "tab": "饮食",
+              "anchor_bounds": [
+                95,
+                413,
+                985,
+                615
+              ],
+              "tolerance_px": 5,
+              "night": "yes"
+            },
+            {
+              "tab": "饮食",
+              "anchor_bounds": [
+                95,
+                413,
+                985,
+                615
+              ],
+              "tolerance_px": 5,
+              "night": "no"
+            }
+          ],
+          "qa_forced_restart_during_retention": false
+        },
+        "duration_seconds": 70.8,
+        "screens": [
+          {
+            "name": "system-home-scroll-night-yes",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\002-system-home-scroll-night-yes.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\002-system-home-scroll-night-yes.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-002-system-home-scroll-night-yes.png"
+          },
+          {
+            "name": "system-home-scroll-night-no",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\003-system-home-scroll-night-no.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\003-system-home-scroll-night-no.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-003-system-home-scroll-night-no.png"
+          },
+          {
+            "name": "system-theme-preserves-tab-and-scroll",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\004-system-theme-preserves-tab-and-scroll.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\004-system-theme-preserves-tab-and-scroll.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-004-system-theme-preserves-tab-and-scroll.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-state/report.json"
+      },
+      {
+        "name": "manual-theme-settings-return-preserves-scroll",
+        "status": "passed",
+        "details": {
+          "transitions": [
+            {
+              "tab": "饮食",
+              "anchor_bounds": [
+                95,
+                891,
+                985,
+                1093
+              ],
+              "tolerance_px": 5,
+              "content_viewport": [
+                4,
+                263,
+                1076,
+                1531
+              ],
+              "theme": "dark",
+              "gutter_luminance": 17.22
+            },
+            {
+              "tab": "饮食",
+              "anchor_bounds": [
+                95,
+                891,
+                985,
+                1093
+              ],
+              "tolerance_px": 5,
+              "content_viewport": [
+                4,
+                263,
+                1076,
+                1531
+              ],
+              "theme": "light",
+              "gutter_luminance": 245.14
+            }
+          ],
+          "qa_forced_restart_during_retention": false
+        },
+        "duration_seconds": 116.88,
+        "screens": [
+          {
+            "name": "manual-home-scroll-before",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\001-manual-home-scroll-before.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\001-manual-home-scroll-before.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-final-001-manual-home-scroll-before.png"
+          },
+          {
+            "name": "manual-home-scroll-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\002-manual-home-scroll-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\002-manual-home-scroll-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-final-002-manual-home-scroll-dark.png"
+          },
+          {
+            "name": "manual-home-scroll-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\003-manual-home-scroll-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\003-manual-home-scroll-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-final-003-manual-home-scroll-light.png"
+          },
+          {
+            "name": "manual-theme-settings-return-preserves-scroll",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\004-manual-theme-settings-return-preserves-scroll.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-final\\screens\\004-manual-theme-settings-return-preserves-scroll.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-final-004-manual-theme-settings-return-preserves-scroll.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-final/report.json"
+      },
+      {
+        "name": "gallery-light",
+        "status": "passed",
+        "details": {
+          "theme": "light",
+          "captured": [
+            "add-outfit",
+            "meal-chooser",
+            "add-meal",
+            "add-moment",
+            "add-anniversary",
+            "settings-home",
+            "我的信息",
+            "外观",
+            "云同步",
+            "数据备份",
+            "后台不被冻结",
+            "edit-outfit",
+            "edit-event",
+            "edit-meal",
+            "delete-confirm-cancelled",
+            "unsaved-confirm-cancelled"
+          ],
+          "saved_or_deleted": false
+        },
+        "duration_seconds": 364.49,
+        "screens": [
+          {
+            "name": "light-add-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\006-light-add-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\006-light-add-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-006-light-add-outfit.png"
+          },
+          {
+            "name": "light-meal-chooser",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\007-light-meal-chooser.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\007-light-meal-chooser.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-007-light-meal-chooser.png"
+          },
+          {
+            "name": "light-add-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\008-light-add-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\008-light-add-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-008-light-add-meal.png"
+          },
+          {
+            "name": "light-add-moment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\009-light-add-moment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\009-light-add-moment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-009-light-add-moment.png"
+          },
+          {
+            "name": "light-add-anniversary",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\010-light-add-anniversary.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\010-light-add-anniversary.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-010-light-add-anniversary.png"
+          },
+          {
+            "name": "light-settings-home",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\011-light-settings-home.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\011-light-settings-home.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-011-light-settings-home.png"
+          },
+          {
+            "name": "light-settings-module-1",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\012-light-settings-module-1.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\012-light-settings-module-1.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-012-light-settings-module-1.png"
+          },
+          {
+            "name": "light-settings-module-2",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\013-light-settings-module-2.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\013-light-settings-module-2.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-013-light-settings-module-2.png"
+          },
+          {
+            "name": "light-settings-module-3",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\014-light-settings-module-3.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\014-light-settings-module-3.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-014-light-settings-module-3.png"
+          },
+          {
+            "name": "light-settings-module-4",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\015-light-settings-module-4.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\015-light-settings-module-4.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-015-light-settings-module-4.png"
+          },
+          {
+            "name": "light-settings-module-5",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\016-light-settings-module-5.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\016-light-settings-module-5.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-016-light-settings-module-5.png"
+          },
+          {
+            "name": "light-edit-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\017-light-edit-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\017-light-edit-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-017-light-edit-outfit.png"
+          },
+          {
+            "name": "light-edit-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\018-light-edit-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\018-light-edit-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-018-light-edit-event.png"
+          },
+          {
+            "name": "light-edit-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\019-light-edit-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\019-light-edit-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-019-light-edit-meal.png"
+          },
+          {
+            "name": "light-unsaved-confirm-cancelled",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\020-light-unsaved-confirm-cancelled.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\020-light-unsaved-confirm-cancelled.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-020-light-unsaved-confirm-cancelled.png"
+          },
+          {
+            "name": "light-delete-confirm-cancelled",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\021-light-delete-confirm-cancelled.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\021-light-delete-confirm-cancelled.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-021-light-delete-confirm-cancelled.png"
+          },
+          {
+            "name": "gallery-light",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\022-gallery-light.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\022-gallery-light.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-022-gallery-light.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-state/report.json"
+      },
+      {
+        "name": "gallery-dark",
+        "status": "passed",
+        "details": {
+          "theme": "dark",
+          "captured": [
+            "add-outfit",
+            "meal-chooser",
+            "add-meal",
+            "add-moment",
+            "add-anniversary",
+            "settings-home",
+            "我的信息",
+            "外观",
+            "云同步",
+            "数据备份",
+            "后台不被冻结",
+            "edit-outfit",
+            "edit-event",
+            "edit-meal",
+            "delete-confirm-cancelled",
+            "unsaved-confirm-cancelled"
+          ],
+          "saved_or_deleted": false
+        },
+        "duration_seconds": 367.6,
+        "screens": [
+          {
+            "name": "dark-add-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\023-dark-add-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\023-dark-add-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-023-dark-add-outfit.png"
+          },
+          {
+            "name": "dark-meal-chooser",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\024-dark-meal-chooser.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\024-dark-meal-chooser.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-024-dark-meal-chooser.png"
+          },
+          {
+            "name": "dark-add-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\025-dark-add-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\025-dark-add-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-025-dark-add-meal.png"
+          },
+          {
+            "name": "dark-add-moment",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\026-dark-add-moment.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\026-dark-add-moment.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-026-dark-add-moment.png"
+          },
+          {
+            "name": "dark-add-anniversary",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\027-dark-add-anniversary.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\027-dark-add-anniversary.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-027-dark-add-anniversary.png"
+          },
+          {
+            "name": "dark-settings-home",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\028-dark-settings-home.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\028-dark-settings-home.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-028-dark-settings-home.png"
+          },
+          {
+            "name": "dark-settings-module-1",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\029-dark-settings-module-1.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\029-dark-settings-module-1.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-029-dark-settings-module-1.png"
+          },
+          {
+            "name": "dark-settings-module-2",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\030-dark-settings-module-2.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\030-dark-settings-module-2.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-030-dark-settings-module-2.png"
+          },
+          {
+            "name": "dark-settings-module-3",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\031-dark-settings-module-3.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\031-dark-settings-module-3.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-031-dark-settings-module-3.png"
+          },
+          {
+            "name": "dark-settings-module-4",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\032-dark-settings-module-4.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\032-dark-settings-module-4.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-032-dark-settings-module-4.png"
+          },
+          {
+            "name": "dark-settings-module-5",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\033-dark-settings-module-5.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\033-dark-settings-module-5.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-033-dark-settings-module-5.png"
+          },
+          {
+            "name": "dark-edit-outfit",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\034-dark-edit-outfit.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\034-dark-edit-outfit.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-034-dark-edit-outfit.png"
+          },
+          {
+            "name": "dark-edit-event",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\035-dark-edit-event.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\035-dark-edit-event.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-035-dark-edit-event.png"
+          },
+          {
+            "name": "dark-edit-meal",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\036-dark-edit-meal.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\036-dark-edit-meal.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-036-dark-edit-meal.png"
+          },
+          {
+            "name": "dark-unsaved-confirm-cancelled",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\037-dark-unsaved-confirm-cancelled.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\037-dark-unsaved-confirm-cancelled.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-037-dark-unsaved-confirm-cancelled.png"
+          },
+          {
+            "name": "dark-delete-confirm-cancelled",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\038-dark-delete-confirm-cancelled.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\038-dark-delete-confirm-cancelled.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-038-dark-delete-confirm-cancelled.png"
+          },
+          {
+            "name": "gallery-dark",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\039-gallery-dark.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-state\\screens\\039-gallery-dark.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-state-039-gallery-dark.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-state/report.json"
+      },
+      {
+        "name": "outfit-month-picker-and-date-strip",
+        "status": "passed",
+        "details": {
+          "previous_next_month": true,
+          "date_strip_selected": "2026年11月26日",
+          "month_picker_applied": "2026-10"
+        },
+        "duration_seconds": 91.45,
+        "screens": [
+          {
+            "name": "outfit-date-strip-selected",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-dates-final\\screens\\001-outfit-date-strip-selected.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-dates-final\\screens\\001-outfit-date-strip-selected.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-dates-final-001-outfit-date-strip-selected.png"
+          },
+          {
+            "name": "outfit-month-picker-applied",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-dates-final\\screens\\002-outfit-month-picker-applied.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-dates-final\\screens\\002-outfit-month-picker-applied.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-dates-final-002-outfit-month-picker-applied.png"
+          },
+          {
+            "name": "outfit-month-picker-and-date-strip",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-dates-final\\screens\\003-outfit-month-picker-and-date-strip.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-dates-final\\screens\\003-outfit-month-picker-and-date-strip.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-dates-final-003-outfit-month-picker-and-date-strip.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-dates-final/report.json"
+      },
+      {
+        "name": "meal-previous-next-and-date-picker",
+        "status": "passed",
+        "details": {
+          "previous_next_day": true,
+          "returned_date": "2026-11-24",
+          "date_picker_cancel_retained_date": true
+        },
+        "duration_seconds": 77.45,
+        "screens": [
+          {
+            "name": "meal-date-picker",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-date-recheck\\screens\\001-meal-date-picker.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-date-recheck\\screens\\001-meal-date-picker.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-date-recheck-001-meal-date-picker.png"
+          },
+          {
+            "name": "meal-previous-next-and-date-picker",
+            "png": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-date-recheck\\screens\\002-meal-previous-next-and-date-picker.png",
+            "xml": "E:\\project\\AI_seession\\zcode\\TheCutestGirl\\.verification\\ui-refinement\\qa-date-recheck\\screens\\002-meal-previous-next-and-date-picker.xml",
+            "delivered_png": "deliverables/ui-refinement/screens/qa-date-recheck-002-meal-previous-next-and-date-picker.png"
+          }
+        ],
+        "source_report": ".verification/ui-refinement/qa-date-recheck/report.json"
+      }
+    ],
+    "runs": [
+      {
+        "path": ".verification/ui-refinement/qa/report.json",
+        "passed_in_that_run": false,
+        "started_at": "2026-11-24T17:18:33.573888+00:00",
+        "finished_at": "2026-11-24T17:42:28.414053+00:00",
+        "checks": 19,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-recheck/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T01:27:04.139332+00:00",
+        "finished_at": "2026-11-25T01:36:04.878630+00:00",
+        "checks": 6,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-system/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T01:36:50.869706+00:00",
+        "finished_at": "2026-11-25T01:47:53.805505+00:00",
+        "checks": 14,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": null
+      },
+      {
+        "path": ".verification/ui-refinement/qa-photo-final/report.json",
+        "passed_in_that_run": false,
+        "started_at": "2026-11-25T01:48:24.041339+00:00",
+        "finished_at": "2026-11-25T01:54:51.899623+00:00",
+        "checks": 4,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-sync-recheck/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T01:56:45.020979+00:00",
+        "finished_at": "2026-11-25T02:00:32.096742+00:00",
+        "checks": 1,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-state/report.json",
+        "passed_in_that_run": false,
+        "started_at": "2026-11-25T02:01:59.024671+00:00",
+        "finished_at": "2026-11-25T02:18:13.988151+00:00",
+        "checks": 5,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-state-recheck/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T02:19:39.618897+00:00",
+        "finished_at": "2026-11-25T02:24:07.275493+00:00",
+        "checks": 2,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-nav-final/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T02:24:34.489487+00:00",
+        "finished_at": "2026-11-25T02:26:53.768814+00:00",
+        "checks": 2,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-responsive-final/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T02:26:53.933249+00:00",
+        "finished_at": "2026-11-25T02:30:02.230591+00:00",
+        "checks": 2,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": null
+      },
+      {
+        "path": ".verification/ui-refinement/qa-position-final/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T02:30:36.990179+00:00",
+        "finished_at": "2026-11-25T02:33:04.712276+00:00",
+        "checks": 1,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-dates-final/report.json",
+        "passed_in_that_run": false,
+        "started_at": "2026-11-25T02:33:04.891086+00:00",
+        "finished_at": "2026-11-25T02:36:09.856900+00:00",
+        "checks": 2,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-date-recheck/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T02:38:00.487269+00:00",
+        "finished_at": "2026-11-25T02:39:49.495396+00:00",
+        "checks": 1,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      },
+      {
+        "path": ".verification/ui-refinement/qa-final/report.json",
+        "passed_in_that_run": true,
+        "started_at": "2026-11-25T02:41:56.874645+00:00",
+        "finished_at": "2026-11-25T02:44:25.913006+00:00",
+        "checks": 1,
+        "restoration": [
+          {
+            "setting": "font_scale",
+            "status": "restored"
+          },
+          {
+            "setting": "size",
+            "status": "restored"
+          },
+          {
+            "setting": "night",
+            "status": "restored"
+          },
+          {
+            "setting": "virtual_keyboard",
+            "status": "restored"
+          },
+          {
+            "setting": "app_theme",
+            "status": "restored"
+          }
+        ],
+        "fixture_unchanged": true
+      }
+    ],
+    "initial_failures": [
+      {
+        "report": ".verification/ui-refinement/qa/report.json",
+        "check": "field-labels-outfit",
+        "error": "AssertionError: No usable EditText with stable field name: 备注"
+      },
+      {
+        "report": ".verification/ui-refinement/qa/report.json",
+        "check": "field-labels-meal",
+        "error": "AssertionError: No usable EditText with stable field name: 内容"
+      },
+      {
+        "report": ".verification/ui-refinement/qa/report.json",
+        "check": "field-labels-moment",
+        "error": "AssertionError: No usable EditText with stable field name: 标题"
+      },
+      {
+        "report": ".verification/ui-refinement/qa/report.json",
+        "check": "field-labels-anniversary",
+        "error": "AssertionError: No usable EditText with stable field name: 名称"
+      },
+      {
+        "report": ".verification/ui-refinement/qa/report.json",
+        "check": "partner-comment-only-no-delete",
+        "error": "AssertionError: Wrong ownership/edit permissions: {'内容'}"
+      },
+      {
+        "report": ".verification/ui-refinement/qa-photo-final/report.json",
+        "check": "synthetic-sync-failure-light-and-dark",
+        "error": "AssertionError: Fixture preference transfer did not preserve bytes"
+      },
+      {
+        "report": ".verification/ui-refinement/qa-state/report.json",
+        "check": "system-theme-preserves-open-draft",
+        "error": "AssertionError: No usable EditText with stable field name: 标题"
+      },
+      {
+        "report": ".verification/ui-refinement/qa-state/report.json",
+        "check": "manual-theme-settings-return-preserves-scroll",
+        "error": "AssertionError: The same record content did not retain its scroll position"
+      },
+      {
+        "report": ".verification/ui-refinement/qa-dates-final/report.json",
+        "check": "meal-previous-next-and-date-picker",
+        "error": "AssertionError: Missing controls: ['确定', '取消']; unexpected: []"
+      }
+    ],
+    "harness_corrections": [
+      "Focused Compose 1.7 editors may expose their name on a unique same-bounds non-focusable descendant; roles and values remain checked.",
+      "Partner uploaders must be distinguished from the same name in a reply on an own record.",
+      "Synthetic preference injection compares on-device SHA256; adb shell text line-ending normalization is not a byte-preserving file read.",
+      "The draft test first checks whether the target field is visible before scrolling upward, avoiding dragging an empty Sheet closed.",
+      "Scroll anchors must be fully visible outside the floating header and bottom bar.",
+      "The date picker test clicks the date text, avoiding the separate Today action inside its shared parent."
+    ],
+    "app_corrections": [
+      "Persist all three home screens expanded header heights with their saved list state.",
+      "Do not expose a retry action when a photo-management placeholder has no retry callback."
+    ],
+    "incremental_validation": "Rich content and synthetic failure were rechecked after the PhotoSyncPlaceholder text change. Draft/position retention, header/notification navigation, dates and responsive checks were rerun after the saved-header fix. The final nullable retry callback change was compiled and the final installed APK rechecked for visible content position retention; unaffected static galleries and settings checks remain from preceding builds."
+  },
+  "assets": {
+    "count": 13,
+    "icons": [
+      {
+        "name": "outfit",
+        "original": "output/imagegen/ios-icons/originals/outfit.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_outfit.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "dcdc78240a81baa142cfe268b6bc03b6906a9607a4fb9a50822e33d5519b83db"
+      },
+      {
+        "name": "meal",
+        "original": "output/imagegen/ios-icons/originals/meal.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_meal.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "608b091fc1536b61a82d2ddc554480e8afb1a5ad6efd678a2c7e160ce2e4e100"
+      },
+      {
+        "name": "event",
+        "original": "output/imagegen/ios-icons/originals/event.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_event.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "b0985ae3877114473115212fc52d6ad2348994f429ab0cffc79bf441011590ca"
+      },
+      {
+        "name": "breakfast",
+        "original": "output/imagegen/ios-icons/originals/breakfast.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_breakfast.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "5599d424bff4aa2f3f7f82e5b049a4c11d5184f683d71f12792092a8056a3f3e"
+      },
+      {
+        "name": "lunch",
+        "original": "output/imagegen/ios-icons/originals/lunch.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_lunch.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "5b338832b1afd3100f4d2c8b978fe2db7880228ca71613fe9d5bd844b534e321"
+      },
+      {
+        "name": "dinner",
+        "original": "output/imagegen/ios-icons/originals/dinner.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_dinner.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "a5d4d28350a3b69db94d042a3fb4bae2725f61721fe9edfeb52b21b7ad060b8c"
+      },
+      {
+        "name": "settings",
+        "original": "output/imagegen/ios-icons/originals/settings.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_settings.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "433c0bbf3de04439568ae034a2b814cf233cc8d9fc7826912f41da7639860da7"
+      },
+      {
+        "name": "profile",
+        "original": "output/imagegen/ios-icons/originals/profile.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_profile.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "553c1c151fd7c74585a6b7757a2e27f27ad93b5f1653ecd5c881e4f7b036351a"
+      },
+      {
+        "name": "sync",
+        "original": "output/imagegen/ios-icons/originals/sync.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_sync.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "e43dac077be66626487a3521f48734be75d7a3cc962ac926b60b5c9344ac02d5"
+      },
+      {
+        "name": "backup",
+        "original": "output/imagegen/ios-icons/originals/backup.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_backup.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "38480176405a156f4576a8e34805a006c790f86a07af85a7890c0266c5f62efe"
+      },
+      {
+        "name": "battery",
+        "original": "output/imagegen/ios-icons/originals/battery.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_battery.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "9c0cf4564cca94475a8912d7d929cdde8731862b4bb53f8a884f731bb9ab36bf"
+      },
+      {
+        "name": "appearance",
+        "original": "output/imagegen/ios-icons/originals/appearance.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_appearance.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "3751ec4d10eba9aa2c6e7895c6189ce0e133b23e21b512b48a743aabceef90cc"
+      },
+      {
+        "name": "add",
+        "original": "output/imagegen/ios-icons/originals/add.png",
+        "resource": "app/src/main/res/drawable-nodpi/art_add.png",
+        "size": [
+          384,
+          384
+        ],
+        "format": "8-bit RGBA PNG",
+        "sha256": "0e6e4218867ddf4915f2c535deb76783b8af899447e1020ac10643eae8b1af5f"
+      }
+    ],
+    "model_metadata": "Native tool does not expose a model identifier; relay model discovery failed because no API credential was configured."
+  },
+  "limits": [
+    "No production app or real phone was modified.",
+    "Cloud failure screenshots use a synthetic persisted state; no live cloud request was made.",
+    "AndroidTest sources were compiled; the full device sync/backup suite was not rerun for this UI change.",
+    "Native image generation did not return an exact model ID."
+  ]
+}

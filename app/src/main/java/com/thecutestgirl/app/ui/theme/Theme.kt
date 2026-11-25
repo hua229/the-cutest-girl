@@ -1,147 +1,104 @@
 package com.thecutestgirl.app.ui.theme
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.IndicationNodeFactory
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.node.DelegatableNode
-import androidx.compose.ui.node.DrawModifierNode
-import androidx.compose.ui.platform.LocalDensity
 
 private val LightColors = lightColorScheme(
     primary = Pink,
-    onPrimary = OnPinkLight,
+    onPrimary = Color.White,
     primaryContainer = PinkSoft,
-    onPrimaryContainer = Pink,
-    secondary = TextSecondary,
-    onSecondary = OnPinkLight,
-    secondaryContainer = SegmentSlotLight,
-    onSecondaryContainer = TextPrimary,
+    onPrimaryContainer = PinkInk,
+    secondary = MutedRose,
+    onSecondary = Color.White,
+    secondaryContainer = CobaltDeep,
+    onSecondaryContainer = Color(0xFF433641),
     tertiary = EmberWarm,
-    onTertiary = OnPinkLight,
+    onTertiary = Color.White,
     tertiaryContainer = WarningDeep,
-    onTertiaryContainer = EmberWarm,
+    onTertiaryContainer = Color(0xFF503A16),
     background = CanvasLight,
     onBackground = TextPrimary,
     surface = CardWhite,
     onSurface = TextPrimary,
-    surfaceVariant = SegmentSlotLight,
+    surfaceVariant = PanelRaised,
     onSurfaceVariant = TextSecondary,
     surfaceTint = Color.Transparent,
-    surfaceContainerLowest = CardWhite,
-    surfaceContainerLow = CardWhite,
-    surfaceContainer = CardWhite,
-    surfaceContainerHigh = ElevatedLight,
-    surfaceContainerHighest = ElevatedLight,
     outline = OutlineNeutral,
-    outlineVariant = DividerSoft,
+    outlineVariant = Color(0xFFE6E6EC),
+    inverseSurface = Color(0xFF303036),
+    inverseOnSurface = Color(0xFFF7F7FA),
+    inversePrimary = PrimaryDark,
+    surfaceBright = CardWhite,
+    surfaceDim = Color(0xFFE9E9EF),
+    surfaceContainerLowest = CardWhite,
+    surfaceContainerLow = Color(0xFFFAFAFC),
+    surfaceContainer = CardWhite,
+    surfaceContainerHigh = PanelRaised,
+    surfaceContainerHighest = Color(0xFFE9E9EF),
     error = DangerRed,
-    onError = OnPinkLight,
+    onError = Color.White,
     errorContainer = DangerDeep,
-    onErrorContainer = DangerRed,
-    scrim = ScrimLight
+    onErrorContainer = Color(0xFF71323B),
+    scrim = Color.Black
 )
 
 private val DarkColors = darkColorScheme(
-    primary = PinkDark,
-    onPrimary = PinkInkDark,
-    primaryContainer = PinkContainerDark,
-    onPrimaryContainer = PinkDark,
-    secondary = TextSecondaryDark,
-    onSecondary = CanvasDark,
-    secondaryContainer = PanelRaisedDark,
-    onSecondaryContainer = TextPrimaryDark,
-    tertiary = EmberDark,
-    onTertiary = CanvasDark,
-    tertiaryContainer = WarningDeepDark,
-    onTertiaryContainer = EmberDark,
+    primary = PrimaryDark,
+    onPrimary = Color(0xFF3E202E),
+    primaryContainer = Color(0xFF49303D),
+    onPrimaryContainer = Color(0xFFF6DBE5),
+    secondary = Color(0xFFCDB8C3),
+    onSecondary = Color(0xFF342B33),
+    secondaryContainer = Color(0xFF393039),
+    onSecondaryContainer = Color(0xFFEADDE5),
+    tertiary = Color(0xFFE6C08B),
+    onTertiary = Color(0xFF3C2C15),
+    tertiaryContainer = Color(0xFF463725),
+    onTertiaryContainer = Color(0xFFF4DBB8),
     background = CanvasDark,
-    onBackground = TextPrimaryDark,
-    surface = CardDark,
-    onSurface = TextPrimaryDark,
-    surfaceVariant = PanelRaisedDark,
-    onSurfaceVariant = TextSecondaryDark,
+    onBackground = Color(0xFFF1F1F5),
+    surface = Color(0xFF1D1D22),
+    onSurface = Color(0xFFF1F1F5),
+    surfaceVariant = Color(0xFF2A2A31),
+    onSurfaceVariant = Color(0xFFB4B4BF),
     surfaceTint = Color.Transparent,
-    surfaceContainerLowest = CanvasDark,
-    surfaceContainerLow = CardDark,
-    surfaceContainer = CardDark,
-    surfaceContainerHigh = ElevatedDark,
-    surfaceContainerHighest = ElevatedDark,
-    outline = OutlineNight,
-    outlineVariant = DashedDark,
-    error = DangerDark,
-    onError = CanvasDark,
-    errorContainer = DangerDeepDark,
-    onErrorContainer = DangerDark,
-    scrim = ScrimDark
+    outline = Color(0xFF55555F),
+    outlineVariant = Color(0xFF36363F),
+    inverseSurface = Color(0xFFE9E9EF),
+    inverseOnSurface = Color(0xFF28282F),
+    inversePrimary = Pink,
+    surfaceBright = Color(0xFF38383F),
+    surfaceDim = CanvasDark,
+    surfaceContainerLowest = Color(0xFF0D0D10),
+    surfaceContainerLow = Color(0xFF19191E),
+    surfaceContainer = Color(0xFF1D1D22),
+    surfaceContainerHigh = Color(0xFF26262C),
+    surfaceContainerHighest = Color(0xFF303037),
+    error = Color(0xFFF1A7AE),
+    onError = Color(0xFF4D2028),
+    errorContainer = Color(0xFF4A2B32),
+    onErrorContainer = Color(0xFFF8DDE0),
+    scrim = Color.Black
 )
-
-private object NoIndication : IndicationNodeFactory {
-    override fun create(interactionSource: InteractionSource): DelegatableNode = NoIndicationNode()
-
-    override fun hashCode(): Int = 0
-
-    override fun equals(other: Any?): Boolean = other === this
-
-    private class NoIndicationNode : Modifier.Node(), DrawModifierNode {
-        override fun ContentDrawScope.draw() {
-            drawContent()
-        }
-    }
-}
 
 @Composable
 fun TheCutestGirlTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val palette = if (darkTheme) DarkAppPalette else LightAppPalette
-    val colorScheme = if (darkTheme) DarkColors else LightColors
-    val degradation = if (LocalDensity.current.fontScale >= 2f) {
-        DegradationLevel.L7
-    } else {
-        DegradationLevel.L0
-    }
-    val contentAlpha = remember { Animatable(1f) }
-    var firstComposition by remember { mutableStateOf(true) }
-    LaunchedEffect(darkTheme) {
-        if (firstComposition) {
-            firstComposition = false
-        } else {
-            contentAlpha.snapTo(0f)
-            contentAlpha.animateTo(1f, tween(durationMillis = 220))
-        }
-    }
     CompositionLocalProvider(
-        LocalAppPalette provides palette,
-        LocalDegradationLevel provides degradation,
-        LocalIndication provides NoIndication
+        LocalAppPalette provides if (darkTheme) DarkAppPalette else LightAppPalette
     ) {
         MaterialTheme(
-            colorScheme = colorScheme,
+            colorScheme = if (darkTheme) DarkColors else LightColors,
             typography = AppTypography,
-            shapes = AppShapes
-        ) {
-            Box(modifier = Modifier.graphicsLayer { alpha = contentAlpha.value }) {
-                content()
-            }
-        }
+            shapes = AppShapes,
+            content = content
+        )
     }
 }
